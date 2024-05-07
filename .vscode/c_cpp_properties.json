@@ -1,18 +1,33 @@
 {
-  "configurations": [
-    {
-      "name": "windows-gcc-x64",
-      "includePath": [
-        "${workspaceFolder}/**"
-      ],
-      "compilerPath": "C:/Program Files/mingw64/bin/gcc.exe",
-      "cStandard": "${default}",
-      "cppStandard": "${default}",
-      "intelliSenseMode": "windows-gcc-x64",
-      "compilerArgs": [
-        ""
-      ]
-    }
-  ],
-  "version": 4
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "/usr/include/c++/13/**",
+                "/usr/include/c++/13/x86_64-suse-linux/**",
+                "/usr/include/c++/13/backward/**",
+                "/usr/local/llvm/lib/clang/19/include/**",
+                "/usr/include/**"
+            ],
+            "browse": {
+                "path": [
+                    "${workspaceFolder}/",
+                    "/usr/include/c++/13/",
+                    "/usr/include/c++/13/x86_64-suse-linux/",
+                    "/usr/include/c++/13/backward/",
+                    "/usr/local/llvm/lib/clang/19/include/",
+                    "/usr/include/"
+                ],
+                "databaseFilename": "",
+                "limitSymbolsToIncludedHeaders": true
+            },
+            "defines": [],
+            "compilerPath": "/usr/local/llvm/bin/clang++",
+            "cStandard": "c17",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "linux-clang-x64"
+        }
+    ],
+    "version": 4
 }
