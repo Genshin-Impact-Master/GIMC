@@ -2,8 +2,6 @@
 .vscode
 # tmp
 tmp*
-# example 前期工作对接使用不上传
-example*
 # 编译器默认输出文件
 a.out
 # cmake build 文件夹

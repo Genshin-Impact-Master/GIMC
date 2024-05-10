@@ -6,9 +6,16 @@ Value
     > Function
     > ConstValue
     > Instruction 
+        > BinaryInst (枚举类型)
+            > Add
+            > Sub
+            > Div
+            > Mul
+    > BBlock
 TypeBase
     > IntegerType
     > FloatType
+    > VoidType
 ```
 *注： `>` 的含义，例如 `Value > Function` 表示 `Function is-a Value` 继承关系*
 

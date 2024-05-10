@@ -9,15 +9,16 @@ project( GIMC CXX)
 
 # 可执行文件 gimc_ir 的依赖文件
 add_executable(gimc_ir
-  IR/BBlock.h
-  IR/ConstValue.h
-  IR/Function.h
-  IR/Inst.h
-  IR/IRBuilder.h
-  IR/Type.h
-  IR/Value.h
-  Utils/ErrorConfig.h
-  Config.h
+  include/IR/BBlock.h
+  include/IR/ConstValue.h
+  include/IR/Function.h
+  include/IR/Inst.h
+  include/IR/IRBuilder.h
+  include/IR/Type.h
+  include/IR/Value.h
+  include/Utils/ErrorConfig.h
+  include/Config.h
+  Config.cpp
   IR/BBlock.cpp
   IR/Function.cpp
   IR/ConstValue.cpp
@@ -34,7 +35,9 @@ add_executable(gimc_ir
 # )
 
 # 编译参数
-SET( CMAKE_CXX_FLAGS "--std=c++17 -O2 -lm")
+# SET( CMAKE_CXX_FLAGS "--std=c++17 -O2 -lm ")
+# 先支持调试
+SET( CMAKE_CXX_FLAGS "--std=c++17 -g -lm ")
 
 # build 目录位置
 set(CMAKE_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/build)
