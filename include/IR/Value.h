@@ -5,9 +5,9 @@
 #include <cstdint>
 #include <string>
 #include <memory> //@C++_Learn 用于智能指针 unique_ptr,shared_ptr...
+#include "Type.h"
 GIMC_NAMESPACE_BEGIN
 
-class TypeBase;
 class VoidType;
 
 /**
@@ -22,7 +22,7 @@ private:
   std::string prefix;                               // emit LLVM 时用到的前缀
 
   // @C++_Learn 因为 TypeBase 里面有纯虚函数，故 TypeBase 不能被实例化，只能传递其引用 or 指针
-  baseTypePtr type_;                  // Value 的数据类型的指针
+  baseTypePtr type_;                                // Value 的数据类型的指针
 public:
   /**
    * @todo 带名称 Value 初始化
@@ -54,6 +54,8 @@ public:
   }
 
   baseTypePtr getType() {return type_;}
+
+  const std::string getTypeName() {return getType()->getName();}
 
   virtual ~Value() = default;
 };

@@ -59,6 +59,22 @@ public:
   }
 };
 
+// 指针类型
+class PointerType final : public TypeBase {
+private:
+  baseTypePtr base_;
+  int cnt_; 
+public:
+  PointerType(baseTypePtr base, int cnt) : base_(base), cnt_(cnt) {}
+  PointerType(baseTypePtr base) : PointerType(base, 1) {}
+  PointerType(const PointerType&) = delete;                             // @C++_Learn 禁用拷贝构造函数和赋值运算符，防止浅拷贝
+  PointerType& operator=(const PointerType&) = delete;
+
+  baseTypePtr getBaseType() {return base_;}                             // 返回指针指向的数据类型
+  std::string getName() const override {return base_->getName();}
+  int getArraySizeCnt() {return cnt_;}
+};
+
 /**
  * 给每种类型都构造一个对象
  * 所有使用基础类型的指针都指向这些对象

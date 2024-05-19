@@ -22,7 +22,10 @@ enum class InstKind {
   Sub,
   Mul,
   Div,
-  BinaryOpEnd
+  BinaryOpEnd,
+  Alloca,
+  Store,
+  Load
 };
 
 /**
@@ -41,7 +44,6 @@ public:
   Instruction(baseTypePtr type, InstKind kind, BBlock *parent);
   Instruction(InstKind kind, BBlock *parent);
   Instruction(const std::string &name, InstKind kind, BBlock *parent);
-  const std::string getTypeName() {return getType()->getName();}
   virtual ~Instruction() = default;
 };
 
@@ -62,6 +64,51 @@ public:
              Value *rhs)
             : Instruction(name, type, kind, parent), lhs_(lhs), rhs_(rhs) {}
   
+};
+
+/**
+ * 分配内存并产生指向该内存指针的指令
+*/
+class Alloca final : public Instruction {
+friend class IRBuilder;
+private:
+  // baseTypePtr cntType;                    // 计数元素类型
+public:
+  /**
+   * 此处传递的 baseTypePtr 需要为 PointerType 的指针
+  */
+  Alloca(const std::string &name,
+         baseTypePtr type,
+         BBlock *parent) : Instruction(name, type, InstKind::Alloca, parent) {}
+};
+
+/**
+ * store 不产生 Value
+*/
+class Store final : public Instruction {
+friend class IRBuilder;
+private:
+  Value *input_;                      // 需要存入的数据
+  Value *ptr_;                        // 存入的内存指针
+public:
+  Store(const std::string &name,
+        baseTypePtr type,
+        BBlock *parent,
+        Value *input,
+        Value *ptr) : Instruction(name, type, InstKind::Store, parent), input_(input), ptr_(ptr) {} 
+  // Value* getInput() {return input_;}
+  // Value* getPtr() {return ptr_;}
+};
+
+class Load final : public Instruction {
+friend class IRBuilder;
+private:
+  Value *ptr_;
+public:
+  Load(const std::string &name,
+       baseTypePtr type,
+       BBlock *parent,
+       Value *ptr) : Instruction(name, type, InstKind::Load, parent), ptr_(ptr) {}
 };
 
 GIMC_NAMESPACE_END

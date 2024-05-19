@@ -19,6 +19,10 @@ public:
   */
   ConstValue(baseTypePtr type, uint64_t value)
     : Value("anonymous", type), value_(value) {}
+  
+  // @C++_Learn 利用模板方法实现一个函数不同类型返回值
+  // template<typename T>
+  // T getValue(); 
 };
 
 class ConstIntValue final : public ConstValue {
@@ -31,6 +35,7 @@ public:
   */
   // 返回 符号整数
   int32_t getInt() {return static_cast<int32_t>(value_);}
+  // int32_t getValue() override {return static_cast<int32_t>(value_);}
 
   // 重载 Value 中的 getName
   std::string& getName() override {
@@ -53,7 +58,27 @@ public:
   
   // 返回 符号浮点数
   double getFloat() {return static_cast<double>(value_);}
+  // double getValue() override {return static_cast<double>(value_);}
 };
+
+// @C++_Learn 模板方法特化
+// template<>
+// int32_t ConstValue::getValue<int32_t>() {
+//   ConstIntValue *derived = dynamic_cast<ConstIntValue*>(this);
+//   if (derived) {
+//     return derived->getValue();
+//   }
+//   throw std::bad_cast();          // @C++_Learn 类型不匹配抛出异常
+// }
+
+// template<>
+// double ConstValue::getValue<double>() {
+//   ConstFloatValue *derived = dynamic_cast<ConstFloatValue*>(this);
+//   if (derived) {
+//     return derived->getValue();
+//   }
+//   throw std::bad_cast();          // @C++_Learn 类型不匹配抛出异常
+// }
 
 GIMC_NAMESPACE_END
 

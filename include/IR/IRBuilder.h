@@ -5,11 +5,13 @@
 #include "Function.h"
 #include "Inst.h"
 #include "BBlock.h"
+#include "Type.h"
 #include <cassert>
 #include <fstream>
 #include <string>
 #include <cstdarg>
 #include <cstdio>
+#include <iostream>
 
 GIMC_NAMESPACE_BEGIN
 
@@ -59,9 +61,33 @@ public:
                                 Value *lhs,
                                 Value *rhs,
                                 BBlock* parent = nullptr);
+  Instruction* createBinaryInst(InstKind kind, Value *lhs, Value *rhs, BBlock *parent = nullptr);
 
-  Instruction* createBinaryInst(InstKind kind, Value *lhs, Value *rhs, BBlock* parent = nullptr);
+  /**
+   * 创建 alloca 指令
+   * @param type 指针指向内存的基类
+   * @param cnt 数组元素个数（非数组设置为 1）
+  */
+  Instruction* createAllocaInst(const std::string &name, baseTypePtr type, int cnt, BBlock *parent = nullptr);
+  Instruction* createAllocaInst(baseTypePtr type, int cnt, BBlock *parent = nullptr);
 
+  /**
+   * 创建 store 指令
+   * @param input 待存入的值指针
+   * @param ptr   指针指向存入地址
+  */
+  Instruction* createStoreInst(Value *input, Value *ptr, BBlock *parent = nullptr);
+
+  /**
+   * 创建 load 指令
+   * @param ptr 需要读取的内存的指针
+  */
+  Instruction* createLoadInst(const std::string &name, baseTypePtr type, Value *ptr, BBlock *parent = nullptr);
+  Instruction* createLoadInst(baseTypePtr type, Value *ptr, BBlock *parent = nullptr);
+
+  /**
+   * 检查是否存在 BBlock
+  */
   BBlock* checkBlockParent(BBlock* parent);
 
 /******************************************************************************/

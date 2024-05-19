@@ -60,6 +60,38 @@ Instruction* IRBuilder::createBinaryInst(InstKind kind, Value *lhs, Value *rhs, 
   return createBinaryInst(kind, std::to_string(parent->getCnt()), lhs, rhs, parent);
 }
 
+Instruction* IRBuilder::createAllocaInst(const std::string &name, baseTypePtr type, int cnt, BBlock *parent) {
+  parent = checkBlockParent(parent);
+  std::shared_ptr<PointerType> ptrTy = std::make_shared<PointerType>(type, cnt);
+  Alloca *inst = new Alloca(name, ptrTy, parent);
+  parent->addInst(inst);
+  return inst;
+}
+
+Instruction* IRBuilder::createAllocaInst(baseTypePtr type, int cnt, BBlock *parent) {
+  parent = checkBlockParent(parent);
+  return createAllocaInst(std::to_string(parent->getCnt()), type, cnt, parent);
+}
+
+Instruction* IRBuilder::createStoreInst(Value *input, Value *ptr, BBlock *parent) {
+  parent = checkBlockParent(parent);
+  Store *inst = new Store("anonimous", voidTyPtr, parent, input, ptr);
+  // fprintf(stdout, "the input is %s \n", input->getTypeName().data());
+  parent->addInst(inst);
+  return inst;
+}
+
+Instruction* IRBuilder::createLoadInst(const std::string &name, baseTypePtr type, Value *ptr, BBlock *parent) {
+  parent = checkBlockParent(parent);
+  Load *inst = new Load(name, type, parent, ptr);
+  parent->addInst(inst);
+  return inst;
+}
+
+Instruction* IRBuilder::createLoadInst(baseTypePtr type, Value *ptr, BBlock *parent) {
+  parent = checkBlockParent(parent);
+  return createLoadInst(std::to_string(parent->getCnt()), type, ptr, parent);
+}
 /******************************************************************************/
 /*                                生成 LLVM IR                                */
 /*****************************************************************************/
@@ -70,21 +102,44 @@ void IRBuilder::emitIRFunc(Function *func) {
   for (auto bBlkPtr : func->bBlocks) {
     emitIRBBlock(bBlkPtr);
   }
-  IRTextLineDump(std::string("\t") + "ret i32 %3");
+  IRTextLineDump(std::string("\t") + "ret i32 %12");
   IRTextLineDump("}");
 }
 
 void IRBuilder::emitIRBBlock(BBlock *bBlk) {
   irout << bBlk->getName() << ":\n" ;
+  int cnt = 0;
   for (auto inst : bBlk->instructions) {
     emitIRInst(inst);
+    // std::cout << "Now No." << cnt << " "<< ST_Insts[static_cast<int>(inst->kind_)];
+    cnt++;
   }
 }
 
 void IRBuilder::emitIRInst(Instruction *inst) {
+  // 二元指令
   if (inst->kind_ > InstKind::BinaryOPBegin && inst->kind_ < InstKind::BinaryOpEnd) {
     BinaryInst* i = dynamic_cast<BinaryInst*>(inst);
-    irout << '\t' << i->getFullName() << "=" << ST_Insts[static_cast<int>(i->kind_)] << " " << i->getTypeName() << " "
-        << i->lhs_->getFullName() << ", " << " " << i->rhs_->getFullName() << std::endl;
+    irout << '\t' << i->getFullName() << "=" << ST_Insts[static_cast<int>(i->kind_)] << i->getTypeName() << " "
+          << i->lhs_->getFullName() << ", " << i->rhs_->getFullName() << std::endl;
+  }
+  // alloca 指令
+  else if (inst->kind_ == InstKind::Alloca) {
+    Alloca *i = dynamic_cast<Alloca*>(inst);
+    std::shared_ptr<PointerType> ptr = std::dynamic_pointer_cast<PointerType>(inst->getType());             // @C++_Learn 智能指针转换 
+    irout << '\t' << i->getFullName() << "=" << ST_Insts[static_cast<int>(i->kind_)] << i->getTypeName()
+          << ", i32 " << ptr->getArraySizeCnt() << std::endl; 
+  }
+  // store 指令
+  else if (inst->kind_ == InstKind::Store) {
+    Store *i = dynamic_cast<Store*>(inst);
+    irout << "\tstore " << i->input_->getTypeName() << " " << i->input_->getFullName();
+        irout << ", ptr " << i->ptr_->getFullName()<< std::endl;
+  }
+  // load 指令
+  else if (inst->kind_ == InstKind::Load) {
+    Load *i = dynamic_cast<Load*>(inst);
+    irout << '\t' << i->getFullName() << "=" << ST_Insts[static_cast<int>(i->kind_)]
+          << i->getTypeName() << ", ptr " << i->ptr_->getFullName()<< std::endl;
   }
 }
