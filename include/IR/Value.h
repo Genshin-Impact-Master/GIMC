@@ -53,6 +53,13 @@ public:
     fullName = prefix + newName;
   }
 
+  // 修改前缀
+  void setPrefix(bool setLocal) {
+    if (setLocal) prefix = LOCAL_PREFIX;
+    else prefix = FUNC_OR_GLOBAL_PREFIX;
+    fullName = prefix + valueName;
+  }
+
   baseTypePtr getType() {return type_;}
 
   const std::string getTypeName() {return getType()->getName();}

@@ -10,8 +10,8 @@ void IRBuilder::IRTextDump(const char* format, ...) {
 }
 */
 
-Function* IRBuilder::createFunction(const std::string &fName, baseTypePtr ftype) {
-  Function* function = new Function(fName, ftype);
+Function* IRBuilder::createFunction(const std::string &fName, baseTypePtr ftype, std::vector<baseTypePtr> &arguTypes) {
+  Function* function = new Function(fName, ftype, arguTypes);
   chosedFunc_ = function;
   return function;
 }
@@ -92,22 +92,69 @@ Instruction* IRBuilder::createLoadInst(baseTypePtr type, Value *ptr, BBlock *par
   parent = checkBlockParent(parent);
   return createLoadInst(std::to_string(parent->getCnt()), type, ptr, parent);
 }
+
+Instruction* IRBuilder::createCallInst(const std::string &name, Function *func, std::vector<Value*> &argus, BBlock *parent) {
+  parent = checkBlockParent(parent);
+  // 因为 Function 的类型即为其返回类型
+  Call *inst = new Call(name, func->getType(), parent, func, argus);
+  parent->addInst(inst);
+  return inst;
+}
+
+Instruction* IRBuilder::createCallInst(Function *func, std::vector<Value*> &argus, BBlock *parent) {
+  parent = checkBlockParent(parent);
+  return createCallInst(std::to_string(parent->getCnt()), func, argus, parent);
+}
+
+Instruction* IRBuilder::createRetInst(const std::string &name, Value *retValue, BBlock *parent) {
+  parent = checkBlockParent(parent);
+  Ret *inst = new Ret(name, retValue->getType(), parent, retValue);
+  parent->addInst(inst);
+  return inst;
+}
+  
+Instruction* IRBuilder::createRetInst(Value *retValue, BBlock *parent) {
+  parent = checkBlockParent(parent);
+  return createRetInst(std::to_string(parent->getCnt()), retValue, parent);
+}
 /******************************************************************************/
 /*                                生成 LLVM IR                                */
 /*****************************************************************************/
-void IRBuilder::emitIRFunc(Function *func) {
-  IRTextDump("define ");
-  IRTextLineDump(func->getType()->getName()
-                         + " @" + func->getName() +"() {");
+void IRBuilder::emitIRFuncDef(Function *func) {
+  std::vector<baseTypePtr> &arguTypes = func->arguTypes_;
+  irout <<"define " << func->getTypeName() << " " << func->getFullName()
+        << "(";
+  for (int i = 0; i < static_cast<int>(arguTypes.size()) - 2; i++) {
+    irout << arguTypes[i]->getName() << ",";
+  }
+  if (arguTypes.size() != 0) {
+    irout << arguTypes.back()->getName();  
+  }
+  irout << ") {" << std::endl;
+
   for (auto bBlkPtr : func->bBlocks) {
     emitIRBBlock(bBlkPtr);
   }
-  IRTextLineDump(std::string("\t") + "ret i32 %12");
   IRTextLineDump("}");
 }
 
+void IRBuilder::emitIRFuncDecl(Function *func) {
+  std::vector<baseTypePtr> &arguTypes = func->arguTypes_;
+  irout << "declare " << func->getTypeName() << " " << func->getFullName()
+        << "(";
+  // @C++_Learn 注意 vector 的 size() 函数返回的是无符号整型，需要转换为 int
+  for (int i = 0; i < static_cast<int>(arguTypes.size() - 2); i++) {
+    irout << arguTypes[i]->getName() << ",";
+  }
+  if (arguTypes.size() != 0) {
+    irout << arguTypes.back()->getName();  
+  }
+  irout << ")" << std::endl;
+}
+
 void IRBuilder::emitIRBBlock(BBlock *bBlk) {
-  irout << bBlk->getName() << ":\n" ;
+  // 由于 BBlock 中不需要带有前缀故只需要 getName()
+  irout << bBlk->getName() << ":" << std::endl ;
   int cnt = 0;
   for (auto inst : bBlk->instructions) {
     emitIRInst(inst);
@@ -141,5 +188,30 @@ void IRBuilder::emitIRInst(Instruction *inst) {
     Load *i = dynamic_cast<Load*>(inst);
     irout << '\t' << i->getFullName() << "=" << ST_Insts[static_cast<int>(i->kind_)]
           << i->getTypeName() << ", ptr " << i->ptr_->getFullName()<< std::endl;
+  }
+  // call 指令
+  else if (inst->kind_ == InstKind::Call) {
+    Call *i = dynamic_cast<Call*>(inst);
+    // 因为所有的 void Type 均使用 voidTyPtr，故直接检测
+    if (i->getType() != voidTyPtr) {
+      irout << '\t' << i->getFullName() << "=";
+    }
+    else irout << '\t';
+    irout << ST_Insts[static_cast<int>(i->kind_)]
+          << i->func_->getTypeName() << " " << i->func_->getFullName() << "(";
+    std::vector<Value*> &argus = i->argus_;
+    for (int i = 0; i < static_cast<int>(argus.size()) - 2; i++) {
+      irout << argus[i]->getTypeName() << " " << argus[i]->getFullName() << ",";
+    }
+    if (argus.size() != 0) {
+      irout << argus.back()->getTypeName() << " " << argus.back()->getFullName();  
+    }
+    irout << ")" << std::endl;
+  }
+  // ret 指令
+  else if(inst->kind_ == InstKind::Ret) {
+    Ret *i = dynamic_cast<Ret*>(inst);
+    irout << "\t" << ST_Insts[static_cast<int>(i->kind_)] << i->getTypeName() << " "
+          << i->retValue_->getFullName() << std::endl;
   }
 }

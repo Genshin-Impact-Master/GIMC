@@ -41,7 +41,7 @@ public:
 /*****************************************************************************/
 
   // 创建 Function，并将创建的 Function 作为 chosedFunc 
-  Function* createFunction(const std::string &fName, baseTypePtr fType);
+  Function* createFunction(const std::string &fName, baseTypePtr fType, std::vector<baseTypePtr> &arguTypes);
 
   /**
    * 创建 BBlock
@@ -52,7 +52,7 @@ public:
 
   /**
    * 创建二元运算指令
-   * @param lhs 左操作数指针
+   * @param lhs 左操作数指针，注意获得的 Value 的类型和左操作数的类型相同
    * @param rhs 右操作数指针
    * @param parent 要插入的基本块，默认为上次使用该 IRBuilder 创建的 BBlock*
   */
@@ -86,6 +86,21 @@ public:
   Instruction* createLoadInst(baseTypePtr type, Value *ptr, BBlock *parent = nullptr);
 
   /**
+   * 创建 call 指令，调用函数
+   * 此条 Instruction 的 type 会设置为函数的返回类型（即 call 指令会产生一个函数返回值的 Value）
+   * @see IR/IRBuilder.cpp
+   * @param func 被调用的函数指针
+  */
+  Instruction* createCallInst(const std::string &name, Function *func, std::vector<Value*> &argus, BBlock *parent = nullptr);
+  Instruction* createCallInst(Function *func, std::vector<Value*> &argus,BBlock *parent = nullptr);
+
+  /**
+   * 创建 ret 指令
+  */
+  Instruction* createRetInst(const std::string &name, Value *retValue, BBlock *parent = nullptr);
+  Instruction* createRetInst(Value *retValue, BBlock *parent = nullptr);
+
+  /**
    * 检查是否存在 BBlock
   */
   BBlock* checkBlockParent(BBlock* parent);
@@ -108,8 +123,11 @@ public:
   // 关闭输出文件
   void close() {irout.close();}
 
-  // 生成 llvm IR 格式 Function
-  void emitIRFunc(Function *func);
+  // 生成 llvm IR 格式 Function 的定义 define
+  void emitIRFuncDef(Function *func);
+
+  // 生成 llvm IR 格式 Function 的声明 declare
+  void emitIRFuncDecl(Function *func);
 
   // 生成 llvm IR 格式 BBlock
   void emitIRBBlock(BBlock *bBlk);
@@ -124,6 +142,12 @@ public:
   bool isBinaryOp(InstKind kind) {
     return kind > InstKind::BinaryOPBegin && kind < InstKind::BinaryOpEnd;
   }
+
+  // 切换选中函数
+  void setChosedFunc(Function *func) {chosedFunc_ = func;}
+  // 切换选中基本块
+  void setChosedBBlock(BBlock *bBlock) {chosedBBlock_ = bBlock;}
+
 };
 
 GIMC_NAMESPACE_END

@@ -50,12 +50,11 @@ public:
   std::string getName() const override { return "Float"; }  
 };
 
-// 未定义的数据类型
+// void 数据类型
 class VoidType final : public TypeBase {
 public:
   std::string getName() const override {
-    fprintf(stderr, "不能得到一个为定义数据类型的名称\n");
-    return nullptr;
+    return "void";
   }
 };
 

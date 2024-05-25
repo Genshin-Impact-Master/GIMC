@@ -25,7 +25,9 @@ enum class InstKind {
   BinaryOpEnd,
   Alloca,
   Store,
-  Load
+  Load,
+  Call,
+  Ret
 };
 
 /**
@@ -111,6 +113,33 @@ public:
        Value *ptr) : Instruction(name, type, InstKind::Load, parent), ptr_(ptr) {}
 };
 
+class Call final : public Instruction {
+friend class IRBuilder;
+private:
+Function *func_;
+std::vector<Value*> argus_;
+public:
+  Call(const std::string &name,
+        baseTypePtr type,
+        BBlock *parent,
+        Function *func,
+        std::vector<Value*> &argus) : Instruction(name, type, InstKind::Call, parent), func_(func), argus_(argus) {}
+};
+
+/**
+ * Ret 指令所代表 Value 的类型即为返回值类型
+ * @see IRBuilder.cpp
+*/
+class Ret final : public Instruction {
+friend class IRBuilder;
+private:
+Value* retValue_;
+public:
+  Ret(const std::string &name,
+      baseTypePtr type,
+      BBlock *parent,
+      Value* retValue) : Instruction(name, type, InstKind::Ret, parent), retValue_(retValue) {}
+};
 GIMC_NAMESPACE_END
 
 #endif //INST_H_

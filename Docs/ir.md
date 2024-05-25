@@ -11,11 +11,17 @@ Value
             > Sub
             > Div
             > Mul
+        > Alloca
+        > Store
+        > Load
+        > Call
+        > Ret
     > BBlock
 TypeBase
     > IntegerType
     > FloatType
     > VoidType
+    > PointerType
 ```
 *注： `>` 的含义，例如 `Value > Function` 表示 `Function is-a Value` 继承关系*
 
