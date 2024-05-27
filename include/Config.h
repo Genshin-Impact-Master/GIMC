@@ -22,6 +22,7 @@ typedef std::shared_ptr<TypeBase> baseTypePtr;          // 数据类型基类指
  * @see IR/Inst.h
 */
 extern std::vector<std::string> ST_Insts;
+extern std::vector<std::string> ST_Conds;
 
 // 定义一个空参数列表，所有零参函数在 call 时均使用此列表
 extern std::vector<Value*> Zero_Argu_List;

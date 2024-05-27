@@ -1,5 +1,6 @@
 #ifndef IRBUILDER_H_
 #define IRBUILDER_H_
+#define INST_STRING ST_Insts[static_cast<int>(i->kind_)]      // 方便打印相应的 Inst
 
 #include "../Config.h"
 #include "Function.h"
@@ -99,6 +100,17 @@ public:
   */
   Instruction* createRetInst(const std::string &name, Value *retValue, BBlock *parent = nullptr);
   Instruction* createRetInst(Value *retValue, BBlock *parent = nullptr);
+
+  /**
+   * 创建 icmp 指令 
+  */
+  Instruction* createIcmpInst(const std::string &name, CondKind kind, Value *first, Value *second, BBlock *parent = nullptr);
+  Instruction* createIcmpInst(CondKind kind, Value *first, Value *second, BBlock *parent = nullptr);
+
+  /**
+   * 创建 Br 指令，Br 指令不需要名称
+  */
+  Instruction* createBrInst(Value *cond, BBlock *ifTure, BBlock *ifFalse, BBlock *parent = nullptr);
 
   /**
    * 检查是否存在 BBlock

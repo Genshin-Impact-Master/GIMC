@@ -21,10 +21,10 @@ private:
 public:
   // 构造长度为 length 比特的 Int 类型
   IntegerType(int length) : int_w(length) {
-    assert((length == 16 || length == 32 || length == 64) 
-          && "整型字长必须为 16 or 32 or 64");
+    assert((length == 1 || length == 16 || length == 32 || length == 64) 
+          && "整型字长必须为 1 or 16 or 32 or 64");
 
-    if (!(length == 16 || length == 32 || length == 64))
+    if (!(length == 1 || length == 16 || length == 32 || length == 64))
       fprintf(stderr, "Invalid Int length\n");              //@todo 统一的错误报告模板
   }
 
@@ -79,7 +79,8 @@ public:
  * 所有使用基础类型的指针都指向这些对象
 */
 // @C++_Learn 此处使用 shared_ptr 保证其所指内存在无对象指向时销毁
-extern baseTypePtr i32TyPtr;         // 32位长的 int 类型实例
+extern baseTypePtr i32TyPtr;          // 32 位长的 int 类型实例
+extern baseTypePtr i1TyPtr;           // 1 位长的 int 类型实例
 extern baseTypePtr fTyPtr;
 extern baseTypePtr voidTyPtr;
 

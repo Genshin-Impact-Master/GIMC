@@ -117,6 +117,36 @@ Instruction* IRBuilder::createRetInst(Value *retValue, BBlock *parent) {
   parent = checkBlockParent(parent);
   return createRetInst(std::to_string(parent->getCnt()), retValue, parent);
 }
+
+Instruction* IRBuilder::createIcmpInst(const std::string &name, CondKind kind, Value *first, Value *second, BBlock *parent) {
+  parent = checkBlockParent(parent);
+  Icmp *inst = new Icmp(name, i1TyPtr, parent, kind, first, second);
+  parent->addInst(inst);
+  return inst;
+}
+
+Instruction* IRBuilder::createIcmpInst(CondKind kind, Value *first, Value *second, BBlock *parent) {
+  parent = checkBlockParent(parent);
+  return createIcmpInst(std::to_string(parent->getCnt()), kind, first, second, parent);
+}
+
+Instruction* IRBuilder::createBrInst(Value *cond, BBlock *ifTure, BBlock *ifFalse, BBlock *parent) {
+  parent = checkBlockParent(parent);
+  // 判断是否为无条件跳转，检查两块必须非空
+  Br *inst;
+  // 三个操作 Value* 除了 ifTrue 均为 nullptr 才表示无条件跳转
+  if (ifTure && ifFalse == nullptr && cond == nullptr) {
+    inst = new Br("anonymous", voidTyPtr, parent, nullptr, ifTure, nullptr);
+  }
+  else if(ifTure && ifFalse && cond) {
+    inst = new Br("anonymous", voidTyPtr, parent, cond, ifTure, ifFalse);
+  }
+  else
+    fprintf(stderr, "生成 Br 指令异常\n");
+  parent->addInst(inst);
+  return inst;
+}
+
 /******************************************************************************/
 /*                                生成 LLVM IR                                */
 /*****************************************************************************/
@@ -167,38 +197,38 @@ void IRBuilder::emitIRInst(Instruction *inst) {
   // 二元指令
   if (inst->kind_ > InstKind::BinaryOPBegin && inst->kind_ < InstKind::BinaryOpEnd) {
     BinaryInst* i = dynamic_cast<BinaryInst*>(inst);
-    irout << '\t' << i->getFullName() << "=" << ST_Insts[static_cast<int>(i->kind_)] << i->getTypeName() << " "
-          << i->lhs_->getFullName() << ", " << i->rhs_->getFullName() << std::endl;
+    irout << '\t' << i->getFullName() << "= " << INST_STRING << i->getTypeName() << " "
+          << i->ops_[0]->getFullName() << ", " << i->ops_[1]->getFullName() << std::endl;
   }
   // alloca 指令
   else if (inst->kind_ == InstKind::Alloca) {
     Alloca *i = dynamic_cast<Alloca*>(inst);
     std::shared_ptr<PointerType> ptr = std::dynamic_pointer_cast<PointerType>(inst->getType());             // @C++_Learn 智能指针转换 
-    irout << '\t' << i->getFullName() << "=" << ST_Insts[static_cast<int>(i->kind_)] << i->getTypeName()
+    irout << '\t' << i->getFullName() << "= " << INST_STRING << i->getTypeName()
           << ", i32 " << ptr->getArraySizeCnt() << std::endl; 
   }
   // store 指令
   else if (inst->kind_ == InstKind::Store) {
     Store *i = dynamic_cast<Store*>(inst);
-    irout << "\tstore " << i->input_->getTypeName() << " " << i->input_->getFullName();
-        irout << ", ptr " << i->ptr_->getFullName()<< std::endl;
+    irout << "\tstore " << i->ops_[0]->getTypeName() << " " << i->ops_[0]->getFullName();
+        irout << ", ptr " << i->ops_[1]->getFullName()<< std::endl;
   }
   // load 指令
   else if (inst->kind_ == InstKind::Load) {
     Load *i = dynamic_cast<Load*>(inst);
-    irout << '\t' << i->getFullName() << "=" << ST_Insts[static_cast<int>(i->kind_)]
-          << i->getTypeName() << ", ptr " << i->ptr_->getFullName()<< std::endl;
+    irout << '\t' << i->getFullName() << "= " << INST_STRING
+          << i->getTypeName() << ", ptr " << i->ops_[0]->getFullName()<< std::endl;
   }
   // call 指令
   else if (inst->kind_ == InstKind::Call) {
     Call *i = dynamic_cast<Call*>(inst);
     // 因为所有的 void Type 均使用 voidTyPtr，故直接检测
     if (i->getType() != voidTyPtr) {
-      irout << '\t' << i->getFullName() << "=";
+      irout << '\t' << i->getFullName() << "= ";
     }
     else irout << '\t';
-    irout << ST_Insts[static_cast<int>(i->kind_)]
-          << i->func_->getTypeName() << " " << i->func_->getFullName() << "(";
+    irout << INST_STRING
+          << i->ops_[0]->getTypeName() << " " << i->ops_[0]->getFullName() << "(";
     std::vector<Value*> &argus = i->argus_;
     for (int i = 0; i < static_cast<int>(argus.size()) - 2; i++) {
       irout << argus[i]->getTypeName() << " " << argus[i]->getFullName() << ",";
@@ -209,9 +239,30 @@ void IRBuilder::emitIRInst(Instruction *inst) {
     irout << ")" << std::endl;
   }
   // ret 指令
-  else if(inst->kind_ == InstKind::Ret) {
+  else if (inst->kind_ == InstKind::Ret) {
     Ret *i = dynamic_cast<Ret*>(inst);
-    irout << "\t" << ST_Insts[static_cast<int>(i->kind_)] << i->getTypeName() << " "
-          << i->retValue_->getFullName() << std::endl;
+    irout << '\t' << INST_STRING << i->getTypeName() << " "
+          << i->ops_[0]->getFullName() << std::endl;
+  }
+  // icmp 指令
+  else if (inst->kind_ == InstKind::Icmp) {
+    Icmp *i = dynamic_cast<Icmp*>(inst);
+    irout << '\t' << i->getFullName() << "= " << INST_STRING << ST_Conds[static_cast<int>(i->ckind_)]
+          << i->ops_[0]->getTypeName() << " " << i->ops_[0]->getFullName() << ", " << i->ops_[1]->getFullName() << std::endl; 
+  } 
+  // Br 指令
+  else if (inst->kind_ == InstKind::Br) {
+    Br *i = dynamic_cast<Br*>(inst);
+    irout << '\t' << INST_STRING;
+    if (i->ops_[0] != nullptr && i->ops_[1] != nullptr && i->ops_[2] != nullptr) {
+      // 有条件跳转
+      Value *cond = i->ops_[0];
+      irout << cond->getTypeName() << " " << cond->getFullName() << ", label "
+            << i->ops_[1]->getFullName() << ", label " << i->ops_[2]->getFullName() << std::endl; 
+    }
+    else if (i->ops_[0] == nullptr && i->ops_[1]) {
+      // 无条件跳转
+      irout << "label " << i->ops_[1]->getFullName() << std::endl;
+    }
   }
 }

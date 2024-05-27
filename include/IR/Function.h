@@ -14,7 +14,7 @@ USING_GIMC_NAMESPACE
 class IRBuilder;
 class BBlock;
 
-class Function : Value {
+class Function : public Value {
 // @C++_Learn 引入友类，可以访问 private 变量
 friend class IRBuilder;
 private:

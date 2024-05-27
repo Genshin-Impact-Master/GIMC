@@ -156,3 +156,31 @@ __store__ 指令
 ```llvm
 store <ty> <value>, ptr <pointer>
 ```
+#### 其他指令
+__icmp__ 指令
+```llvm
+<result> = icmp <cond> <ty> <op1>, <op2>   ; yields i1 or <N x i1>:result
+```
+`<cond>` 表示进行哪种类型的比较
+```llvm
+eq: equal
+ne: not equal
+ugt: unsigned greater than
+uge: unsigned greater or equal
+ult: unsigned less than
+ule: unsigned less or equal
+sgt: signed greater than
+sge: signed greater or equal
+slt: signed less than
+sle: signed less or equal
+```
+被比较的两个参数必须为同一个类型，整型 or 指针
+例子：
+```llvm
+<result> = icmp eq i32 4, 5          ; yields: result=false
+<result> = icmp ne ptr %X, %X        ; yields: result=false
+<result> = icmp ult i16  4, 5        ; yields: result=true
+<result> = icmp sgt i16  4, 5        ; yields: result=false
+<result> = icmp ule i16 -4, 5        ; yields: result=false
+<result> = icmp sge i16  4, 5        ; yields: result=false
+```

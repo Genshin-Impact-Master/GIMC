@@ -61,6 +61,8 @@ public:
   // double getValue() override {return static_cast<double>(value_);}
 };
 
+// extern ConstValue *boolTrue;
+
 // @C++_Learn 模板方法特化
 // template<>
 // int32_t ConstValue::getValue<int32_t>() {

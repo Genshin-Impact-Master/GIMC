@@ -13,6 +13,16 @@ int main(int argc, char** args) {
     builder = IRBuilder(args[1], nullptr, nullptr);
   }
 
+  // 使用到的库函数
+  std::vector<baseTypePtr> putch_arguTypes;
+  std::vector<baseTypePtr> putint_arguTypes;
+  putch_arguTypes.push_back(i32TyPtr);
+  putint_arguTypes.push_back(i32TyPtr);
+  Function *putch = builder.createFunction("putch", voidTyPtr, putch_arguTypes);
+  Function *putint = builder.createFunction("putint", voidTyPtr, putint_arguTypes);
+  Function *getch = builder.createFunction("getch", i32TyPtr, Zero_Argu_Type_List);              // getch 为零参函数，使用全局零参空向量，见 Config.cpp
+  Function *getint = builder.createFunction("getint", i32TyPtr, Zero_Argu_Type_List);              // getch 为零参函数，使用全局零参空向量，见 Config.cpp
+
   // 创建零参函数 "main"，返回类型为 i32
   Function *myFunc = builder.createFunction("main", i32TyPtr, Zero_Argu_Type_List);
 
@@ -80,36 +90,68 @@ int main(int argc, char** args) {
           return 0;
       }
   */
-  // 只用到了 putch,getch.
-  std::vector<baseTypePtr> putch_arguTypes;
-  putch_arguTypes.push_back(i32TyPtr);
-  Function *putch = builder.createFunction("putch", voidTyPtr, putch_arguTypes);
-  Function *getch = builder.createFunction("getch", i32TyPtr, Zero_Argu_Type_List);              // getch 为零参函数，使用全局零参空向量，见 Config.cpp
-  // 由于 main 函数还未构建完成时，声明了 putch,getch，现在需要修改 builder 的选中 function
-  builder.setChosedFunc(myFunc);
+  // Instruction *eg3_a_ptr = builder.createAllocaInst("a", i32TyPtr, 1);
+  // Instruction *eg3_b_ptr = builder.createAllocaInst("b", i32TyPtr, 1);
+  // Instruction *eg3_call1 = builder.createCallInst("call1", getch, Zero_Argu_List);
+  // Instruction *eg3_call2 = builder.createCallInst("call2", getch, Zero_Argu_List);
+  // builder.createStoreInst(eg3_call1, eg3_a_ptr);
+  // builder.createStoreInst(eg3_call2, eg3_b_ptr);
+  // Instruction *eg3_load_a = builder.createLoadInst(i32TyPtr, eg3_a_ptr);
+  // Instruction *eg3_load_b = builder.createLoadInst(i32TyPtr, eg3_b_ptr);
+  // Instruction *eg3_arg1 = builder.createBinaryInst(InstKind::Sub, eg3_load_a, new ConstIntValue(32));
+  // Instruction *eg3_arg2 = builder.createBinaryInst(InstKind::Sub, eg3_load_b, new ConstIntValue(32));
+  // std::vector<Value*> eg3_argus1;
+  // std::vector<Value*> eg3_argus2;
+  // eg3_argus1.push_back(eg3_arg1);
+  // eg3_argus2.push_back(eg3_arg2);
+  // builder.createCallInst("call3", putch, eg3_argus1);
+  // builder.createCallInst("call4", putch, eg3_argus2);
+  // builder.createRetInst(new ConstIntValue(0));
+
+  /**
+   * eg.4 实现 if 分支
+   * int main() {
+    int a = getint();
+    int b = getint();
+    if (a <= b) {
+        putint(1);
+    }
+    else {
+        putint(0);
+    }
+    return 0;
+    }
+  */
+  Instruction *eg4_call1 = builder.createCallInst("call1", getint, Zero_Argu_List);
+  Instruction *eg4_call2 = builder.createCallInst("call2", getint, Zero_Argu_List);
+  Instruction *eg4_cmp = builder.createIcmpInst("icmp", CondKind::Sle, eg4_call1, eg4_call2);
+  // 首先为 entry BBlock 新建两个后继 BBlock if_true,if_false，以及最终汇合 BBlock if_end
+  BBlock *eg4_if_end = builder.createBBlock("eg4_if_end", voidTyPtr);
+  Instruction *eg4_ret = builder.createRetInst(new ConstIntValue(0));
+
+  BBlock *eg4_if_true = builder.createBBlock("eg4_if_true", voidTyPtr);
+  std::vector<Value*> eg4_argus_0;
+  std::vector<Value*> eg4_argus_1;
+  eg4_argus_0.push_back(new ConstIntValue(0));
+  eg4_argus_1.push_back(new ConstIntValue(1));
+  Instruction *eg4_call_ifTrue = builder.createCallInst(putint, eg4_argus_1); 
+  Instruction *eg4_true_br = builder.createBrInst(nullptr, eg4_if_end, nullptr);
+
+  BBlock *eg4_if_false = builder.createBBlock("eg4_if_false", voidTyPtr);
+  Instruction *eg4_call_ifFalse = builder.createCallInst(putint, eg4_argus_0); 
+  Instruction *eg4_false_br = builder.createBrInst(nullptr, eg4_if_end, nullptr);
+  // 将需要加入 Inst 的 BBlock 设为 entry
   builder.setChosedBBlock(entry);
-  Instruction *eg3_a_ptr = builder.createAllocaInst("a", i32TyPtr, 1);
-  Instruction *eg3_b_ptr = builder.createAllocaInst("b", i32TyPtr, 1);
-  Instruction *eg3_call1 = builder.createCallInst("call1", getch, Zero_Argu_List);
-  Instruction *eg3_call2 = builder.createCallInst("call2", getch, Zero_Argu_List);
-  builder.createStoreInst(eg3_call1, eg3_a_ptr);
-  builder.createStoreInst(eg3_call2, eg3_b_ptr);
-  Instruction *eg3_load_a = builder.createLoadInst(i32TyPtr, eg3_a_ptr);
-  Instruction *eg3_load_b = builder.createLoadInst(i32TyPtr, eg3_b_ptr);
-  Instruction *eg3_arg1 = builder.createBinaryInst(InstKind::Sub, eg3_load_a, new ConstIntValue(32));
-  Instruction *eg3_arg2 = builder.createBinaryInst(InstKind::Sub, eg3_load_b, new ConstIntValue(32));
-  std::vector<Value*> eg3_argus1;
-  std::vector<Value*> eg3_argus2;
-  eg3_argus1.push_back(eg3_arg1);
-  eg3_argus2.push_back(eg3_arg2);
-  builder.createCallInst("call3", putch, eg3_argus1);
-  builder.createCallInst("call4", putch, eg3_argus2);
-  builder.createRetInst(new ConstIntValue(0));
+  Instruction *eg4_br = builder.createBrInst(eg4_cmp, eg4_if_true, eg4_if_false);
+
+
 
 
   // 发射函数声明 LLVM 代码
   builder.emitIRFuncDecl(putch);
+  builder.emitIRFuncDecl(putint);
   builder.emitIRFuncDecl(getch);
+  builder.emitIRFuncDecl(getint);
 
   // 由 IRBuilder 发射 LLVM 代码
   builder.emitIRFuncDef(myFunc);
