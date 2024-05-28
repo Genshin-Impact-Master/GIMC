@@ -1,6 +1,6 @@
-#line 1 "test.yy.c"
+#line 2 "lex.cpp"
 
-#line 3 "test.yy.c"
+#line 4 "lex.cpp"
 
 #define  YY_INT_ALIGNED short int
 
@@ -536,57 +536,19 @@ int yy_flex_debug = 0;
 #define YY_MORE_ADJ 0
 #define YY_RESTORE_YY_MORE_OFFSET
 char *yytext;
-#line 1 "test.l"
-#line 4 "test.l"
+#line 1 "lex.l"
+#line 4 "lex.l"
     #include <string>
     #include <stdio.h>
     #include <string.h>
     #include <stdlib.h>
     #include <assert.h>
     #include <stdbool.h>
-    #include "../include/Token.hpp"    
-    int totline=0;
-    enum TokenType{
-        VOID =258,
-        INT,
-        FLOAT,
-        INT_VALUE,
-        FLOAT_VALUE,
-        ADD,
-        SUB,
-        MUL,
-        DIV,
-        MOD,
-        ASSIGN,
-        EQ,
-        NEQ,
-        LT,
-        LTE,
-        GT,
-        GTE,
-        AND,
-        OR,
-        NOT,
-        IF,
-        ELSE,
-        WHILE,
-        BREAK,
-        CONTINUE,
-        RETURN,
-        CONST,
-        LEFT_PARENTHESIS,
-        RIGHT_PARENTHESIS,
-        LEFT_BRACKET,
-        RIGHT_BRACKET,
-        LEFT_BRACE,
-        RIGHT_BRACE,
-        IDENTIFIER,
-        COMMA,
-        SEMICOLON
-    };
+    #include "../include/AST.hpp" 
+    #include "../parser/parser.hpp"
     
-#line 588 "test.yy.c"
-#line 589 "test.yy.c"
+#line 551 "lex.cpp"
+#line 552 "lex.cpp"
 
 #define INITIAL 0
 
@@ -597,7 +559,7 @@ char *yytext;
  */
 #include <unistd.h>
 #endif
-    
+
 #ifndef YY_EXTRA_TYPE
 #define YY_EXTRA_TYPE void *
 #endif
@@ -803,9 +765,9 @@ YY_DECL
 		}
 
 	{
-#line 76 "test.l"
+#line 38 "lex.l"
 
-#line 808 "test.yy.c"
+#line 771 "lex.cpp"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -864,12 +826,12 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 77 "test.l"
+#line 39 "lex.l"
 ;
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 78 "test.l"
+#line 40 "lex.l"
 {
                 int c;
                 while ((c=yyinput())!=0){
@@ -884,204 +846,208 @@ YY_RULE_SETUP
 case 3:
 /* rule 3 can match eol */
 YY_RULE_SETUP
-#line 88 "test.l"
+#line 50 "lex.l"
 ;
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 90 "test.l"
+#line 52 "lex.l"
 return ADD;
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 91 "test.l"
+#line 53 "lex.l"
 return MUL;
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 92 "test.l"
+#line 54 "lex.l"
 return SUB;
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 93 "test.l"
+#line 55 "lex.l"
 return DIV;
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 94 "test.l"
+#line 56 "lex.l"
 return MOD;
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 96 "test.l"
+#line 58 "lex.l"
 return IF;
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 97 "test.l"
+#line 59 "lex.l"
 return ELSE;
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 98 "test.l"
+#line 60 "lex.l"
 return WHILE;
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 99 "test.l"
+#line 61 "lex.l"
 return BREAK;
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 100 "test.l"
+#line 62 "lex.l"
 return CONTINUE;
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 101 "test.l"
+#line 63 "lex.l"
 return RETURN;
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 103 "test.l"
+#line 65 "lex.l"
 return CONST;
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
-#line 104 "test.l"
+#line 66 "lex.l"
 return INT;
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
-#line 105 "test.l"
+#line 67 "lex.l"
 return FLOAT;
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 106 "test.l"
+#line 68 "lex.l"
 return VOID;
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
-#line 108 "test.l"
-return IDENTIFIER;
+#line 70 "lex.l"
+{
+                        yylval.identifier= new std::string(yytext,yyleng);
+                        // cout<<yylval.string<<endl;
+                        return IDENTIFIER;
+                    }
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
-#line 109 "test.l"
-return INT_VALUE;
+#line 75 "lex.l"
+return INTVAL;
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
-#line 110 "test.l"
-return FLOAT_VALUE;
+#line 76 "lex.l"
+return FLOATVAL;
 	YY_BREAK
 case 22:
 YY_RULE_SETUP
-#line 112 "test.l"
+#line 78 "lex.l"
 return ASSIGN;
 	YY_BREAK
 case 23:
 YY_RULE_SETUP
-#line 113 "test.l"
+#line 79 "lex.l"
 return EQ;
 	YY_BREAK
 case 24:
 YY_RULE_SETUP
-#line 114 "test.l"
+#line 80 "lex.l"
 return NEQ;
 	YY_BREAK
 case 25:
 YY_RULE_SETUP
-#line 116 "test.l"
+#line 82 "lex.l"
 return GT;
 	YY_BREAK
 case 26:
 YY_RULE_SETUP
-#line 117 "test.l"
+#line 83 "lex.l"
 return GTE;
 	YY_BREAK
 case 27:
 YY_RULE_SETUP
-#line 118 "test.l"
+#line 84 "lex.l"
 return LT;
 	YY_BREAK
 case 28:
 YY_RULE_SETUP
-#line 119 "test.l"
+#line 85 "lex.l"
 return LTE;
 	YY_BREAK
 case 29:
 YY_RULE_SETUP
-#line 121 "test.l"
+#line 87 "lex.l"
 return AND;
 	YY_BREAK
 case 30:
 YY_RULE_SETUP
-#line 122 "test.l"
+#line 88 "lex.l"
 return OR;
 	YY_BREAK
 case 31:
 YY_RULE_SETUP
-#line 123 "test.l"
+#line 89 "lex.l"
 return NOT;
 	YY_BREAK
 case 32:
 YY_RULE_SETUP
-#line 125 "test.l"
-return LEFT_PARENTHESIS;
+#line 91 "lex.l"
+return LEFT_PARENTHESES;
 	YY_BREAK
 case 33:
 YY_RULE_SETUP
-#line 126 "test.l"
-return RIGHT_PARENTHESIS;
+#line 92 "lex.l"
+return RIGHT_PARENTHESES;
 	YY_BREAK
 case 34:
 YY_RULE_SETUP
-#line 127 "test.l"
-return LEFT_BRACKET;
+#line 93 "lex.l"
+return LEFT_BRACKETS;
 	YY_BREAK
 case 35:
 YY_RULE_SETUP
-#line 128 "test.l"
-return RIGHT_BRACKET;
+#line 94 "lex.l"
+return RIGHT_BRACKETS;
 	YY_BREAK
 case 36:
 YY_RULE_SETUP
-#line 129 "test.l"
-return LEFT_BRACE;
+#line 95 "lex.l"
+return LEFT_BRACES;
 	YY_BREAK
 case 37:
 YY_RULE_SETUP
-#line 130 "test.l"
-return RIGHT_BRACE;
+#line 96 "lex.l"
+return RIGHT_BRACES;
 	YY_BREAK
 case 38:
 YY_RULE_SETUP
-#line 132 "test.l"
+#line 98 "lex.l"
 return COMMA;
 	YY_BREAK
 case 39:
 YY_RULE_SETUP
-#line 133 "test.l"
+#line 99 "lex.l"
 return SEMICOLON;
 	YY_BREAK
 case YY_STATE_EOF(INITIAL):
-#line 135 "test.l"
+#line 101 "lex.l"
 return -1;
 	YY_BREAK
 case 40:
 YY_RULE_SETUP
-#line 136 "test.l"
+#line 102 "lex.l"
 printf("%s\n", (std::string("Unknown token: ") + yytext).c_str()); yyterminate();
 	YY_BREAK
 case 41:
 YY_RULE_SETUP
-#line 138 "test.l"
+#line 104 "lex.l"
 ECHO;
 	YY_BREAK
-#line 1084 "test.yy.c"
+#line 1051 "lex.cpp"
 
 	case YY_END_OF_BUFFER:
 		{
@@ -2084,10 +2050,10 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 138 "test.l"
+#line 104 "lex.l"
 
 
-int main(int argc, char *argv[]){
+/* int main(int argc, char *argv[]){
     int c;
     ++argv;
     if (argc>0){yyin=fopen(argv[0], "r");}
@@ -2095,4 +2061,4 @@ int main(int argc, char *argv[]){
         printf("(%s %s)\n",getTokenName(c),yytext);
     }
     return 0;
-}
+} */
