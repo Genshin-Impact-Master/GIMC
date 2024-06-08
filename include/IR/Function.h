@@ -20,13 +20,16 @@ friend class IRBuilder;
 private:
   int cnt = 0;                                // function 中的递增命名计数器 
   std::vector<baseTypePtr> arguTypes_;        // 参数类型链表
-  std::vector<BBlock*> bBlocks;               // BasicBlock 指针链表
+  std::vector<BBlock*> bBlocks_;               // BasicBlock 指针链表
 public:
   Function(const std::string &fName, baseTypePtr funcType, std::vector<baseTypePtr> &arguTypes);
 
-  void addBBlock(BBlock* bBlk) { bBlocks.push_back(bBlk);}
+  void addBBlock(BBlock* bBlk) { bBlocks_.push_back(bBlk);}
 
   int getCnt() {return cnt++;}
+
+  // 清空 Function 中的基本块，包括基本块中的指令 
+  void clearFunc();
 };
 
 GIMC_NAMESPACE_END

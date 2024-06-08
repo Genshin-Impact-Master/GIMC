@@ -3,6 +3,8 @@
 #define INST_STRING ST_Insts[static_cast<int>(i->kind_)]      // 方便打印相应的 Inst
 
 #include "../Config.h"
+#include "Module.h"
+#include "GlobalVar.h"
 #include "Function.h"
 #include "Inst.h"
 #include "BBlock.h"
@@ -15,12 +17,7 @@
 #include <iostream>
 
 GIMC_NAMESPACE_BEGIN
-
-class Instruction;
-class BinaryInst;
-class Function;
-class BBlock;
-enum class InstKind;
+USING_GIMC_NAMESPACE
 
 /*
 * 用于构建 IR 指令（用于添加类型检查等），产生 LLVM IR 文本
@@ -41,8 +38,25 @@ public:
 /*                                创建 IR 数据结构                             */
 /*****************************************************************************/
 
+  /**
+   * 创建 Module
+  */
+  Module* createModule(const std::string &name,
+                        baseTypePtr type,
+                        std::vector<GlobalVar*> globalVars,
+                        std::vector<Function*> funcDefs,
+                        std::vector<Function*> funcDeclares);
+
   // 创建 Function，并将创建的 Function 作为 chosedFunc 
   Function* createFunction(const std::string &fName, baseTypePtr fType, std::vector<baseTypePtr> &arguTypes);
+
+  /**
+   * @note 泛型编程，方便创建数组或常量元素
+   * @brief 创建全局变量 GlobalVar
+   * @param type 为创建的 Value 的类型（数组则为基本类型）
+  */
+  template<typename T>
+  GlobalVar* createGlobalVar(const std::string &name, baseTypePtr type, T values);
 
   /**
    * 创建 BBlock
@@ -134,6 +148,9 @@ public:
 
   // 关闭输出文件
   void close() {irout.close();}
+
+  // 生成 llvm IR 格式 Module
+  void emitIRModule(Module *module);
 
   // 生成 llvm IR 格式 Function 的定义 define
   void emitIRFuncDef(Function *func);

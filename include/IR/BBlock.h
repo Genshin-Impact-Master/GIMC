@@ -2,11 +2,12 @@
 #define BLOCK_H_
 
 #include "../Config.h"
-#include "Function.h"
 #include "Value.h"
+#include "Function.h"
 #include <string>
 #include <vector>
 
+USING_GIMC_NAMESPACE
 GIMC_NAMESPACE_BEGIN
 
 class Instruction;
@@ -18,7 +19,7 @@ class IRBuilder;
 class BBlock : public Value {
 friend class IRBuilder;
 private:
-  std::vector<Instruction*> instructions; // 包含的 Instruction 指针链表
+  std::vector<Instruction*> instructions_; // 包含的 Instruction 指针链表
   Function *parent_;  // 指向所属的 Function
 public:
   BBlock(const std::string &name, baseTypePtr type, Function *parent);
@@ -30,7 +31,10 @@ public:
   int getCnt() {return parent_->getCnt();}
   
   // 插入指令到 Instruction 列表末尾
-  void addInst(Instruction* inst) {instructions.push_back(inst);}
+  void addInst(Instruction* inst) {instructions_.push_back(inst);}
+
+  // 清空基本块中的指令，注意是删除
+  void clearBBlock();
 };
 
 

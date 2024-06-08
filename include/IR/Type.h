@@ -7,11 +7,26 @@
 #include <memory>
 GIMC_NAMESPACE_BEGIN
 
+class PointerType;
+class IntegerType;
+class FloatType;
+
 // 基础类型，所有数据类型的基类
 class TypeBase {  
 public:
   virtual ~TypeBase() = default;              //@C++_Learn 当基类指针/引用指向子类时，会调用子类析构函数
   virtual std::string getName() const = 0;    //@C++_Learn 纯虚函数，子类必须实现  
+  bool static isInteger(baseTypePtr type) {
+    return std::dynamic_pointer_cast<IntegerType>(type) != nullptr;   // @C++_Learn 智能指针转换
+  }
+  
+  static bool isFloat(baseTypePtr type) {
+    return std::dynamic_pointer_cast<FloatType>(type) != nullptr;
+  }
+
+  bool static isPointer(baseTypePtr type) {
+    return std::dynamic_pointer_cast<PointerType>(type) != nullptr;
+  }
 };  
 
 // 整数数据类型
@@ -70,7 +85,7 @@ public:
   PointerType& operator=(const PointerType&) = delete;
 
   baseTypePtr getBaseType() {return base_;}                             // 返回指针指向的数据类型
-  std::string getName() const override {return base_->getName();}
+  std::string getName() const override {return base_->getName();}       // 指针指向的类型名称
   int getArraySizeCnt() {return cnt_;}
 };
 

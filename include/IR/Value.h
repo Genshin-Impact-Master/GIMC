@@ -54,7 +54,7 @@ public:
   }
 
   // 修改前缀
-  void setPrefix(bool setLocal) {
+  void setLocalPrefix(bool setLocal) {
     if (setLocal) prefix = LOCAL_PREFIX;
     else prefix = FUNC_OR_GLOBAL_PREFIX;
     fullName = prefix + valueName;

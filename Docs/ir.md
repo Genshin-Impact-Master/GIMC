@@ -1,8 +1,10 @@
 # 中间表示 版本--CodeGen_llvm_IR
+同时编写了测试脚本 testIR.sh
 使用 IR 中间件——参见 example.cpp
 ## 类继承关系
 ```
 Value
+    > Module
     > Function
     > ConstValue
     > Instruction 
@@ -39,7 +41,7 @@ N 可以很大，超过 64，当 N 小于 64 时，采用大于 N 的最大的 I
 `eg. i7:对齐 = 8，i256:对齐 = 64`
 #### Floating-Point Type
 
-|类型|解释|
+|类型 | 解释|
 |----|----|
 |half|16 bits 浮点类型，5 bits 指数位数，IEEE 754|
 |bfloat|16 bits 浮点类型，8 bits 指数位数同 IEEE 单精度浮点数|
@@ -95,6 +97,11 @@ label
 ; 例子
 [2 x [3 x [4 x i16]]] ; 16b int 的 2x3x4 array
 ```
+#### 运行时抢占符
+*作用不大...*
+`dso_local` 表示在这个编译单元中（Module? 一个文件？）可以直接访问该变量或方程尽管没有在该编译单元里定义。
+`dso_preemptable` 默认情况开启，表明方程或变量在运行时可能被外部的连接单元替代。
+
 ### LLVM IR Instruction
 LLVM IR 指令 [参考链接](https://llvm.org/docs/LangRef.html#instruction-reference)
 #### Terminator Instruction 终结指令（基本块的结尾）

@@ -10,6 +10,16 @@ void IRBuilder::IRTextDump(const char* format, ...) {
 }
 */
 
+
+Module* IRBuilder::createModule(const std::string &name,
+                                baseTypePtr type,
+                                std::vector<GlobalVar*> globalVars,
+                                std::vector<Function*> funcDefs,
+                                std::vector<Function*> funcDeclares) {
+    Module* module = new Module(name, type, globalVars, funcDefs, funcDeclares);
+    return module;
+}
+
 Function* IRBuilder::createFunction(const std::string &fName, baseTypePtr ftype, std::vector<baseTypePtr> &arguTypes) {
   Function* function = new Function(fName, ftype, arguTypes);
   chosedFunc_ = function;
@@ -150,6 +160,42 @@ Instruction* IRBuilder::createBrInst(Value *cond, BBlock *ifTure, BBlock *ifFals
 /******************************************************************************/
 /*                                生成 LLVM IR                                */
 /*****************************************************************************/
+void IRBuilder::emitIRModule(Module *module) {
+  irout.close();
+  irout = std::ofstream(module->getName() + ".ll");
+  std::vector<GlobalVar*> &globalVars = module->globalVars_;
+  std::vector<Function*> &defs = module->funcDefs_;
+  std::vector<Function*> &declares = module->funcDeclares_;
+  for (auto &var : globalVars) {
+    irout << var->getFullName() << " = global " << var->getValueTypeName() << " " << var->getData() << std::endl;
+  }
+  for (auto &def : defs) {
+    emitIRFuncDef(def); 
+  }
+  for (auto &delcare : declares) {
+    emitIRFuncDecl(delcare); 
+  }
+}
+
+template<>
+GlobalVar* IRBuilder::createGlobalVar<ConstValue*>(const std::string &name, baseTypePtr type, ConstValue* values) {
+  std::vector<ConstValue*> vector;
+  vector.push_back(values);
+  std::shared_ptr<PointerType> ptr = std::make_shared<PointerType>(type);
+  return new GlobalVar(name, ptr, vector);
+}
+
+template<>
+GlobalVar* IRBuilder::createGlobalVar<std::vector<ConstValue*>>(const std::string &name, baseTypePtr type, std::vector<ConstValue*> values) {
+  if (values.size() == 0) {
+    fprintf(stderr, "缺少数组初始化值\n");
+    exit(1);
+  }
+  std::shared_ptr<PointerType> ptr = std::make_shared<PointerType>(type, values.size());
+  return new GlobalVar(name, ptr, values);
+}
+
+
 void IRBuilder::emitIRFuncDef(Function *func) {
   std::vector<baseTypePtr> &arguTypes = func->arguTypes_;
   irout <<"define " << func->getTypeName() << " " << func->getFullName()
@@ -162,7 +208,7 @@ void IRBuilder::emitIRFuncDef(Function *func) {
   }
   irout << ") {" << std::endl;
 
-  for (auto bBlkPtr : func->bBlocks) {
+  for (auto bBlkPtr : func->bBlocks_) {
     emitIRBBlock(bBlkPtr);
   }
   IRTextLineDump("}");
@@ -186,7 +232,7 @@ void IRBuilder::emitIRBBlock(BBlock *bBlk) {
   // 由于 BBlock 中不需要带有前缀故只需要 getName()
   irout << bBlk->getName() << ":" << std::endl ;
   int cnt = 0;
-  for (auto inst : bBlk->instructions) {
+  for (auto inst : bBlk->instructions_) {
     emitIRInst(inst);
     // std::cout << "Now No." << cnt << " "<< ST_Insts[static_cast<int>(inst->kind_)];
     cnt++;
@@ -197,14 +243,14 @@ void IRBuilder::emitIRInst(Instruction *inst) {
   // 二元指令
   if (inst->kind_ > InstKind::BinaryOPBegin && inst->kind_ < InstKind::BinaryOpEnd) {
     BinaryInst* i = dynamic_cast<BinaryInst*>(inst);
-    irout << '\t' << i->getFullName() << "= " << INST_STRING << i->getTypeName() << " "
+    irout << '\t' << i->getFullName() << " = " << INST_STRING << i->getTypeName() << " "
           << i->ops_[0]->getFullName() << ", " << i->ops_[1]->getFullName() << std::endl;
   }
   // alloca 指令
   else if (inst->kind_ == InstKind::Alloca) {
     Alloca *i = dynamic_cast<Alloca*>(inst);
-    std::shared_ptr<PointerType> ptr = std::dynamic_pointer_cast<PointerType>(inst->getType());             // @C++_Learn 智能指针转换 
-    irout << '\t' << i->getFullName() << "= " << INST_STRING << i->getTypeName()
+    std::shared_ptr<PointerType> ptr = std::dynamic_pointer_cast<PointerType>(inst->getType()); 
+    irout << '\t' << i->getFullName() << " = " << INST_STRING << ptr->getName()
           << ", i32 " << ptr->getArraySizeCnt() << std::endl; 
   }
   // store 指令
@@ -216,7 +262,7 @@ void IRBuilder::emitIRInst(Instruction *inst) {
   // load 指令
   else if (inst->kind_ == InstKind::Load) {
     Load *i = dynamic_cast<Load*>(inst);
-    irout << '\t' << i->getFullName() << "= " << INST_STRING
+    irout << '\t' << i->getFullName() << " = " << INST_STRING
           << i->getTypeName() << ", ptr " << i->ops_[0]->getFullName()<< std::endl;
   }
   // call 指令
@@ -224,7 +270,7 @@ void IRBuilder::emitIRInst(Instruction *inst) {
     Call *i = dynamic_cast<Call*>(inst);
     // 因为所有的 void Type 均使用 voidTyPtr，故直接检测
     if (i->getType() != voidTyPtr) {
-      irout << '\t' << i->getFullName() << "= ";
+      irout << '\t' << i->getFullName() << " = ";
     }
     else irout << '\t';
     irout << INST_STRING
@@ -247,7 +293,7 @@ void IRBuilder::emitIRInst(Instruction *inst) {
   // icmp 指令
   else if (inst->kind_ == InstKind::Icmp) {
     Icmp *i = dynamic_cast<Icmp*>(inst);
-    irout << '\t' << i->getFullName() << "= " << INST_STRING << ST_Conds[static_cast<int>(i->ckind_)]
+    irout << '\t' << i->getFullName() << " = " << INST_STRING << ST_Conds[static_cast<int>(i->ckind_)]
           << i->ops_[0]->getTypeName() << " " << i->ops_[0]->getFullName() << ", " << i->ops_[1]->getFullName() << std::endl; 
   } 
   // Br 指令
