@@ -26,6 +26,18 @@ Function* IRBuilder::createFunction(const std::string &fName, baseTypePtr ftype,
   return function;
 }
 
+template<>
+GlobalVar* IRBuilder::createGlobalVar<Value*>(const std::string &name, baseTypePtr type, Value* values) {
+  std::vector<Value*> vector;
+  vector.push_back(values);
+  return new GlobalVar(name, type, vector);
+}
+
+template<>
+GlobalVar* IRBuilder::createGlobalVar<std::vector<Value*>>(const std::string &name, baseTypePtr type, std::vector<Value*> values) {
+  return new GlobalVar(name, type, values);
+}
+
 BBlock* IRBuilder::createBBlock(const std::string &name, baseTypePtr type, Function* parent) {
   // 在创建 BBlock 前未创建函数
   if (parent == nullptr && chosedFunc_ == nullptr) {
@@ -70,22 +82,21 @@ Instruction* IRBuilder::createBinaryInst(InstKind kind, Value *lhs, Value *rhs, 
   return createBinaryInst(kind, std::to_string(parent->getCnt()), lhs, rhs, parent);
 }
 
-Instruction* IRBuilder::createAllocaInst(const std::string &name, baseTypePtr type, int cnt, BBlock *parent) {
+Instruction* IRBuilder::createAllocaInst(const std::string &name, baseTypePtr type, BBlock *parent) {
   parent = checkBlockParent(parent);
-  std::shared_ptr<PointerType> ptrTy = std::make_shared<PointerType>(type, cnt);
-  Alloca *inst = new Alloca(name, ptrTy, parent);
+  Alloca *inst = new Alloca(name, type, parent);
   parent->addInst(inst);
   return inst;
 }
 
-Instruction* IRBuilder::createAllocaInst(baseTypePtr type, int cnt, BBlock *parent) {
+Instruction* IRBuilder::createAllocaInst(baseTypePtr type, BBlock *parent) {
   parent = checkBlockParent(parent);
-  return createAllocaInst(std::to_string(parent->getCnt()), type, cnt, parent);
+  return createAllocaInst(std::to_string(parent->getCnt()), type, parent);
 }
 
 Instruction* IRBuilder::createStoreInst(Value *input, Value *ptr, BBlock *parent) {
   parent = checkBlockParent(parent);
-  Store *inst = new Store("anonimous", voidTyPtr, parent, input, ptr);
+  Store *inst = new Store("anonimous", voidType, parent, input, ptr);
   // fprintf(stdout, "the input is %s \n", input->getTypeName().data());
   parent->addInst(inst);
   return inst;
@@ -93,7 +104,11 @@ Instruction* IRBuilder::createStoreInst(Value *input, Value *ptr, BBlock *parent
 
 Instruction* IRBuilder::createLoadInst(const std::string &name, baseTypePtr type, Value *ptr, BBlock *parent) {
   parent = checkBlockParent(parent);
-  Load *inst = new Load(name, type, parent, ptr);
+  baseTypePtr loadType = type;
+  if (TypeBase::isPointer(type)) {
+    loadType = std::static_pointer_cast<PointerType>(type)->getBaseType();
+  }
+  Load *inst = new Load(name, loadType, parent, ptr);
   parent->addInst(inst);
   return inst;
 }
@@ -130,7 +145,7 @@ Instruction* IRBuilder::createRetInst(Value *retValue, BBlock *parent) {
 
 Instruction* IRBuilder::createIcmpInst(const std::string &name, CondKind kind, Value *first, Value *second, BBlock *parent) {
   parent = checkBlockParent(parent);
-  Icmp *inst = new Icmp(name, i1TyPtr, parent, kind, first, second);
+  Icmp *inst = new Icmp(name, i1Type, parent, kind, first, second);
   parent->addInst(inst);
   return inst;
 }
@@ -146,10 +161,10 @@ Instruction* IRBuilder::createBrInst(Value *cond, BBlock *ifTure, BBlock *ifFals
   Br *inst;
   // 三个操作 Value* 除了 ifTrue 均为 nullptr 才表示无条件跳转
   if (ifTure && ifFalse == nullptr && cond == nullptr) {
-    inst = new Br("anonymous", voidTyPtr, parent, nullptr, ifTure, nullptr);
+    inst = new Br("anonymous", voidType, parent, nullptr, ifTure, nullptr);
   }
   else if(ifTure && ifFalse && cond) {
-    inst = new Br("anonymous", voidTyPtr, parent, cond, ifTure, ifFalse);
+    inst = new Br("anonymous", voidType, parent, cond, ifTure, ifFalse);
   }
   else
     fprintf(stderr, "生成 Br 指令异常\n");
@@ -157,6 +172,18 @@ Instruction* IRBuilder::createBrInst(Value *cond, BBlock *ifTure, BBlock *ifFals
   return inst;
 }
 
+Instruction* IRBuilder::createGEPInst(const std::string &name, Value *ptr, int offset, BBlock *parent) {
+  parent = checkBlockParent(parent);
+  std::shared_ptr<PointerType> type = std::static_pointer_cast<PointerType>(ptr->getType());
+  GEP *inst = new GEP(name, type->getBaseType(), parent, ptr, offset);
+  parent->addInst(inst);
+  return inst;
+}
+
+Instruction* IRBuilder::createGEPInst(Value *ptr, int offset, BBlock *parent) {
+  parent = checkBlockParent(parent);
+  return createGEPInst(std::to_string(parent->getCnt()), ptr, offset, parent);
+}
 /******************************************************************************/
 /*                                生成 LLVM IR                                */
 /*****************************************************************************/
@@ -167,7 +194,7 @@ void IRBuilder::emitIRModule(Module *module) {
   std::vector<Function*> &defs = module->funcDefs_;
   std::vector<Function*> &declares = module->funcDeclares_;
   for (auto &var : globalVars) {
-    irout << var->getFullName() << " = global " << var->getValueTypeName() << " " << var->getData() << std::endl;
+    irout << var->getFullName() << " = global " << var->getType()->getDetailName() << " " << var->getData() << std::endl;
   }
   for (auto &def : defs) {
     emitIRFuncDef(def); 
@@ -177,30 +204,11 @@ void IRBuilder::emitIRModule(Module *module) {
   }
 }
 
-template<>
-GlobalVar* IRBuilder::createGlobalVar<ConstValue*>(const std::string &name, baseTypePtr type, ConstValue* values) {
-  std::vector<ConstValue*> vector;
-  vector.push_back(values);
-  std::shared_ptr<PointerType> ptr = std::make_shared<PointerType>(type);
-  return new GlobalVar(name, ptr, vector);
-}
-
-template<>
-GlobalVar* IRBuilder::createGlobalVar<std::vector<ConstValue*>>(const std::string &name, baseTypePtr type, std::vector<ConstValue*> values) {
-  if (values.size() == 0) {
-    fprintf(stderr, "缺少数组初始化值\n");
-    exit(1);
-  }
-  std::shared_ptr<PointerType> ptr = std::make_shared<PointerType>(type, values.size());
-  return new GlobalVar(name, ptr, values);
-}
-
-
 void IRBuilder::emitIRFuncDef(Function *func) {
   std::vector<baseTypePtr> &arguTypes = func->arguTypes_;
   irout <<"define " << func->getTypeName() << " " << func->getFullName()
         << "(";
-  for (int i = 0; i < static_cast<int>(arguTypes.size()) - 2; i++) {
+  for (int i = 0; i < static_cast<int>(arguTypes.size()) - 1; i++) {
     irout << arguTypes[i]->getName() << ",";
   }
   if (arguTypes.size() != 0) {
@@ -219,7 +227,7 @@ void IRBuilder::emitIRFuncDecl(Function *func) {
   irout << "declare " << func->getTypeName() << " " << func->getFullName()
         << "(";
   // @C++_Learn 注意 vector 的 size() 函数返回的是无符号整型，需要转换为 int
-  for (int i = 0; i < static_cast<int>(arguTypes.size() - 2); i++) {
+  for (int i = 0; i < static_cast<int>(arguTypes.size() - 1); i++) {
     irout << arguTypes[i]->getName() << ",";
   }
   if (arguTypes.size() != 0) {
@@ -269,14 +277,14 @@ void IRBuilder::emitIRInst(Instruction *inst) {
   else if (inst->kind_ == InstKind::Call) {
     Call *i = dynamic_cast<Call*>(inst);
     // 因为所有的 void Type 均使用 voidTyPtr，故直接检测
-    if (i->getType() != voidTyPtr) {
+    if (i->getType() != voidType) {
       irout << '\t' << i->getFullName() << " = ";
     }
     else irout << '\t';
     irout << INST_STRING
           << i->ops_[0]->getTypeName() << " " << i->ops_[0]->getFullName() << "(";
     std::vector<Value*> &argus = i->argus_;
-    for (int i = 0; i < static_cast<int>(argus.size()) - 2; i++) {
+    for (int i = 0; i < static_cast<int>(argus.size()) - 1; i++) {
       irout << argus[i]->getTypeName() << " " << argus[i]->getFullName() << ",";
     }
     if (argus.size() != 0) {
@@ -310,5 +318,14 @@ void IRBuilder::emitIRInst(Instruction *inst) {
       // 无条件跳转
       irout << "label " << i->ops_[1]->getFullName() << std::endl;
     }
+  }
+  // GEP 指令
+  else if (inst->kind_ == InstKind::GEP) {
+    GEP *i = dynamic_cast<GEP*>(inst);
+    Value *ptr = i->ops_[0];
+    ConstIntValue *offset = dynamic_cast<ConstIntValue*>(i->ops_[1]);
+    irout << '\t' << inst->getFullName() << " = getelementptr inbounds " << ptr->getType()->getDetailName()
+          << ", ptr " << ptr->getFullName() << ", " << AddrLenPtr->getName() << " 0, " 
+          << AddrLenPtr->getName() << " " << std::to_string(offset->getInt()) << std::endl;
   }
 }

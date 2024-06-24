@@ -1,5 +1,5 @@
-; ModuleID = '../IR/libsysy.c'
-source_filename = "../IR/libsysy.c"
+; ModuleID = 'libsysy.c'
+source_filename = "libsysy.c"
 target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-unknown-linux-gnu"
 
@@ -127,8 +127,30 @@ for.end:                                          ; preds = %for.cond
   ret void
 }
 
+; Function Attrs: noinline nounwind optnone uwtable
+define dso_local void @myMemset(ptr noundef %ptr, i32 noundef %i, i32 noundef %num) #0 {
+entry:
+  %ptr.addr = alloca ptr, align 8
+  %i.addr = alloca i32, align 4
+  %num.addr = alloca i32, align 4
+  store ptr %ptr, ptr %ptr.addr, align 8
+  store i32 %i, ptr %i.addr, align 4
+  store i32 %num, ptr %num.addr, align 4
+  %0 = load ptr, ptr %ptr.addr, align 8
+  %1 = load i32, ptr %i.addr, align 4
+  %2 = trunc i32 %1 to i8
+  %3 = load i32, ptr %num.addr, align 4
+  %conv = sext i32 %3 to i64
+  call void @llvm.memset.p0.i64(ptr align 1 %0, i8 %2, i64 %conv, i1 false)
+  ret void
+}
+
+; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: write)
+declare void @llvm.memset.p0.i64(ptr nocapture writeonly, i8, i64, i1 immarg) #2
+
 attributes #0 = { noinline nounwind optnone uwtable "frame-pointer"="all" "min-legal-vector-width"="0" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="x86-64" "target-features"="+cmov,+cx8,+fxsr,+mmx,+sse,+sse2,+x87" "tune-cpu"="generic" }
 attributes #1 = { "frame-pointer"="all" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="x86-64" "target-features"="+cmov,+cx8,+fxsr,+mmx,+sse,+sse2,+x87" "tune-cpu"="generic" }
+attributes #2 = { nocallback nofree nounwind willreturn memory(argmem: write) }
 
 !llvm.module.flags = !{!0, !1, !2, !3, !4}
 !llvm.ident = !{!5}

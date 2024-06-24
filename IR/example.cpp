@@ -11,10 +11,12 @@ GIMC_NAMESPACE_BEGIN
 // 全局库函数（贯穿所有 example）
 std::vector<baseTypePtr> putch_arguTypes;
 std::vector<baseTypePtr> putint_arguTypes;
+std::vector<baseTypePtr> memset_arguTypes;
 Function *putch;
 Function *putint;
 Function *getch;
 Function *getint;
+Function *memset;
 
 // 每个 example 必须包含
 Function *myFunc;                               // main 函数
@@ -24,15 +26,19 @@ std::vector<Function*> *declares;                      // 函数声明容器
 std::vector<GlobalVar*> *globals;                      // 全局变量容器
 
 Module* initialize(IRBuilder &builder) {
-  putch = builder.createFunction("putch", voidTyPtr, putch_arguTypes);
-  putint = builder.createFunction("putint", voidTyPtr, putint_arguTypes);
-  getch = builder.createFunction("getch", i32TyPtr, Zero_Argu_Type_List);
-  getint = builder.createFunction("getint", i32TyPtr, Zero_Argu_Type_List);              // getint 为零参函数，使用全局零参空向量，见 Config.cpp
-  putch_arguTypes.push_back(i32TyPtr);
-  putint_arguTypes.push_back(i32TyPtr);  
+  putch = builder.createFunction("putch", voidType, putch_arguTypes);
+  putint = builder.createFunction("putint", voidType, putint_arguTypes);
+  getch = builder.createFunction("getch", i32Type, Zero_Argu_Type_List);
+  getint = builder.createFunction("getint", i32Type, Zero_Argu_Type_List);              // getint 为零参函数，使用全局零参空向量，见 Config.cpp
+  memset = builder.createFunction("myMemset", voidType, memset_arguTypes);
+  putch_arguTypes.push_back(i32Type);
+  putint_arguTypes.push_back(i32Type);
+  memset_arguTypes.push_back(std::make_shared<PointerType>(i32Type));  
+  memset_arguTypes.push_back(i32Type);  
+  memset_arguTypes.push_back(i32Type);  
 
   // 初始化一个 Module
-  return new Module("start", voidTyPtr);
+  return new Module("start", voidType);
 }
 
 void addLib() {
@@ -41,6 +47,7 @@ void addLib() {
   declares->push_back(getint);
   declares->push_back(putch);
   declares->push_back(putint);
+  declares->push_back(memset);
 
   // Module 中加入 main
   defs->push_back(myFunc);
@@ -50,20 +57,20 @@ void newModule(IRBuilder &builder, Module *module) {
   // ps:为什么不选择 new 一个 Module，因为想错了把 clear 做了，不用可惜了 q_q
   /**
    * 完全可以用以下方式平替
-   * Module *module = new Module("example" + cnt, voidTyPtr, globals, defs, declares); 
+   * Module *module = new Module("example" + cnt, voidType, globals, defs, declares); 
    */
   static int cnt = 1;
   module->setValueName("example" + std::to_string(cnt));
   cnt++;
   module->clearModule();
   // 创建零参函数 "main"，返回类型为 i32
-  myFunc = builder.createFunction("main", i32TyPtr, Zero_Argu_Type_List);
+  myFunc = builder.createFunction("main", i32Type, Zero_Argu_Type_List);
   globals = module->getGlobalVars();
   declares = module->getFuncDeclares();
   defs = module->getFuncDefs();
 
   // 创建基本块 entry
-  entry = builder.createBBlock("entry", voidTyPtr);
+  entry = builder.createBBlock("entry", voidType);
 
   // 加入库函数
   addLib();
@@ -112,32 +119,38 @@ int main(int argc, char** args) {
   */
   newModule(builder, myModule);
 
-  Instruction* i_2_1 = builder.createAllocaInst("Nqn7m1", i32TyPtr, 1);
-  Instruction* i_2_2 = builder.createAllocaInst("yiersan", i32TyPtr, 1);
-  Instruction* i_2_3 = builder.createAllocaInst("mAgIc_NuMbEr", i32TyPtr, 1);
-  Instruction* i_2_4 = builder.createAllocaInst("a1a11a11", i32TyPtr, 1);
-  Instruction* i_2_5 = builder.createAllocaInst("_CHAOS_TOKEN", i32TyPtr, 1);
-  Instruction* i_2_6 = builder.createStoreInst(new ConstIntValue(8) ,i_2_1);        // Nqn7m1 = 010   8 进制
-  Instruction* i_2_7 = builder.createStoreInst(new ConstIntValue(456), i_2_2);
-  Instruction* i_2_8 = builder.createStoreInst(new ConstIntValue(8456), i_2_3); 
-  Instruction* i_2_9 = builder.createLoadInst(i32TyPtr, i_2_3);                     // mAgIc_NuMbEr load
-  Instruction* i_2_10 = builder.createLoadInst(i32TyPtr, i_2_2);                    // yiersan load
-  Instruction* i_2_11 = builder.createBinaryInst(InstKind::Sub, i_2_9, i_2_10);
-  Instruction* i_2_12 = builder.createBinaryInst(InstKind::Div, i_2_11, new ConstIntValue(1000));
-  Instruction* i_2_13 = builder.createBinaryInst(InstKind::Sub, i_2_12, new ConstIntValue(8));         // 常数折叠
-  Instruction* i_2_14 = builder.createStoreInst(i_2_13, i_2_4);
-  Instruction* i_2_15 = builder.createStoreInst(new ConstIntValue(2), i_2_5);
-  Instruction* i_2_16 = builder.createLoadInst(i_2_4->getType(), i_2_4);            // 这里 Load Instruction 的 Type 同样为指针基类 type
-  Instruction* i_2_17 = builder.createLoadInst(i_2_5->getType(), i_2_5);
-  Instruction* i_2_18 = builder.createBinaryInst(InstKind::Add, i_2_16, i_2_17);
-  Instruction* i_2_19 = builder.createStoreInst(i_2_18, i_2_4);                     // a1a11a11 = a1a11a11 + _CHAOS_TOKEN;
-  Instruction* i_2_20 = builder.createLoadInst(i_2_4->getType(), i_2_4);
-  Instruction* eg2_ret = builder.createRetInst(i_2_20);
+  // alloca 
+  Instruction* eg2_Nqn7m1_ptr = builder.createAllocaInst("Nqn7m1", int32PointerType);
+  Instruction* eg2_yiersan_ptr = builder.createAllocaInst("yiersan", int32PointerType);
+  Instruction* eg2_mAg_ptr = builder.createAllocaInst("mAgIc_NuMbEr", int32PointerType);
+  Instruction* eg2_a1a11_ptr = builder.createAllocaInst("a1a11a11", int32PointerType);
+  Instruction* eg2_chaos_ptr = builder.createAllocaInst("_CHAOS_TOKEN", int32PointerType);
+  
+  // store 初始化
+  builder.createStoreInst(new ConstIntValue(8) ,eg2_Nqn7m1_ptr);        // Nqn7m1 = 010   8 进制
+  builder.createStoreInst(new ConstIntValue(456), eg2_yiersan_ptr);
+  builder.createStoreInst(new ConstIntValue(8456), eg2_mAg_ptr); 
+
+  // 加载运算
+  Instruction* eg2_mAg_1 = builder.createLoadInst(i32Type, eg2_mAg_ptr);                     // mAgIc_NuMbEr load
+  Instruction* eg2_yiersan_1 = builder.createLoadInst(i32Type, eg2_yiersan_ptr);                    // yiersan load
+  Instruction* eg2_sub_1 = builder.createBinaryInst(InstKind::Sub, eg2_mAg_1, eg2_yiersan_1);
+  Instruction* eg2_div_1 = builder.createBinaryInst(InstKind::Div, eg2_sub_1, new ConstIntValue(1000));
+  Instruction* eg2_sub_2 = builder.createBinaryInst(InstKind::Sub, eg2_div_1, new ConstIntValue(8));         // 常数折叠
+  builder.createStoreInst(eg2_sub_2, eg2_a1a11_ptr);
+  builder.createStoreInst(new ConstIntValue(2), eg2_chaos_ptr);
+  Instruction* eg2_a1a11_1 = builder.createLoadInst(eg2_a1a11_ptr->getType(), eg2_a1a11_ptr);            // 这里 Load Instruction 的 Type 同样为指针基类 type
+  Instruction* eg2_chaos_1 = builder.createLoadInst(eg2_chaos_ptr->getType(), eg2_chaos_ptr);
+  Instruction* eg2_add_1 = builder.createBinaryInst(InstKind::Add, eg2_a1a11_1, eg2_chaos_1);
+  builder.createStoreInst(eg2_add_1, eg2_a1a11_ptr);                     // a1a11a11 = a1a11a11 + _CHAOS_TOKEN;
+  Instruction* eg2_a1a11_2 = builder.createLoadInst(eg2_a1a11_ptr->getType(), eg2_a1a11_ptr);
+  builder.createRetInst(eg2_a1a11_2);
   
   builder.emitIRModule(myModule);
 
   /**
-   * eg.3 实现小写转大写（无鲁棒性）
+   * eg.3 函数调用 
+   * 实现小写转大写（无鲁棒性）
    *  int  getint(), getch(), getarray(int a[]);
       void putint(int a), putch(int a), putarray(int n, int a[]);
       int main() {
@@ -150,14 +163,14 @@ int main(int argc, char** args) {
   */
   newModule(builder, myModule);
 
-  Instruction *eg3_a_ptr = builder.createAllocaInst("a", i32TyPtr, 1);
-  Instruction *eg3_b_ptr = builder.createAllocaInst("b", i32TyPtr, 1);
+  Instruction *eg3_a_ptr = builder.createAllocaInst("a", int32PointerType);
+  Instruction *eg3_b_ptr = builder.createAllocaInst("b", int32PointerType);
   Instruction *eg3_call1 = builder.createCallInst("call1", getch, Zero_Argu_List);
   Instruction *eg3_call2 = builder.createCallInst("call2", getch, Zero_Argu_List);
   builder.createStoreInst(eg3_call1, eg3_a_ptr);
   builder.createStoreInst(eg3_call2, eg3_b_ptr);
-  Instruction *eg3_load_a = builder.createLoadInst(i32TyPtr, eg3_a_ptr);
-  Instruction *eg3_load_b = builder.createLoadInst(i32TyPtr, eg3_b_ptr);
+  Instruction *eg3_load_a = builder.createLoadInst(i32Type, eg3_a_ptr);
+  Instruction *eg3_load_b = builder.createLoadInst(i32Type, eg3_b_ptr);
   Instruction *eg3_arg1 = builder.createBinaryInst(InstKind::Sub, eg3_load_a, new ConstIntValue(32));
   Instruction *eg3_arg2 = builder.createBinaryInst(InstKind::Sub, eg3_load_b, new ConstIntValue(32));
   std::vector<Value*> eg3_argus1;
@@ -193,10 +206,10 @@ int main(int argc, char** args) {
   Instruction *eg4_call2 = builder.createCallInst("call2", getint, Zero_Argu_List);
   Instruction *eg4_cmp = builder.createIcmpInst("icmp", CondKind::Sle, eg4_call1, eg4_call2);
   // 首先为 entry BBlock 新建两个后继 BBlock if_true,if_false，以及最终汇合 BBlock if_end
-  BBlock *eg4_if_end = builder.createBBlock("eg4_if_end", voidTyPtr);
+  BBlock *eg4_if_end = builder.createBBlock("eg4_if_end", voidType);
   Instruction *eg4_ret = builder.createRetInst(new ConstIntValue(0));
 
-  BBlock *eg4_if_true = builder.createBBlock("eg4_if_true", voidTyPtr);
+  BBlock *eg4_if_true = builder.createBBlock("eg4_if_true", voidType);
   std::vector<Value*> eg4_argus_0;
   std::vector<Value*> eg4_argus_1;
   eg4_argus_0.push_back(new ConstIntValue(0));
@@ -204,7 +217,7 @@ int main(int argc, char** args) {
   Instruction *eg4_call_ifTrue = builder.createCallInst(putint, eg4_argus_1); 
   Instruction *eg4_true_br = builder.createBrInst(nullptr, eg4_if_end, nullptr);
 
-  BBlock *eg4_if_false = builder.createBBlock("eg4_if_false", voidTyPtr);
+  BBlock *eg4_if_false = builder.createBBlock("eg4_if_false", voidType);
   Instruction *eg4_call_ifFalse = builder.createCallInst(putint, eg4_argus_0); 
   Instruction *eg4_false_br = builder.createBrInst(nullptr, eg4_if_end, nullptr);
   // 将需要加入 Inst 的 BBlock 设为 entry
@@ -227,10 +240,10 @@ int main(int argc, char** args) {
   */
   newModule(builder, myModule);
 
-  GlobalVar *eg5_a = builder.createGlobalVar<ConstValue*>("a", i32TyPtr, new ConstIntValue(5));
+  GlobalVar *eg5_a = builder.createGlobalVar<Value*>("a", int32PointerType, new ConstIntValue(5));
   // 注意 ptr 类型的数据需要先 load
   Instruction *eg5_load_a = builder.createLoadInst("load_a", eg5_a->getValueType(), eg5_a);
-  GlobalVar *eg5_h = builder.createGlobalVar<ConstValue*>("h", i32TyPtr, new ConstIntValue(0));
+  GlobalVar *eg5_h = builder.createGlobalVar<Value*>("h", int32PointerType, new ConstIntValue(0));
   globals->push_back(eg5_a);
   globals->push_back(eg5_h);
   Value *eg5_b = builder.createCallInst("call1", getint, Zero_Argu_List);
@@ -238,6 +251,61 @@ int main(int argc, char** args) {
   std::vector<Value*> eg5_args;
   eg5_args.push_back(eg5_add);
   builder.createCallInst(putint, eg5_args);
+  builder.createRetInst(new ConstIntValue(0));
+
+  builder.emitIRModule(myModule);
+
+  /**
+   * eg.6 支持整型数组
+   *  int a = 1;
+      int b[2] = {1, a};
+      int main() {
+          putint(b[1]);
+          int c[4][2] = {3,4};
+          putint(c[0][1]);
+          return 0;
+      }
+   */
+  newModule(builder, myModule);
+  // 对于非数组 Value 构建使用
+  GlobalVar *eg6_a = builder.createGlobalVar<Value*>("a", int32PointerType, new ConstIntValue(1));
+  globals->push_back(eg6_a);
+  
+  // 对于数组的构建
+  baseTypePtr eg6_ty_1 = std::make_shared<PointerType>(i32Type, 2);
+  std::vector<Value*> eg6_init_b;
+  eg6_init_b.push_back(new ConstIntValue(1));
+  eg6_init_b.push_back(eg6_a);
+  GlobalVar *eg6_b = builder.createGlobalVar<std::vector<Value*>>("b", eg6_ty_1, eg6_init_b);
+  globals->push_back(eg6_b);
+  
+  // GEP 指令
+  Instruction *eg6_gep_1 = builder.createGEPInst("b_1_ptr", eg6_b, 1);
+  Instruction *eg6_b_1 = builder.createLoadInst("b_1", i32Type, eg6_gep_1);
+  std::vector<Value*> eg6_argus;
+  eg6_argus.push_back(eg6_b_1);
+  builder.createCallInst(putint, eg6_argus);
+  
+  // 生成局部数组变量
+  baseTypePtr eg6_ty_2 = std::make_shared<PointerType>(i32Type, 2);
+  baseTypePtr eg6_ty_3 = std::make_shared<PointerType>(eg6_ty_2, 4);
+  Instruction *eg6_c_ptr = builder.createAllocaInst(eg6_ty_3);
+  Instruction *eg6_gep_2 = builder.createGEPInst("c_0_ptr", eg6_c_ptr, 0);
+  Instruction *eg6_gep_3 = builder.createGEPInst("c_0_0_ptr", eg6_gep_2, 0);
+  Instruction *eg6_gep_4 = builder.createGEPInst("c_0_1_ptr", eg6_gep_2, 1);
+  builder.createStoreInst(new ConstIntValue(3), eg6_gep_3);
+  builder.createStoreInst(new ConstIntValue(4), eg6_gep_4);
+  // 调用 memset 函数
+  Instruction *eg6_gep_5 = builder.createGEPInst("c_1_ptr", eg6_c_ptr, 1);
+  std::vector<Value*> eg6_argus_1;
+  eg6_argus_1.push_back(eg6_gep_5);
+  eg6_argus_1.push_back(new ConstIntValue(0));
+  eg6_argus_1.push_back(new ConstIntValue(3*2*4));
+  builder.createCallInst(memset, eg6_argus_1);
+  Instruction *eg6_c_0_1 = builder.createLoadInst("c_0_1", i32Type, eg6_gep_4);
+  std::vector<Value*> eg6_argus_2;
+  eg6_argus_2.push_back(eg6_c_0_1);
+  builder.createCallInst(putint, eg6_argus_2);
   builder.createRetInst(new ConstIntValue(0));
   
   // 由 IRBuilder 发射 LLVM 代码

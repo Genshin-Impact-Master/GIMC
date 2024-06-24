@@ -44,8 +44,10 @@ public:
   virtual std::string& getName() {return valueName;}
 
   // 获取带前缀的 Value 名
-  // @todo 需要添加自动加变量前缀的代码，这里先支持局部
   virtual std::string& getFullName() {return fullName;}
+
+  // 获取 Value 的值
+  virtual std::string getData() {return "no value";}
 
   // 修改 name 值
   void setValueName(const std::string& newName) {

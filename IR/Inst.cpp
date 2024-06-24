@@ -23,10 +23,10 @@ Instruction::Instruction(baseTypePtr type, InstKind kind, BBlock *parent) :
                          Instruction(std::to_string(parent->getCnt()),
                                      type, kind, parent) {}
 
-Instruction::Instruction(InstKind kind, BBlock *parent) : Instruction(i32TyPtr, kind, parent) {}
+Instruction::Instruction(InstKind kind, BBlock *parent) : Instruction(i32Type, kind, parent) {}
 
 Instruction::Instruction(const std::string &name, InstKind kind, BBlock *parent) :
-                         Instruction(name, i32TyPtr, kind, parent) {}
+                         Instruction(name, i32Type, kind, parent) {}
 BinaryInst::BinaryInst(const std::string &name,
                         baseTypePtr type,
                         InstKind kind,
@@ -89,3 +89,12 @@ Br::Br(const std::string &name,
           ops_.push_back(ifTrue);
           ops_.push_back(ifFalse);
         }
+
+GEP::GEP(const std::string &name,
+          baseTypePtr type,
+          BBlock *parent,
+          Value *ptr,
+          int offset) : Instruction(name, type, InstKind::GEP, parent) {
+            ops_.push_back(ptr);
+            ops_.push_back(new ConstIntValue(AddrLenPtr, offset));
+          }

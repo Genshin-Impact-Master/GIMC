@@ -29,7 +29,8 @@ enum class InstKind {
   Call,
   Ret,
   Icmp,
-  Br
+  Br,
+  GEP
 };
 
 /**
@@ -133,7 +134,6 @@ public:
 
 class Load final : public Instruction {
 private:
-  Value *ptr_;
 public:
   /**
    * @param ptr Load 需要加载到的地址的指针
@@ -206,6 +206,22 @@ public:
       Value *cond,
       BBlock *ifTrue,
       BBlock *ifFalse);
+};
+
+/**
+ * GEP 指令 获取数组元素地址 
+*/
+class GEP final : public Instruction {
+public:
+  /**
+   * @param ptr     给定数组的基址
+   * @param offset  相对基址偏移量
+  */
+  GEP(const std::string &name,
+      baseTypePtr type,
+      BBlock *parent,
+      Value *ptr,
+      int offset);
 };
 
 GIMC_NAMESPACE_END

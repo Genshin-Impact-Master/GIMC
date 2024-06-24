@@ -3,40 +3,34 @@ USING_GIMC_NAMESPACE
 
 std::string GlobalVar::getData() {
   // 返回 value 的初始化 llvm 代码
-  if (values_.size() == 0) {
-    fprintf(stderr, "Have no initialization of this global var: %s\n", this->getName().c_str());
-  }
   std::shared_ptr<PointerType> ptr = std::dynamic_pointer_cast<PointerType>(this->getType());
   if (ptr == nullptr) {
     fprintf(stderr, "GlobalVar type error\n");
     exit(1);
   }
-  baseTypePtr basePtr = ptr->getBaseType();
-  if (ptr->getArraySizeCnt() == 1) {
-    // 非数组类型
-    if (TypeBase::isInteger(basePtr)) {
-      // 整数类型
-      ConstIntValue* value = dynamic_cast<ConstIntValue*>(values_[0]);
-      return std::to_string(value->getInt());
+  if (ptr->isArray() == false) {
+    // 非数组类型，此处与 C 语言有所不同，数组初始化不一定为常数
+    if (values_.size() == 0) {
+      return "zeroinitializer";
     }
-    if (TypeBase::isFloat(basePtr)) {
-      // 浮点数类型 @todo
-    }
+    return values_[0]->getData();
   }
   else {
-    // 处理数组@todo
-  }
-  return nullptr;
-}
-
-baseTypePtr GlobalVar::getValueType() {
-  if (values_.size() == 0) {
-    // 没有 value 空赋值
-    fprintf(stderr, "GlobalVar without initialization value\n");
-    exit(1);
-  }
-  else {
-    baseTypePtr type = values_[0]->getType();
-    return type;
+    // 处理数组
+    if (values_.size() == 0) {
+      // 若不含初始化变量，则认为是 zeroinitializer
+      return "zeroinitializer";
+    }
+    std::string ret = "[";
+    for (int i = 0; i < values_.size(); i++) {
+      ret += values_[i]->getType()->getDetailName();
+      ret += " ";
+      ret += values_[i]->getData();
+      if (i != values_.size() - 1) {
+        ret += ", ";
+      }
+    }
+    ret += "]";
+    return ret;
   }
 }

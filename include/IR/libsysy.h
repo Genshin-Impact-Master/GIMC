@@ -7,4 +7,5 @@
 /* Input & output functions */
 int getint(),getch(),getarray(int a[]);
 void putint(int a),putch(int a),putarray(int n,int a[]);
+void myMemset(void* ptr, int i, int num);
 #endif

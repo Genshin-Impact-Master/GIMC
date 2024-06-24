@@ -3,8 +3,9 @@
 #define NDEBUG   //@C++_Learn 如果定义 NDEBUG 则 assert 不会工作
 
 #define GIMC_NAMESPACE_BEGIN namespace GIMC {
-#define GIMC_NAMESPACE_END }  // GIMC namespace
+#define GIMC_NAMESPACE_END }                          // GIMC namespace
 #define USING_GIMC_NAMESPACE using namespace GIMC;
+#define ADDR_LENGTH 64                                // 机器字长
 
 #include <string>
 #include <vector>

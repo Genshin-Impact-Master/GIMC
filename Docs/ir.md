@@ -162,7 +162,21 @@ __store__ 指令
 删减后的语法
 ```llvm
 store <ty> <value>, ptr <pointer>
+``` 
+__getelementptr__ 指令
+用于获得数组某个子元素的地址。
+```llvm
+<result> = getelementptr inbounds <ty>, ptr <ptrval>{, <ty> <idx>}*
 ```
+```llvm
+; 例子
+  %c = alloca [2 x [3 x [4 x i32]]], align 16
+  %arrayidx1 = getelementptr inbounds [2 x [3 x [4 x i32]]], ptr %c, i64 0, i64 0
+  %arrayidx2 = getelementptr inbounds [3 x [4 x i32]], ptr %arrayidx1, i64 0, i64 1
+  %arrayidx3 = getelementptr inbounds [4 x i32], ptr %arrayidx2, i64 0, i64 2
+```
+第一个 i64 后面的数似乎必须取 0
+
 #### 其他指令
 __icmp__ 指令
 ```llvm

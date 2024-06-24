@@ -12,9 +12,9 @@ done
 # 如果没有跳过 make，执行清理和编译
 if [ ${skip_make} = false ]; then
   # 如果文件夹存在
-  if [ -d ../build ]; then
-    rm -rf ../build
-  fi
+  # if [ -d ../build ]; then
+  #   rm -rf ../build
+  # fi
 
   cd ../
   cmake -Bbuild
@@ -41,7 +41,7 @@ for example in ./example*.ll; do
   clang++ out.ll -o "../build/${basename}.out"
 
   # 删除中间的 out.ll
-  rm out.ll
+  # rm out.ll
 done
 echo 
 echo "get all example*.out in build/"

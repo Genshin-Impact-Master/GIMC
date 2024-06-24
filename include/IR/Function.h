@@ -19,7 +19,7 @@ class Function : public Value {
 friend class IRBuilder;
 private:
   int cnt = 0;                                // function 中的递增命名计数器 
-  std::vector<baseTypePtr> arguTypes_;        // 参数类型链表
+  std::vector<baseTypePtr> &arguTypes_;        // 参数类型链表，注意是引用不是新的一个
   std::vector<BBlock*> bBlocks_;               // BasicBlock 指针链表
 public:
   Function(const std::string &fName, baseTypePtr funcType, std::vector<baseTypePtr> &arguTypes);

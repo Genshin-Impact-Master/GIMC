@@ -83,8 +83,8 @@ public:
    * @param type 指针指向内存的基类
    * @param cnt 数组元素个数（非数组设置为 1）
   */
-  Instruction* createAllocaInst(const std::string &name, baseTypePtr type, int cnt, BBlock *parent = nullptr);
-  Instruction* createAllocaInst(baseTypePtr type, int cnt, BBlock *parent = nullptr);
+  Instruction* createAllocaInst(const std::string &name, baseTypePtr type, BBlock *parent = nullptr);
+  Instruction* createAllocaInst(baseTypePtr type, BBlock *parent = nullptr);
 
   /**
    * 创建 store 指令
@@ -125,6 +125,12 @@ public:
    * 创建 Br 指令，Br 指令不需要名称
   */
   Instruction* createBrInst(Value *cond, BBlock *ifTure, BBlock *ifFalse, BBlock *parent = nullptr);
+
+  /**
+   * 创建 GEP 指令
+   */
+  Instruction* createGEPInst(const std::string &name, Value *ptr, int offset, BBlock *parent = nullptr);
+  Instruction* createGEPInst(Value *ptr, int offset, BBlock *parent  = nullptr);
 
   /**
    * 检查是否存在 BBlock
