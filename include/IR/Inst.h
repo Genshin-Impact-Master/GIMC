@@ -57,6 +57,7 @@ friend class IRBuilder;
 private:
   InstKind kind_;                   // 指令的种类
   BBlock *parent_;                  // 指示包含该指令的 BBlock
+  INode<Instruction> instNode_;      // 自身对应于一个 Instruction 结点
 protected:
   std::vector<Value*> ops_;         // 可能用到的操作数
   std::vector<Value*> argus_;       // 参数列表，仅 Call 用到
@@ -80,6 +81,7 @@ public:
   Instruction(InstKind kind, BBlock *parent);
   Instruction(const std::string &name, InstKind kind, BBlock *parent);
   virtual ~Instruction() = default;
+  INode<Instruction> &getNode() {return instNode_;};
 };
 
 /**

@@ -216,9 +216,12 @@ void IRBuilder::emitIRFuncDef(Function *func) {
   }
   irout << ") {" << std::endl;
 
-  for (auto bBlkPtr : func->bBlocks_) {
-    emitIRBBlock(bBlkPtr);
+  INode<BBlock> *iterator = func->getBBlockList().getHeadPtr();
+  while (!iterator->isEnd()) {
+    iterator = iterator->getNext();
+    emitIRBBlock(iterator->getOwner());
   }
+  
   IRTextLineDump("}");
 }
 
@@ -239,11 +242,10 @@ void IRBuilder::emitIRFuncDecl(Function *func) {
 void IRBuilder::emitIRBBlock(BBlock *bBlk) {
   // 由于 BBlock 中不需要带有前缀故只需要 getName()
   irout << bBlk->getName() << ":" << std::endl ;
-  int cnt = 0;
-  for (auto inst : bBlk->instructions_) {
-    emitIRInst(inst);
-    // std::cout << "Now No." << cnt << " "<< ST_Insts[static_cast<int>(inst->kind_)];
-    cnt++;
+  INode<Instruction> *iterator = bBlk->getInstList().getHeadPtr();
+  while (!iterator->isEnd()) {
+    iterator = iterator->getNext();
+    emitIRInst(iterator->getOwner());
   }
 }
 

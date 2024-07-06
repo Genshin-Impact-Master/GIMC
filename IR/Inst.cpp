@@ -5,19 +5,19 @@ USING_GIMC_NAMESPACE
 Instruction::Instruction(const std::string &name,
                          baseTypePtr type,
                          InstKind kind,
-                         BBlock *parent) : Value(name, type), kind_(kind), parent_(parent) {}
+                         BBlock *parent) : Value(name, type), kind_(kind), parent_(parent), instNode_(INode<Instruction>(nullptr, this)) {}
 
 Instruction::Instruction(const std::string &name,
                          baseTypePtr type,
                          InstKind kind,
                          BBlock *parent,
-                         std::vector<Value*> argus) : Value(name, type), kind_(kind), parent_(parent), argus_(argus) {}
+                         std::vector<Value*> argus) : Value(name, type), kind_(kind), parent_(parent), argus_(argus), instNode_(INode<Instruction>(nullptr, this)) {}
 
 Instruction::Instruction(const std::string &name,
                          baseTypePtr type,
                          InstKind kind,
                          BBlock *parent,
-                         CondKind ckind) : Value(name, type), kind_(kind), parent_(parent), ckind_(ckind) {}
+                         CondKind ckind) : Value(name, type), kind_(kind), parent_(parent), ckind_(ckind), instNode_(INode<Instruction>(nullptr, this)) {}
 
 Instruction::Instruction(baseTypePtr type, InstKind kind, BBlock *parent) :
                          Instruction(std::to_string(parent->getCnt()),
@@ -27,6 +27,7 @@ Instruction::Instruction(InstKind kind, BBlock *parent) : Instruction(i32Type, k
 
 Instruction::Instruction(const std::string &name, InstKind kind, BBlock *parent) :
                          Instruction(name, i32Type, kind, parent) {}
+                         
 BinaryInst::BinaryInst(const std::string &name,
                         baseTypePtr type,
                         InstKind kind,

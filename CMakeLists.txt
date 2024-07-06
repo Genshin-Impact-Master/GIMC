@@ -19,6 +19,7 @@ add_executable(gimc_ir
   include/IR/Type.h
   include/IR/Value.h
   include/Utils/ErrorConfig.h
+  include/Utils/IList.h
   include/Config.h
   Config.cpp
   IR/GlobalVar.cpp

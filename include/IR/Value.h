@@ -6,6 +6,7 @@
 #include <string>
 #include <memory> //@C++_Learn 用于智能指针 unique_ptr,shared_ptr...
 #include "Type.h"
+#include "../Utils/IList.h"
 GIMC_NAMESPACE_BEGIN
 
 class VoidType;
