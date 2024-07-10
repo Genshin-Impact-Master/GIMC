@@ -28,7 +28,8 @@ public:
 class ConstIntValue final : public ConstValue {
 private:
 public:
-  ConstIntValue(uint64_t value) : ConstValue(i32TyPtr, value) {}
+  ConstIntValue(baseTypePtr ty, uint64_t value) : ConstValue(ty, value) {}
+  ConstIntValue(uint64_t value) : ConstValue(i32Type, value) {}
   
   /**
    * @todo 暂时只支持了符号整数，还有无符号整数
@@ -48,18 +49,25 @@ public:
     setValueName(std::to_string(getInt()));
     return Value::getName();                    // 因为对于值而言，没有加前缀的说法
   }
+
+  // 重载 Value 中 getData 同样是返回值的 string
+  std::string getData() override {
+    return std::to_string(getInt());
+  }
 };
 
 class ConstFloatValue final : public ConstValue {
 private:
 public:
   ConstFloatValue(double value)
-    : ConstValue(fTyPtr, static_cast<uint64_t>(value)) {}
+    : ConstValue(floatType, static_cast<uint64_t>(value)) {}
   
   // 返回 符号浮点数
   double getFloat() {return static_cast<double>(value_);}
   // double getValue() override {return static_cast<double>(value_);}
 };
+
+// extern ConstValue *boolTrue;
 
 // @C++_Learn 模板方法特化
 // template<>

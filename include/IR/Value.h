@@ -6,6 +6,7 @@
 #include <string>
 #include <memory> //@C++_Learn 用于智能指针 unique_ptr,shared_ptr...
 #include "Type.h"
+#include "../Utils/IList.h"
 GIMC_NAMESPACE_BEGIN
 
 class VoidType;
@@ -44,8 +45,10 @@ public:
   virtual std::string& getName() {return valueName;}
 
   // 获取带前缀的 Value 名
-  // @todo 需要添加自动加变量前缀的代码，这里先支持局部
   virtual std::string& getFullName() {return fullName;}
+
+  // 获取 Value 的值
+  virtual std::string getData() {return "no value";}
 
   // 修改 name 值
   void setValueName(const std::string& newName) {
@@ -54,7 +57,7 @@ public:
   }
 
   // 修改前缀
-  void setPrefix(bool setLocal) {
+  void setLocalPrefix(bool setLocal) {
     if (setLocal) prefix = LOCAL_PREFIX;
     else prefix = FUNC_OR_GLOBAL_PREFIX;
     fullName = prefix + valueName;

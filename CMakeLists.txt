@@ -9,6 +9,8 @@ project( GIMC CXX)
 
 # 可执行文件 gimc_ir 的依赖文件
 add_executable(gimc_ir
+  include/IR/Module.h
+  include/IR/GlobalVar.h
   include/IR/BBlock.h
   include/IR/ConstValue.h
   include/IR/Function.h
@@ -17,8 +19,11 @@ add_executable(gimc_ir
   include/IR/Type.h
   include/IR/Value.h
   include/Utils/ErrorConfig.h
+  include/Utils/IList.h
   include/Config.h
   Config.cpp
+  IR/GlobalVar.cpp
+  IR/Module.cpp
   IR/BBlock.cpp
   IR/Function.cpp
   IR/ConstValue.cpp

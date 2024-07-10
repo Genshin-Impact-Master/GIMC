@@ -1,8 +1,10 @@
 # 中间表示 版本--CodeGen_llvm_IR
+同时编写了测试脚本 testIR.sh
 使用 IR 中间件——参见 example.cpp
 ## 类继承关系
 ```
 Value
+    > Module
     > Function
     > ConstValue
     > Instruction 
@@ -16,6 +18,9 @@ Value
         > Load
         > Call
         > Ret
+        > Icmp
+        > Br
+        > Gep
     > BBlock
 TypeBase
     > IntegerType
@@ -29,6 +34,37 @@ TypeBase
 ### Instruction 类
 含有 `TypeBase` 原因是在 SSA 中，每条指令实际上指代的是一个 __值__ 
 
+### 侵入式链表
+**为什么要采用侵入式链表？**
+
+// 借鉴 22 年萝杨空队解释
+* 在对于 Instructions 进行迭代时，因为需要进行删减操作，如果直接使用 vector，其内置迭代器对修改敏感。(但似乎普通的链表也能做到)
+* 还有一个好处是，可以直接通过 Instruction，就可以得到在链表中的位置
+
+**侵入式链表简述**
+[参考链接](http://t.csdnimg.cn/pScaX)
+简单而言，就是将链接域的指针所存放的数据，从**整个结构体**的地址，转换为存放**链接域**地址
+```c
+// 存放链接域的结点
+struct INode {
+  struct INode *next;
+  Node *owner;
+};
+
+// 整个结构体
+typedef struct Node {
+  Data data;            // 数据信息
+  struct INode iNode;   // 链接域结点 
+} Node;
+
+// 侵入式链表
+struct IList {
+  struct INode *rear;   // 链表尾部
+  struct INode head;    // 头结点
+};
+```
+如此一来，迭代的就是链接域结点，那么如何通过结点得到整个数据结构的地址呢？
+* 解决方案：通过向链接域结点中添加 `struct Node` 的地址，作为其变量来获得。
 ## LLVM IR
 ### LLVM IR Type 
 [LLVM IR Type 参考链接](https://llvm.org/docs/LangRef.html#type-system)
@@ -39,7 +75,7 @@ N 可以很大，超过 64，当 N 小于 64 时，采用大于 N 的最大的 I
 `eg. i7:对齐 = 8，i256:对齐 = 64`
 #### Floating-Point Type
 
-|类型|解释|
+|类型 | 解释|
 |----|----|
 |half|16 bits 浮点类型，5 bits 指数位数，IEEE 754|
 |bfloat|16 bits 浮点类型，8 bits 指数位数同 IEEE 单精度浮点数|
@@ -95,6 +131,11 @@ label
 ; 例子
 [2 x [3 x [4 x i16]]] ; 16b int 的 2x3x4 array
 ```
+#### 运行时抢占符
+*作用不大...*
+`dso_local` 表示在这个编译单元中（Module? 一个文件？）可以直接访问该变量或方程尽管没有在该编译单元里定义。
+`dso_preemptable` 默认情况开启，表明方程或变量在运行时可能被外部的连接单元替代。
+
 ### LLVM IR Instruction
 LLVM IR 指令 [参考链接](https://llvm.org/docs/LangRef.html#instruction-reference)
 #### Terminator Instruction 终结指令（基本块的结尾）
@@ -155,4 +196,46 @@ __store__ 指令
 删减后的语法
 ```llvm
 store <ty> <value>, ptr <pointer>
+``` 
+__getelementptr__ 指令
+用于获得数组某个子元素的地址。
+```llvm
+<result> = getelementptr inbounds <ty>, ptr <ptrval>{, <ty> <idx>}*
+```
+```llvm
+; 例子
+  %c = alloca [2 x [3 x [4 x i32]]], align 16
+  %arrayidx1 = getelementptr inbounds [2 x [3 x [4 x i32]]], ptr %c, i64 0, i64 0
+  %arrayidx2 = getelementptr inbounds [3 x [4 x i32]], ptr %arrayidx1, i64 0, i64 1
+  %arrayidx3 = getelementptr inbounds [4 x i32], ptr %arrayidx2, i64 0, i64 2
+```
+第一个 i64 后面的数似乎必须取 0
+
+#### 其他指令
+__icmp__ 指令
+```llvm
+<result> = icmp <cond> <ty> <op1>, <op2>   ; yields i1 or <N x i1>:result
+```
+`<cond>` 表示进行哪种类型的比较
+```llvm
+eq: equal
+ne: not equal
+ugt: unsigned greater than
+uge: unsigned greater or equal
+ult: unsigned less than
+ule: unsigned less or equal
+sgt: signed greater than
+sge: signed greater or equal
+slt: signed less than
+sle: signed less or equal
+```
+被比较的两个参数必须为同一个类型，整型 or 指针
+例子：
+```llvm
+<result> = icmp eq i32 4, 5          ; yields: result=false
+<result> = icmp ne ptr %X, %X        ; yields: result=false
+<result> = icmp ult i16  4, 5        ; yields: result=true
+<result> = icmp sgt i16  4, 5        ; yields: result=false
+<result> = icmp ule i16 -4, 5        ; yields: result=false
+<result> = icmp sge i16  4, 5        ; yields: result=false
 ```
