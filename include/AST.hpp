@@ -12,9 +12,20 @@ enum BaseType {
     B_VOID,B_INT,B_FLOAT
 };
 enum StmtType {
-    ST_IF,ST_WHILE,ST_BREAK,ST_CONTINUE,ST_RETURN,ST_EXP
+    ST_IF,ST_WHILE,ST_BREAK,ST_CONTINUE,
+    ST_RETURN,ST_EXP,ST_ASSIGN,ST_BLOCK,
+    ST_BLANK
 };
-
+enum ExpType {
+    ET_INT,ET_FLOAT,ET_LVAL,ET_FUNC,ET_BIN
+};
+enum BinOpType {
+    OP_ADD,OP_SUB,OP_MUL,OP_DIV,OP_MOD,
+    OP_EQ,OP_NEQ,OP_LT,OP_LTE,OP_GT,OP_GTE,OP_AND,OP_OR
+};
+enum UnaryOpType {
+    UO_POS,UO_NEG,UO_NOT
+};
 using namespace std;
 class BaseNode;
 class CompUnit;
@@ -55,10 +66,10 @@ class ConstInitVals;
 class ArrayInitVal;
 class InitVals;
 class ParamArrayDim;
-
+class AssignStmt;
 class Visitor;
 
-
+#define AssignStmtPtr shared_ptr<AssignStmt>
 #define CompUnitPtr shared_ptr<CompUnit>
 #define DeclPtr shared_ptr<Decl>
 #define ConstDeclPtr shared_ptr<ConstDecl>
@@ -303,7 +314,7 @@ public:
     vector<ExpPtr> getDim() {return _dims;}
 };
 
-class BlockItem {
+class BlockItems {
 private:
     vector<StmtPtr> _stmts;
     vector<DeclPtr> _decls;
@@ -315,19 +326,164 @@ public:
 };
 class Block {
 private:
-    BlockItemPtr _block_items;
+    BlockItemsPtr _block_items;
 public:
-    void addBlockItem(BlockItemPtr block_items) {_block_items = block_items;}
-    BlockItemPtr getBlockItem() {return _block_items;}
+    void addBlockItem(BlockItemsPtr block_items) {_block_items = block_items;}
+    BlockItemsPtr getBlockItem() {return _block_items;}
 };
 
 class Stmt {
-    StmtType _type;  
+private:
+    StmtType _type;
+public:
+    void addType(StmtType type){_type=type;}
+    StmtType getType(){return _type;}
 };
-class ConstExp {
 
+
+class AssignStmt : public Stmt {
+private:
+    LValPtr _lval;
+    ExpPtr _exp;
+public:
+    void addLVal(LValPtr lval){_lval=lval;}
+    void addExp(ExpPtr exp){_exp=exp;}
+    LValPtr getLVal(){return _lval;}
+    ExpPtr getExp(){return _exp;}
 };
+class ExpStmt : public Stmt {
+private:
+    ExpPtr _exp;
+public:
+    void addExp(ExpPtr exp){_exp=exp;}
+    ExpPtr getExp(){return _exp;}
+};
+
+class BlockStmt : public Stmt {
+private:
+    BlockPtr _block;
+public:
+    void addBlock(BlockPtr block){_block=block;}
+    BlockPtr getBlock(){return _block;}
+};
+class IfElseStmt : public Stmt {
+private:
+    ExpPtr _cond;
+    StmtPtr _then_stmt;
+    StmtPtr _else_stmt;
+public:
+    void addCond(ExpPtr cond){_cond=cond;}
+    void addThenStmt(StmtPtr then_stmt){_then_stmt=then_stmt;}
+    void addElseStmt(StmtPtr else_stmt){_else_stmt=else_stmt;}
+    ExpPtr getCond(){return _cond;}
+    StmtPtr getThenStmt(){return _then_stmt;}
+    StmtPtr getElseStmt(){return _else_stmt;}
+};
+class WhileStmt : public Stmt {
+private:
+    ExpPtr _cond;
+    StmtPtr _stmt;
+public:
+    void addCond(ExpPtr cond){_cond=cond;}
+    void addStmt(StmtPtr stmt){_stmt=stmt;}
+    ExpPtr getCond(){return _cond;}
+    StmtPtr getStmt(){return _stmt;}  
+};
+class ReturnStmt : public Stmt {
+private:
+    ExpPtr _exp;
+public:
+    void addExp(ExpPtr exp){_exp=exp;}
+    ExpPtr getExp(){return _exp;}
+};
+
+
 class Exp {
-
+private:
+    ExpType _type;
+public:
+    void addType(ExpType type){_type=type;}
+    ExpType getType(){return _type;}
 };
+
+class BinaryExp : public Exp {
+private:
+    ExpPtr _exp1;
+    ExpPtr _exp2;
+    BinOpType _op;
+public:
+    void addExp1(ExpPtr exp1){_exp1=exp1;}
+    void addExp2(ExpPtr exp2){_exp2=exp2;}
+    ExpPtr getExp1(){return _exp1;}
+    ExpPtr getExp2(){return _exp2;}
+    void addOp(BinOpType op){_op=op;}
+    BinOpType getOp(){return _op;}
+};
+
+class UnaryExp : public Exp {
+private:
+    ExpPtr _exp;
+    UnaryOpType _op;
+public:
+    void addExp(ExpPtr exp){_exp=exp;}
+    void addOp(UnaryOpType op){_op=op;}
+    ExpPtr getExp(){return _exp;}
+    UnaryOpType getOp(){return _op;}
+};
+
+class LVal : public Exp {
+private:
+    string _identifier;
+    bool _is_array;
+    vector<ExpPtr> _dims;
+public:
+    void addIdentifier(string* identifier){_identifier=*identifier;}
+    void addIsArray(bool is_array){_is_array=is_array;}
+    string getIdentifier(){return _identifier;}
+    bool getIsArray(){return _is_array;}
+    void addDims(ExpPtr dim){_dims.pb(dim);}
+    vector<ExpPtr> getDims(){return _dims;}
+};
+
+class Number : public Exp {
+private:
+    int32_t _int_val;
+    float _float_val;
+    bool _is_float;
+public:
+    void addIntVal(int32_t int_val){_int_val=int_val;}
+    void addFloatVal(float float_val){_float_val=float_val;}
+    void addIsFloat(bool is_float){_is_float=is_float;}
+    int32_t getIntVal(){return _int_val;}
+    float getFloatVal(){return _float_val;}
+    bool getIsFloat(){return _is_float;}
+};
+class FuncRParams{
+private:
+    vector<ExpPtr> _args;
+public:
+    void addArgs(ExpPtr arg){_args.pb(arg);}
+    vector<ExpPtr> getArgs(){return _args;}
+};
+
+class FuncCall : public Exp {
+private:
+    string _identifier;
+    vector<ExpPtr> _args;
+public:
+    void addIdentifier(string* identifier){_identifier=*identifier;}
+    void addArgs(FuncRParamsPtr arg){_args = arg->getArgs();}
+    string getIdentifier(){return _identifier;}
+    vector<ExpPtr> getArgs(){return _args;}
+};
+
+class ConstExp: public Exp{
+private:
+    ExpPtr _exp;
+public:
+    void addExp(ExpPtr exp){_exp=exp;}
+    ExpPtr getExp(){return _exp;}
+};
+
+
 #endif

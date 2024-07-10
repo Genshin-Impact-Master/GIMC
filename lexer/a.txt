@@ -1,3 +1,22 @@
 
+int func(){
+    int int a, b;
+    while (a) {
+        b + a;
+    }
+    if (a) {
+        if (b) ;
+        else ;
+    }
+    // else (c) ;
+    a = b + a;
+    a[c+b] = 10;
+    
+    return b + a;
+}
 
-int a;
+int main(){
+
+    func();
+    return 0;
+}
