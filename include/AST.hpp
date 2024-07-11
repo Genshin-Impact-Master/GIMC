@@ -121,6 +121,7 @@ class Visitor;
 #define InitValsPtr shared_ptr<InitVals>
 #define ArrayInitValPtr shared_ptr<ArrayInitVal>
 #define ParamArrayDimPtr shared_ptr<ParamArrayDim>
+#define UnaryExpPtr shared_ptr<UnaryExp>
 
 class BaseNode {
 public:
@@ -249,6 +250,7 @@ public:
     ExpPtr getInitVal(){return _init_val;}
     string getIdentifier(){return _identifier;}
     ArrayInitValPtr getArrayInitVal(){return _array_init_val;}
+    bool isInit(){return _is_init;}
     
 };
 
@@ -415,6 +417,7 @@ class Exp {
 private:
     ExpType _type;
 public:
+    virtual ~Exp() = default;
     void addType(ExpType type){_type=type;}
     ExpType getType(){return _type;}
 };
@@ -464,6 +467,7 @@ private:
     float _float_val;
     bool _is_float;
 public:
+    Number(int32_t int_val, float float_val, bool is_float){_int_val=int_val;_float_val=float_val;_is_float=is_float;}
     void addIntVal(int32_t int_val){_int_val=int_val;}
     void addFloatVal(float float_val){_float_val=float_val;}
     void addIsFloat(bool is_float){_is_float=is_float;}

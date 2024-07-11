@@ -576,14 +576,16 @@ LVal: IDENTIFIER {
 
 /* Number → IntConst | floatConst */
 Number: INTVAL  {
-        $$ = new Number();
+        $$ = new Number(0, 0, false);
         $$ -> addIntVal($1);
+        $$ -> addFloatVal(0);
         $$ -> addIsFloat(false);
         printf("Number Find\n");
     }
     | FLOATVAL {
-        $$ = new Number();
+        $$ = new Number(0, 0, false);
         $$ -> addFloatVal($1);
+        $$ -> addIntVal(0);
         $$ -> addIsFloat(true);
         printf("Number Find\n");
     };
@@ -591,10 +593,7 @@ Number: INTVAL  {
 /* UnaryExp → PrimaryExp | Ident '(' [FuncRParams] ')' 
             | UnaryOp UnaryExp */
 UnaryExp: LEFT_PARENTHESES Exp RIGHT_PARENTHESES {
-        auto tmp = new UnaryExp();
-        tmp -> addExp(ExpPtr($2));
-        tmp -> addOp(UnaryOpType::UO_POS);
-        $$ = (Exp*)(tmp);
+        $$ = $2;
         printf("UnaryExp Find\n");
     }
     | LVal {
@@ -842,8 +841,7 @@ ConstExp: AddExp {
 %%
 
 
-int main(int argc, char *argv[]){
-    /* int c; */
+/* int main(int argc, char *argv[]){
     ++ argv;
     if (argc > 0) yyin = fopen(argv[0], "r");
     else {
@@ -852,7 +850,7 @@ int main(int argc, char *argv[]){
     }
     yyparse();
     std::cout << root << std::endl;
-}
+} */
 
 CompUnit* parse(char *filename) {
     yyin = fopen(filename, "r");
