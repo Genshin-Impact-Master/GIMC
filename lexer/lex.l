@@ -9,7 +9,21 @@
     #include <stdbool.h>
     #include "../include/AST.hpp" 
     #include "../parser/parser.hpp"
-    
+
+    int yycolumn = 1;
+    /* Location type.  */
+    // extern YYLTYPE yylloc;
+	YYLTYPE yylloc = {1,0,0,0};
+    #define YY_USER_ACTION yylloc.first_line = yylineno;            \
+                       yylloc.first_column = yycolumn;          \
+                       for (auto i : std::string(yytext_ptr)) { \
+                           if (i == '\n') {                     \
+                               yylineno++;                      \
+                               yycolumn = 1;                    \
+                           } else {                             \
+                               yycolumn++;                      \
+                           }                                    \
+                       }
 %}
 
 DIGIT [0-9]
@@ -73,11 +87,11 @@ TOKEN_IDENTIFIER ({LETTER}|_)({DIGIT}|{LETTER}|_)*
                         return IDENTIFIER;
                     }
 {TOKEN_INT_VALUE}  {
-                        yylval.int_val = static_cast<int32_t>(strtol(yytext, NULL, 0));
+                        yylval.intVal = static_cast<int32_t>(strtol(yytext, NULL, 0));
                         return INTVAL;
                    }
 {TOKEN_FLOAT_VALUE} {
-    yylval.float_val = static_cast<float>(strtod(yytext, NULL));
+    yylval.floatVal = static_cast<float>(strtod(yytext, NULL));
     return FLOATVAL;
     }
 

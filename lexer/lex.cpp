@@ -1,6 +1,5 @@
-#line 2 "lex.cpp"
 
-#line 4 "lex.cpp"
+#line 3 "lex.yy.c"
 
 #define  YY_INT_ALIGNED short int
 
@@ -546,9 +545,23 @@ char *yytext;
     #include <stdbool.h>
     #include "../include/AST.hpp" 
     #include "../parser/parser.hpp"
-    
-#line 551 "lex.cpp"
-#line 552 "lex.cpp"
+
+    int yycolumn = 1;
+    /* Location type.  */
+    // extern YYLTYPE yylloc;
+	YYLTYPE yylloc = {1,0,0,0};
+    #define YY_USER_ACTION yylloc.first_line = yylineno;            \
+                       yylloc.first_column = yycolumn;          \
+                       for (auto i : std::string(yytext_ptr)) { \
+                           if (i == '\n') {                     \
+                               yylineno++;                      \
+                               yycolumn = 1;                    \
+                           } else {                             \
+                               yycolumn++;                      \
+                           }                                    \
+                       }
+#line 563 "lex.yy.c"
+#line 564 "lex.yy.c"
 
 #define INITIAL 0
 
@@ -765,9 +778,9 @@ YY_DECL
 		}
 
 	{
-#line 38 "lex.l"
+#line 51 "lex.l"
 
-#line 771 "lex.cpp"
+#line 783 "lex.yy.c"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -826,12 +839,12 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 39 "lex.l"
+#line 52 "lex.l"
 ;
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 40 "lex.l"
+#line 53 "lex.l"
 {
                 int c;
                 while ((c=yyinput())!=0){
@@ -846,87 +859,87 @@ YY_RULE_SETUP
 case 3:
 /* rule 3 can match eol */
 YY_RULE_SETUP
-#line 50 "lex.l"
+#line 63 "lex.l"
 ;
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 52 "lex.l"
+#line 65 "lex.l"
 return ADD;
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 53 "lex.l"
+#line 66 "lex.l"
 return MUL;
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 54 "lex.l"
+#line 67 "lex.l"
 return SUB;
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 55 "lex.l"
+#line 68 "lex.l"
 return DIV;
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 56 "lex.l"
+#line 69 "lex.l"
 return MOD;
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 58 "lex.l"
+#line 71 "lex.l"
 return IF;
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 59 "lex.l"
+#line 72 "lex.l"
 return ELSE;
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 60 "lex.l"
+#line 73 "lex.l"
 return WHILE;
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 61 "lex.l"
+#line 74 "lex.l"
 return BREAK;
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 62 "lex.l"
+#line 75 "lex.l"
 return CONTINUE;
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 63 "lex.l"
+#line 76 "lex.l"
 return RETURN;
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 65 "lex.l"
+#line 78 "lex.l"
 return CONST;
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
-#line 66 "lex.l"
+#line 79 "lex.l"
 return INT;
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
-#line 67 "lex.l"
+#line 80 "lex.l"
 return FLOAT;
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 68 "lex.l"
+#line 81 "lex.l"
 return VOID;
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
-#line 70 "lex.l"
+#line 83 "lex.l"
 {
                         yylval.identifier= new std::string(yytext,yyleng);
                         // cout<<yylval.string<<endl;
@@ -935,119 +948,125 @@ YY_RULE_SETUP
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
-#line 75 "lex.l"
-return INTVAL;
+#line 88 "lex.l"
+{
+                        yylval.intVal = static_cast<int32_t>(strtol(yytext, NULL, 0));
+                        return INTVAL;
+                   }
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
-#line 76 "lex.l"
-return FLOATVAL;
+#line 92 "lex.l"
+{
+    yylval.floatVal = static_cast<float>(strtod(yytext, NULL));
+    return FLOATVAL;
+    }
 	YY_BREAK
 case 22:
 YY_RULE_SETUP
-#line 78 "lex.l"
+#line 97 "lex.l"
 return ASSIGN;
 	YY_BREAK
 case 23:
 YY_RULE_SETUP
-#line 79 "lex.l"
+#line 98 "lex.l"
 return EQ;
 	YY_BREAK
 case 24:
 YY_RULE_SETUP
-#line 80 "lex.l"
+#line 99 "lex.l"
 return NEQ;
 	YY_BREAK
 case 25:
 YY_RULE_SETUP
-#line 82 "lex.l"
+#line 101 "lex.l"
 return GT;
 	YY_BREAK
 case 26:
 YY_RULE_SETUP
-#line 83 "lex.l"
+#line 102 "lex.l"
 return GTE;
 	YY_BREAK
 case 27:
 YY_RULE_SETUP
-#line 84 "lex.l"
+#line 103 "lex.l"
 return LT;
 	YY_BREAK
 case 28:
 YY_RULE_SETUP
-#line 85 "lex.l"
+#line 104 "lex.l"
 return LTE;
 	YY_BREAK
 case 29:
 YY_RULE_SETUP
-#line 87 "lex.l"
+#line 106 "lex.l"
 return AND;
 	YY_BREAK
 case 30:
 YY_RULE_SETUP
-#line 88 "lex.l"
+#line 107 "lex.l"
 return OR;
 	YY_BREAK
 case 31:
 YY_RULE_SETUP
-#line 89 "lex.l"
+#line 108 "lex.l"
 return NOT;
 	YY_BREAK
 case 32:
 YY_RULE_SETUP
-#line 91 "lex.l"
+#line 110 "lex.l"
 return LEFT_PARENTHESES;
 	YY_BREAK
 case 33:
 YY_RULE_SETUP
-#line 92 "lex.l"
+#line 111 "lex.l"
 return RIGHT_PARENTHESES;
 	YY_BREAK
 case 34:
 YY_RULE_SETUP
-#line 93 "lex.l"
+#line 112 "lex.l"
 return LEFT_BRACKETS;
 	YY_BREAK
 case 35:
 YY_RULE_SETUP
-#line 94 "lex.l"
+#line 113 "lex.l"
 return RIGHT_BRACKETS;
 	YY_BREAK
 case 36:
 YY_RULE_SETUP
-#line 95 "lex.l"
+#line 114 "lex.l"
 return LEFT_BRACES;
 	YY_BREAK
 case 37:
 YY_RULE_SETUP
-#line 96 "lex.l"
+#line 115 "lex.l"
 return RIGHT_BRACES;
 	YY_BREAK
 case 38:
 YY_RULE_SETUP
-#line 98 "lex.l"
+#line 117 "lex.l"
 return COMMA;
 	YY_BREAK
 case 39:
 YY_RULE_SETUP
-#line 99 "lex.l"
+#line 118 "lex.l"
 return SEMICOLON;
 	YY_BREAK
 case YY_STATE_EOF(INITIAL):
-#line 101 "lex.l"
+#line 120 "lex.l"
 return -1;
 	YY_BREAK
 case 40:
 YY_RULE_SETUP
-#line 102 "lex.l"
+#line 121 "lex.l"
 printf("%s\n", (std::string("Unknown token: ") + yytext).c_str()); yyterminate();
 	YY_BREAK
 case 41:
 YY_RULE_SETUP
-#line 104 "lex.l"
+#line 123 "lex.l"
 ECHO;
 	YY_BREAK
-#line 1051 "lex.cpp"
+#line 1069 "lex.yy.c"
 
 	case YY_END_OF_BUFFER:
 		{
@@ -2050,7 +2069,7 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 104 "lex.l"
+#line 123 "lex.l"
 
 
 /* int main(int argc, char *argv[]){

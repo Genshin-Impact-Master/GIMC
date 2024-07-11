@@ -8,6 +8,9 @@
     extern int yylex(void);
     extern void yyerror(const char *s);
     extern FILE *yyin;
+    extern YYLTYPE yylloc;
+    extern CompUnit* root;
+    CompUnit* root = nullptr;
 %}
 /* %option c++ */
 
@@ -133,12 +136,14 @@ CompUnit: CompUnit Decl{
         printf("CompUnit FuncDef Find\n");
     }
     | Decl{
-        $$ = new CompUnit();
+        root = new CompUnit();
+        $$ = root;
         $$ -> addDecl(DeclPtr($1));
         printf("Decl Find\n");
     }
     | FuncDef{
-        $$ = new CompUnit();
+        root = new CompUnit();
+        $$ = root;
         $$ -> addFuncDef(FuncDefPtr($1));
         printf("FuncDef Find\n");
     };
@@ -836,19 +841,34 @@ ConstExp: AddExp {
     };
 %%
 
-void yyerror(const char* s) {
-    printf("ERROR: %s\n", s);
-}
 
 int main(int argc, char *argv[]){
     /* int c; */
-    ++argv;
-    if (argc>0){yyin=fopen(argv[0], "r");}
-    return yyparse();
+    ++ argv;
+    if (argc > 0) yyin = fopen(argv[0], "r");
+    else {
+        printf("No input file\n");
+        return 0;
+    }
+    yyparse();
+    std::cout << root << std::endl;
 }
 
+CompUnit* parse(char *filename) {
+    yyin = fopen(filename, "r");
+    yyparse();
+    return root;
+}
 
-
+void yyerror(const char* s) {
+    printf("line:%d\tcolumn:%d\n", yylloc.first_line, yylloc.first_column);
+    /* char line[1024]={0};
+    for (int i=1;i<=yylloc.first_line;i++) {
+        fgets(line, 1024, yyin);
+    }
+    printf("%s\n", line); */
+    printf("ERROR: %s\n", s);
+}
 
 
 

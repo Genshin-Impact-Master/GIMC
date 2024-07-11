@@ -1,6 +1,5 @@
-
 int func(){
-    int int a, b;
+    int a, b;
     while (a) {
         b + a;
     }
