@@ -29,19 +29,20 @@
     // BlockItem* blockItem;
     Stmt* stmt;
     Exp* exp;
-    Cond* cond;
+    // Cond* cond;
+
     LVal* lVal;
-    PrimaryExp* primaryExp;
+    // PrimaryExp* primaryExp;
     Number* number;
-    UnaryExp* unaryExp;
-    UnaryOp* unaryOp;
+    Exp* unaryExp;
+    // UnaryOpType unaryOp;
     FuncRParams* funcRParams;
-    MulExp* mulExp;
-    AddExp* addExp;
-    RelExp* relExp;
-    EqExp* eqExp;
-    LAndExp* lAndExp;
-    LOrExp* lOrExp;
+    Exp* mulExp;
+    Exp* addExp;
+    Exp* relExp;
+    Exp* eqExp;
+    Exp* lAndExp;
+    Exp* lOrExp;
     ConstExp* constExp;
     BlockItems* blockItems;
     ConstDefs* constDefs;
@@ -90,12 +91,12 @@
 %type <block> Block
 %type <stmt> Stmt
 %type <exp> Exp
-%type <cond> Cond
+/* %type <cond> Cond */
 %type <lVal> LVal
-%type <primaryExp> PrimaryExp
+/* %type <primaryExp> PrimaryExp */
 %type <number> Number
 %type <unaryExp> UnaryExp
-%type <unaryOp> UnaryOp
+/* %type <unaryOp> UnaryOp */
 %type <funcRParams> FuncRParams
 %type <mulExp> MulExp
 %type <addExp> AddExp
@@ -246,7 +247,6 @@ ConstArrayInitVal: LEFT_BRACES ConstInitVals RIGHT_BRACES {
         $$ -> addDimVal(ConstInitValsPtr($2));
         auto tmp = $4 -> getDimVal();
         for (auto initvals: tmp) $$ -> addDimVal(initvals);
-        delete $4;
         printf("ConstArrayInitVal Find\n");
     }
     | LEFT_BRACES ConstArrayInitVal COMMA ConstInitVals RIGHT_BRACES {
@@ -329,6 +329,8 @@ InitVals: Exp {
         $$ -> addExp(ExpPtr($3));
         printf("InitVals Find\n");
     };
+
+
 ArrayInitVal: LEFT_BRACES InitVals RIGHT_BRACES {
         $$ = new ArrayInitVal();
         $$ -> addDimVal(InitValsPtr($2));
@@ -344,7 +346,6 @@ ArrayInitVal: LEFT_BRACES InitVals RIGHT_BRACES {
         $$ -> addDimVal(InitValsPtr($2));
         auto tmp = $4 -> getDimVal();
         for (auto initvals: tmp) $$ -> addDimVal(initvals);
-        delete $4;
         printf("ArrayInitVal Find\n");
     }
     | LEFT_BRACES ArrayInitVal COMMA InitVals RIGHT_BRACES {
@@ -357,18 +358,18 @@ ArrayInitVal: LEFT_BRACES InitVals RIGHT_BRACES {
 FuncDef: BaseType IDENTIFIER LEFT_PARENTHESES FuncFParams RIGHT_PARENTHESES Block{
         $$ = new FuncDef();
         $$ -> addReturnType($1);
-        $$ -> addIdentifier($1);
+        $$ -> addIdentifier($2);
         $$ -> addParam(true);
         $$ -> addFuncFParams(FuncFParamsPtr($4));
-        $$ -> addBlock(BlockPtr($7));
+        $$ -> addBlock(BlockPtr($6));
         printf("FuncDef Find\n");
     }
     | BaseType IDENTIFIER LEFT_PARENTHESES RIGHT_PARENTHESES Block{
         $$ = new FuncDef();
         $$ -> addReturnType($1);
-        $$ -> addIdentifier($1);
+        $$ -> addIdentifier($2);
         $$ -> addParam(false);
-        $$ -> addBlock(BlockPtr($7));
+        $$ -> addBlock(BlockPtr($5));
         printf("FuncDef Find\n");
     };
 
@@ -399,7 +400,7 @@ FuncFParam: BaseType IDENTIFIER {
         $$ -> addType($1);
         $$ -> addIdentifier($2);
         $$ -> addArray(true);
-        $$ -> addParamArrayDim(ParamArrayDimPtr($3));
+        $$ -> addArrayDim(ParamArrayDimPtr($3));
         printf("FuncFParam Find\n");
     };
 
@@ -413,19 +414,24 @@ ParamArrayDim: LEFT_BRACKETS RIGHT_BRACKETS {
     };
 
 /* Block → '{' { BlockItem } '}' */
-Block: LEFT_BRACES BlockItems RIGHT_BRACES{
+Block: LEFT_BRACES RIGHT_BRACES {
         $$ = new Block();
-        $$ -> addBlockItem(BlockItemPtr($2));
+        $$ -> addBlockItem(BlockItemsPtr(nullptr));
+        printf("Empty Block Find\n");
+    }
+    | LEFT_BRACES BlockItems RIGHT_BRACES{
+        $$ = new Block();
+        $$ -> addBlockItem(BlockItemsPtr($2));
         printf("Block Find\n");
     };
 
 BlockItems: Decl {
-        $$ = new BlockItem();
+        $$ = new BlockItems();
         $$ -> addDecl(DeclPtr($1));
         printf("BlockItems Find\n");
     }
     | Stmt {
-        $$ = new BlockItem();
+        $$ = new BlockItems();
         $$ -> addStmt(StmtPtr($1));
         printf("BlockItems Find\n");
     }
@@ -453,51 +459,107 @@ BlockItems: Decl {
 | 'break' ';' | 'continue' ';'
 | 'return' [Exp] ';' */
 Stmt: LVal ASSIGN Exp SEMICOLON {
-        
-        printf("Stmt Find\n");
+        AssignStmt* assign = new AssignStmt();
+        assign -> addLVal(LValPtr($1));
+        assign -> addExp(ExpPtr($3));
+        $$ = (Stmt*)(assign);
+        $$ -> addType(StmtType::ST_ASSIGN);
+        printf("Assign Stmt Find\n");
     }   
-    | Exp {
-        printf("Stmt Find\n");
+    | Exp SEMICOLON {
+        ExpStmt* exp = new ExpStmt();
+        exp -> addExp(ExpPtr($1));
+        $$ = (Stmt*)(exp);
+        $$ -> addType(StmtType::ST_EXP);
+        printf("Exp Stmt Find\n");
+    }
+    | SEMICOLON {
+        $$ = new Stmt();
+        $$ -> addType(StmtType::ST_BLANK);
+        printf("Blank Stmt Find\n");
     }
     | Block {
-        printf("Stmt Find\n");
+        BlockStmt* block = new BlockStmt();
+        block -> addBlock(BlockPtr($1));
+        $$ = (Stmt*)(block);
+        $$ -> addType(StmtType::ST_BLOCK);
+        printf("Block Stmt Find\n");
     }
-    | IF LEFT_PARENTHESES Cond RIGHT_PARENTHESES Stmt {
-        printf("Stmt Find\n");
+    | IF LEFT_PARENTHESES LOrExp RIGHT_PARENTHESES Stmt {
+        IfElseStmt* ifelsestmt = new IfElseStmt();
+        ifelsestmt -> addCond(ExpPtr($3));
+        ifelsestmt -> addThenStmt(StmtPtr($5));
+        ifelsestmt -> addElseStmt(StmtPtr(nullptr));
+        $$ = (Stmt*)(ifelsestmt);
+        $$ -> addType(StmtType::ST_IF);
+        printf("If Stmt Find\n");
     }
-    | WHILE LEFT_PARENTHESES Cond RIGHT_PARENTHESES Stmt {
-        printf("Stmt Find\n");
+    | IF LEFT_PARENTHESES LOrExp RIGHT_PARENTHESES Stmt ELSE Stmt {
+        IfElseStmt* ifelsestmt = new IfElseStmt();
+        ifelsestmt -> addCond(ExpPtr($3));
+        ifelsestmt -> addThenStmt(StmtPtr($5));
+        ifelsestmt -> addElseStmt(StmtPtr($7));
+        $$ = (Stmt*)(ifelsestmt);
+        $$ -> addType(StmtType::ST_IF);
+        printf("If Else Stmt Find\n");
+    }
+    | WHILE LEFT_PARENTHESES LOrExp RIGHT_PARENTHESES Stmt {
+        WhileStmt* whilestmt = new WhileStmt();
+        whilestmt -> addCond(ExpPtr($3));
+        whilestmt -> addStmt(StmtPtr($5));
+        $$ = (Stmt*)(whilestmt);
+        $$ -> addType(StmtType::ST_WHILE);
+        printf("While Stmt Find\n");
     }
     | BREAK SEMICOLON{
-        printf("Stmt Find\n");
+        $$ = new Stmt();
+        $$ -> addType(StmtType::ST_BREAK);
+        printf("Break Stmt Find\n");
     }
     | CONTINUE SEMICOLON {
-        printf("Stmt Find\n");
+        $$ = new Stmt();
+        $$ -> addType(StmtType::ST_CONTINUE);
+        printf("Continue Stmt Find\n");
     }
     | RETURN SEMICOLON {
-        printf("Stmt Find\n");
+        ReturnStmt* returnstmt = new ReturnStmt();
+        returnstmt -> addExp(nullptr);
+        $$ = (Stmt*)(returnstmt);
+        $$ -> addType(StmtType::ST_RETURN);
+        printf("Return Stmt Find\n");
     }
     | RETURN Exp SEMICOLON {
-        printf("Stmt Find\n");
+        ReturnStmt* returnstmt = new ReturnStmt();
+        returnstmt -> addExp(ExpPtr($2));
+        $$ = (Stmt*)(returnstmt);
+        $$ -> addType(StmtType::ST_RETURN);
+        printf("Return Stmt Find\n");
     };
 
 /* Exp → AddExp */
 Exp: AddExp {
+        $$ = $1;
         printf("Exp Find\n");
     };
 
 /* Cond → LOrExp */
-Cond: LOrExp{
-        printf("Cond Find\n");
-    };
 
 /* LVal → Ident {'[' Exp ']'} */
 LVal: IDENTIFIER {
-        printf("Identifier Find\n");
+        $$ = new LVal();
+        $$ -> addIdentifier($1);
+        $$ -> addIsArray(false);
+        printf("LVal Find\n");
+    }
+    | LVal LEFT_BRACKETS Exp RIGHT_BRACKETS {
+        $$ = $1;
+        $$ -> addIsArray(true);
+        $$ -> addDims(ExpPtr($3));
+        printf("LVal Find\n");
     };
 
 /* PrimaryExp → '(' Exp ')' | LVal | Number */
-PrimaryExp: LEFT_PARENTHESES Exp RIGHT_PARENTHESES {
+/* PrimaryExp: LEFT_PARENTHESES Exp RIGHT_PARENTHESES {
         printf("PrimaryExp Find\n");
     }
     | LVal {
@@ -505,121 +567,271 @@ PrimaryExp: LEFT_PARENTHESES Exp RIGHT_PARENTHESES {
     }
     | Number {
         printf("PrimaryExp Find\n");
-    };
+    }; */
 
 /* Number → IntConst | floatConst */
 Number: INTVAL  {
+        $$ = new Number();
+        $$ -> addIntVal($1);
+        $$ -> addIsFloat(false);
         printf("Number Find\n");
     }
     | FLOATVAL {
+        $$ = new Number();
+        $$ -> addFloatVal($1);
+        $$ -> addIsFloat(true);
         printf("Number Find\n");
     };
 
 /* UnaryExp → PrimaryExp | Ident '(' [FuncRParams] ')' 
             | UnaryOp UnaryExp */
-UnaryExp: PrimaryExp {
+UnaryExp: LEFT_PARENTHESES Exp RIGHT_PARENTHESES {
+        auto tmp = new UnaryExp();
+        tmp -> addExp(ExpPtr($2));
+        tmp -> addOp(UnaryOpType::UO_POS);
+        $$ = (Exp*)(tmp);
+        printf("UnaryExp Find\n");
+    }
+    | LVal {
+        auto tmp = new UnaryExp();
+        tmp -> addExp(ExpPtr($1));
+        tmp -> addOp(UnaryOpType::UO_POS);
+        tmp -> addType(ExpType::ET_LVAL);
+        $$ = (Exp*)(tmp);
+        printf("UnaryExp Find\n");
+    }
+    | Number {
+        auto tmp = new UnaryExp();
+        tmp -> addExp(ExpPtr($1));
+        tmp -> addOp(UnaryOpType::UO_POS);
+        if ($1 -> getIsFloat()) tmp -> addType(ExpType::ET_FLOAT);
+        else tmp -> addType(ExpType::ET_INT);
+        $$ = (Exp*)(tmp);
         printf("UnaryExp Find\n");
     }
     | IDENTIFIER LEFT_PARENTHESES RIGHT_PARENTHESES {
+        auto tmp = new FuncCall();
+        tmp -> addIdentifier($1);
+        auto tmp2 = new UnaryExp();
+        tmp2 -> addExp(ExpPtr(tmp));
+        tmp2 -> addOp(UnaryOpType::UO_POS);
+        tmp2 -> addType(ExpType::ET_FUNC); 
+        $$ = (Exp*)(tmp2);
         printf("UnaryExp Find\n");
     }
     | IDENTIFIER LEFT_PARENTHESES FuncRParams RIGHT_PARENTHESES{
+        auto tmp = new FuncCall();
+        tmp -> addIdentifier($1);
+        tmp -> addArgs(FuncRParamsPtr($3));
+        auto tmp2 = new UnaryExp();
+        tmp2 -> addExp(ExpPtr(tmp));
+        tmp2 -> addOp(UnaryOpType::UO_POS);
+        tmp2 -> addType(ExpType::ET_FUNC); 
+        $$ = (Exp*)(tmp2);
         printf("UnaryExp Find\n");
     }
-    | UnaryOp UnaryExp{
+    | ADD UnaryExp{
+        auto tmp = (UnaryExp*) $2;
+        tmp -> addOp(UnaryOpType::UO_POS);
+        $$ = (Exp*)(tmp);
+        printf("UnaryExp Find\n");
+    }
+    | SUB UnaryExp{
+        auto tmp = (UnaryExp*) $2;
+        tmp -> addOp(UnaryOpType::UO_NEG);
+        $$ = (Exp*)(tmp);
+        printf("UnaryExp Find\n");
+        
+    }
+    | NOT UnaryExp{
+        auto tmp = (UnaryExp*) $2;
+        tmp -> addOp(UnaryOpType::UO_NOT);
+        $$ = (Exp*)(tmp);
         printf("UnaryExp Find\n");
     };
 
 /* UnaryOp → '+' | '−' | '!'  */
-UnaryOp: ADD {
+/* UnaryOp: ADD {
+        $$ = UnaryOpType::UO_POS;
         printf("UnaryOp Find\n");
     }    
     | SUB {
+        $$ = UnaryOpType::UO_NEG;
         printf("UnaryOp Find\n");
     }
     | NOT {
+        $$ = UnaryOpType::UO_NOT;
         printf("UnaryOp Find\n");
-    };
+    }; */
 
 /* FuncRParams → Exp { ',' Exp } */
 FuncRParams: Exp {
+        $$ = new FuncRParams();
+        $$ -> addArgs(ExpPtr($1));
         printf("FuncRParams Find\n");
     }
     | FuncRParams COMMA Exp {
+        $$ = $1;
+        $$ -> addArgs(ExpPtr($3));
         printf("FuncRParams Find\n");
     };
 
 /* MulExp → UnaryExp | MulExp ('*' | '/' | '%') UnaryExp */
 MulExp: UnaryExp {
-        printf("UnaryExp Find\n");
+        $$ = $1;
+        printf("MulExp Find\n");
     }
-    | MulExp MUL UnaryOp {
+    | MulExp MUL UnaryExp {
+        auto tmp = new BinaryExp();
+        tmp -> addExp1(ExpPtr($1));
+        tmp -> addExp2(ExpPtr($3));
+        tmp -> addOp(BinOpType::OP_MUL);
+        tmp -> addType(ExpType::ET_BIN);
+        $$ = (Exp*)(tmp);
         printf("MulExp Find\n");
     }
     | MulExp DIV UnaryExp {
+        auto tmp = new BinaryExp();
+        tmp -> addExp1(ExpPtr($1));
+        tmp -> addExp2(ExpPtr($3));
+        tmp -> addOp(BinOpType::OP_DIV);
+        $$ = (Exp*)(tmp);
+        $$ -> addType(ExpType::ET_BIN);
         printf("MulExp Find\n");
     }
     | MulExp MOD UnaryExp {
+        auto tmp = new BinaryExp();
+        tmp -> addExp1(ExpPtr($1));
+        tmp -> addExp2(ExpPtr($3));
+        tmp -> addOp(BinOpType::OP_MOD);
+        $$ = (Exp*)(tmp);
+        $$ -> addType(ExpType::ET_BIN);
         printf("MulExp Find\n");
     };
 
 /* AddExp → MulExp | AddExp ('+' | '−') MulExp */
 AddExp: MulExp {
+         $$ = $1;
+    } 
+    | AddExp ADD MulExp {
+        auto tmp = new BinaryExp();
+        tmp -> addExp1(ExpPtr($1));
+        tmp -> addExp2(ExpPtr($3));
+        tmp -> addOp(BinOpType::OP_ADD);
+        $$ = (Exp*)(tmp);
+        $$ -> addType(ExpType::ET_BIN);
         printf("AddExp Find\n");
     }
-    | AddExp ADD MulExp {
-        printf("MulExp Find\n");
-    }
     | AddExp SUB MulExp {
-        printf("MulExp Find\n");
+        auto tmp = new BinaryExp();
+        tmp -> addExp1(ExpPtr($1));
+        tmp -> addExp2(ExpPtr($3));
+        tmp -> addOp(BinOpType::OP_SUB);
+        $$ = (Exp*)(tmp);
+        $$ -> addType(ExpType::ET_BIN);
+        printf("AddExp Find\n");
     };
 
 /* RelExp → AddExp | RelExp ('<' | '>' | '<=' | '>=') AddExp */
 RelExp: AddExp {
+        $$ = $1;
         printf("RelExp Find\n");
     }
     | RelExp LT AddExp {
+        auto tmp = new BinaryExp();
+        tmp -> addExp1(ExpPtr($1));
+        tmp -> addExp2(ExpPtr($3));
+        tmp -> addOp(BinOpType::OP_LT);
+        $$ = (Exp*)(tmp);
+        $$ -> addType(ExpType::ET_BIN);
         printf("RelExp Find\n");
     }
     | RelExp GT AddExp {
+        auto tmp = new BinaryExp();
+        tmp -> addExp1(ExpPtr($1));
+        tmp -> addExp2(ExpPtr($3));
+        tmp -> addOp(BinOpType::OP_GT);
+        $$ = (Exp*)(tmp);
+        $$ -> addType(ExpType::ET_BIN);
         printf("RelExp Find\n");
     }
     | RelExp LTE AddExp {
+        auto tmp = new BinaryExp();
+        tmp -> addExp1(ExpPtr($1));
+        tmp -> addExp2(ExpPtr($3));
+        tmp -> addOp(BinOpType::OP_LTE);
+        $$ = (Exp*)(tmp);
+        $$ -> addType(ExpType::ET_BIN);
         printf("RelExp Find\n");
     }
     | RelExp GTE AddExp {
+        auto tmp = new BinaryExp();
+        tmp -> addExp1(ExpPtr($1));
+        tmp -> addExp2(ExpPtr($3));
+        tmp -> addOp(BinOpType::OP_GTE);
+        $$ = (Exp*)(tmp);
+        $$ -> addType(ExpType::ET_BIN);
         printf("RelExp Find\n");
     };
 
 /* EqExp → RelExp | EqExp ('==' | '!=') RelExp */
 EqExp: RelExp {
+        $$ = $1;
         printf("EqExp Find\n");
     }
     | EqExp EQ RelExp {
+        auto tmp = new BinaryExp();
+        tmp -> addExp1(ExpPtr($1));
+        tmp -> addExp2(ExpPtr($3));
+        tmp -> addOp(BinOpType::OP_EQ);
+        $$ = (Exp*)(tmp);
+        $$ -> addType(ExpType::ET_BIN);
         printf("EqExp Find\n");
     }
     | EqExp NEQ RelExp {
+        auto tmp = new BinaryExp();
+        tmp -> addExp1(ExpPtr($1));
+        tmp -> addExp2(ExpPtr($3));
+        tmp -> addOp(BinOpType::OP_NEQ);
+        $$ = (Exp*)(tmp);
+        $$ -> addType(ExpType::ET_BIN);
         printf("EqExp Find\n");
     };
 
 /* LAndExp → EqExp | LAndExp '&&' EqExp */
 LAndExp: EqExp {
+        $$ = $1;
         printf("LAndExp Find\n");
     }
     | LAndExp AND EqExp {
+        auto tmp = new BinaryExp();
+        tmp -> addExp1(ExpPtr($1));
+        tmp -> addExp2(ExpPtr($3));
+        tmp -> addOp(BinOpType::OP_AND);
+        $$ = (Exp*)(tmp);
+        $$ -> addType(ExpType::ET_BIN);
         printf("LAndExp Find\n");
     };
 
 /* LOrExp → LAndExp | LOrExp '||' LAndExp */
 LOrExp: LAndExp {
+        $$ = $1;
         printf("LOrExp Find\n");
     }
     | LOrExp OR LAndExp {
+        auto tmp = new BinaryExp();
+        tmp -> addExp1(ExpPtr($1));
+        tmp -> addExp2(ExpPtr($3));
+        tmp -> addOp(BinOpType::OP_OR);
+        $$ = (Exp*)(tmp);
+        $$ -> addType(ExpType::ET_BIN);
         printf("LOrExp Find\n");
     };
 
 /* ConstExp → AddExp  */
 ConstExp: AddExp {
+        $$ = new ConstExp();
+        $$ -> addExp(ExpPtr($1));
         printf("ConstExp Find\n");
     };
 %%

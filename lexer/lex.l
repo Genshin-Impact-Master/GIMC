@@ -72,8 +72,14 @@ TOKEN_IDENTIFIER ({LETTER}|_)({DIGIT}|{LETTER}|_)*
                         // cout<<yylval.string<<endl;
                         return IDENTIFIER;
                     }
-{TOKEN_INT_VALUE}  return INTVAL;
-{TOKEN_FLOAT_VALUE} return FLOATVAL;
+{TOKEN_INT_VALUE}  {
+                        yylval.int_val = static_cast<int32_t>(strtol(yytext, NULL, 0));
+                        return INTVAL;
+                   }
+{TOKEN_FLOAT_VALUE} {
+    yylval.float_val = static_cast<float>(strtod(yytext, NULL));
+    return FLOATVAL;
+    }
 
 "="                 return ASSIGN;
 "=="                return EQ;

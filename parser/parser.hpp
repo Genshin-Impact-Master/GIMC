@@ -98,7 +98,7 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 14 "paser.y"
+#line 14 "parser.y"
 
     
     CompUnit* compUnit;
@@ -114,22 +114,23 @@ union YYSTYPE
     FuncFParams* funcFParams;
     FuncFParam* funcFParam;
     Block* block;
-    BlockItem* blockItem;
+    // BlockItem* blockItem;
     Stmt* stmt;
     Exp* exp;
-    Cond* cond;
+    // Cond* cond;
+
     LVal* lVal;
-    PrimaryExp* primaryExp;
+    // PrimaryExp* primaryExp;
     Number* number;
-    UnaryExp* unaryExp;
-    UnaryOp* unaryOp;
+    Exp* unaryExp;
+    // UnaryOpType unaryOp;
     FuncRParams* funcRParams;
-    MulExp* mulExp;
-    AddExp* addExp;
-    RelExp* relExp;
-    EqExp* eqExp;
-    LAndExp* lAndExp;
-    LOrExp* lOrExp;
+    Exp* mulExp;
+    Exp* addExp;
+    Exp* relExp;
+    Exp* eqExp;
+    Exp* lAndExp;
+    Exp* lOrExp;
     ConstExp* constExp;
     BlockItems* blockItems;
     ConstDefs* constDefs;
@@ -138,13 +139,13 @@ union YYSTYPE
     ConstInitVals* constInitVals;
     InitVals* initVals;
     ArrayInitVal* arrayInitVal;
-
+    ParamArrayDim* paramArrayDim;
     BaseType type;
     int32_t intVal;
     float floatVal;
     string* identifier;
 
-#line 148 "parser.hpp"
+#line 149 "parser.hpp"
 
 };
 typedef union YYSTYPE YYSTYPE;

@@ -6,3 +6,7 @@ tmp*
 a.out
 # cmake build 文件夹
 build
+logger
+main
+main.cpp
+local
