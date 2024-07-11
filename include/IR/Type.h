@@ -76,15 +76,14 @@ public:
 class FloatType final : public TypeBase {  
 public:
   /**
-   * @todo 构造函数
+   * 构造函数
   */
   FloatType() {}
 
   /**
    * 浮点数获取类型名用于 emit llvm
-   * @todo
   */
-  std::string getName() const override { return "Float"; }  
+  std::string getName() const override { return "float"; }  
 };
 
 // void 数据类型
@@ -128,6 +127,7 @@ extern baseTypePtr i1Type;           // 1 位长的 int 类型实例
 extern baseTypePtr floatType;
 extern baseTypePtr voidType;
 extern baseTypePtr int32PointerType;
+extern baseTypePtr floatPointerType;
 
 GIMC_NAMESPACE_END
 

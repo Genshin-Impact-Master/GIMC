@@ -184,6 +184,30 @@ Instruction* IRBuilder::createGEPInst(Value *ptr, int offset, BBlock *parent) {
   parent = checkBlockParent(parent);
   return createGEPInst(std::to_string(parent->getCnt()), ptr, offset, parent);
 }
+
+Instruction* IRBuilder::createInt2FpInst(const std::string &name, Value *i32, BBlock *parent) {
+  parent = checkBlockParent(parent);
+  Int2Fp *inst = new Int2Fp(name, floatType, parent, i32);  // 一定转换为 floatType
+  parent->addInst(inst);
+  return inst;
+}
+
+Instruction* IRBuilder::createInt2FpInst(Value *i32, BBlock *parent) {
+  parent = checkBlockParent(parent);
+  return createInt2FpInst(std::to_string(parent->getCnt()), i32, parent);
+}
+
+Instruction* IRBuilder::createFp2IntInst(const std::string &name, Value *fp, BBlock *parent) {
+  parent = checkBlockParent(parent);
+  Fp2Int *inst = new Fp2Int(name, i32Type, parent, fp);   // 一定转换为 i32
+  parent->addInst(inst);
+  return inst;
+}
+
+Instruction* IRBuilder::createFp2IntInst(Value *i32, BBlock *parent) {
+  parent = checkBlockParent(parent);
+  return createFp2IntInst(std::to_string(parent->getCnt()), i32, parent);
+}
 /******************************************************************************/
 /*                                生成 LLVM IR                                */
 /*****************************************************************************/
@@ -329,5 +353,15 @@ void IRBuilder::emitIRInst(Instruction *inst) {
     irout << '\t' << inst->getFullName() << " = getelementptr inbounds " << ptr->getType()->getDetailName()
           << ", ptr " << ptr->getFullName() << ", " << AddrLenPtr->getName() << " 0, " 
           << AddrLenPtr->getName() << " " << std::to_string(offset->getInt()) << std::endl;
+  }
+  // Int2Fp 指令
+  else if (inst->kind_ == InstKind::Int2Fp || inst->kind_ == InstKind::Fp2Int) {
+    Instruction *i = dynamic_cast<Int2Fp*>(inst);
+    if (i == nullptr) {
+      i = dynamic_cast<Fp2Int*>(inst);
+    }
+    Value *i32 = i->ops_[0];
+    irout << '\t' << inst->getFullName() << " = " << INST_STRING << i32->getTypeName() << " " 
+          << i32->getFullName() << " to " << i->getTypeName() << std::endl; 
   }
 }

@@ -6,19 +6,27 @@
 #include "Value.h"
 #include <cstdint>
 #include <memory>
+#include <iomanip>
+#include <sstream>
+
 
 GIMC_NAMESPACE_BEGIN
 
+typedef union IntFloat {
+  int i;                    // 共用体作为 int
+  float f;                  // 共用体作为 float
+} IntFloat;
+
 class ConstValue : public Value {
 protected:
-  uint64_t value_;
+  IntFloat value_;
 public:
   /**
    * 实际上此函数不会被直接调用，只会在生成子类对象时调用
    * 因为 Type 仅有具体的 Integer or Float
   */
-  ConstValue(baseTypePtr type, uint64_t value)
-    : Value("anonymous", type), value_(value) {}
+  ConstValue(baseTypePtr type)
+    : Value("anonymous", type) {}
   
   // @C++_Learn 利用模板方法实现一个函数不同类型返回值
   // template<typename T>
@@ -28,15 +36,11 @@ public:
 class ConstIntValue final : public ConstValue {
 private:
 public:
-  ConstIntValue(baseTypePtr ty, uint64_t value) : ConstValue(ty, value) {}
-  ConstIntValue(uint64_t value) : ConstValue(i32Type, value) {}
+  ConstIntValue(baseTypePtr ty, int value) : ConstValue(ty) {value_.i = value;}
+  ConstIntValue(int value) : ConstValue(i32Type) {value_.i = value;}
   
-  /**
-   * @todo 暂时只支持了符号整数，还有无符号整数
-  */
   // 返回 符号整数
-  int32_t getInt() {return static_cast<int32_t>(value_);}
-  // int32_t getValue() override {return static_cast<int32_t>(value_);}
+  int32_t getInt() {return value_.i;}
 
   // 重载 Value 中的 getName
   std::string& getName() override {
@@ -59,34 +63,18 @@ public:
 class ConstFloatValue final : public ConstValue {
 private:
 public:
-  ConstFloatValue(double value)
-    : ConstValue(floatType, static_cast<uint64_t>(value)) {}
+  ConstFloatValue(float value)
+    : ConstValue(floatType) {value_.f = value;}
   
+  // 重载 Value 中的 getName
+  std::string& getName() override;
+
+  // 重载 Value 中的 getFullName
+  std::string& getFullName() override;
+
   // 返回 符号浮点数
-  double getFloat() {return static_cast<double>(value_);}
-  // double getValue() override {return static_cast<double>(value_);}
+  float getFloat() {return value_.f;}
 };
-
-// extern ConstValue *boolTrue;
-
-// @C++_Learn 模板方法特化
-// template<>
-// int32_t ConstValue::getValue<int32_t>() {
-//   ConstIntValue *derived = dynamic_cast<ConstIntValue*>(this);
-//   if (derived) {
-//     return derived->getValue();
-//   }
-//   throw std::bad_cast();          // @C++_Learn 类型不匹配抛出异常
-// }
-
-// template<>
-// double ConstValue::getValue<double>() {
-//   ConstFloatValue *derived = dynamic_cast<ConstFloatValue*>(this);
-//   if (derived) {
-//     return derived->getValue();
-//   }
-//   throw std::bad_cast();          // @C++_Learn 类型不匹配抛出异常
-// }
 
 GIMC_NAMESPACE_END
 

@@ -133,6 +133,18 @@ public:
   Instruction* createGEPInst(Value *ptr, int offset, BBlock *parent  = nullptr);
 
   /**
+   * 创建 Fp2Int 指令
+   */
+  Instruction* createFp2IntInst(const std::string &name, Value *fp, BBlock *parent = nullptr);
+  Instruction* createFp2IntInst(Value *fp, BBlock *parent = nullptr);
+
+  /**
+   * 创建 Int2Fp 指令
+   */
+  Instruction* createInt2FpInst(const std::string &name, Value *i32, BBlock *parent = nullptr);
+  Instruction* createInt2FpInst(Value *i32, BBlock *parent = nullptr);
+
+  /**
    * 检查是否存在 BBlock
   */
   BBlock* checkBlockParent(BBlock* parent);

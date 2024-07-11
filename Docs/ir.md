@@ -13,6 +13,10 @@ Value
             > Sub
             > Div
             > Mul
+            > Addf
+            > Subf
+            > Divf
+            > Mulf
         > Alloca
         > Store
         > Load

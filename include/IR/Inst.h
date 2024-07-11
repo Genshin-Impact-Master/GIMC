@@ -22,6 +22,10 @@ enum class InstKind {
   Sub,
   Mul,
   Div,
+  Addf,
+  Subf,
+  Mulf,
+  Divf,
   BinaryOpEnd,
   Alloca,
   Store,
@@ -30,7 +34,9 @@ enum class InstKind {
   Ret,
   Icmp,
   Br,
-  GEP
+  GEP,
+  Fp2Int,
+  Int2Fp
 };
 
 /**
@@ -224,6 +230,28 @@ public:
       BBlock *parent,
       Value *ptr,
       int offset);
+};
+
+/**
+ * Fp2Int 指令，Float 转为 int
+ */
+class Fp2Int final : public Instruction {
+public:
+  Fp2Int(const std::string &name,
+          baseTypePtr type,
+          BBlock *parent,
+          Value *fp);
+};
+
+/**
+ * Int2Fp 指令，int 转为 Float
+ */
+class Int2Fp final : public Instruction {
+public:
+  Int2Fp(const std::string &name,
+          baseTypePtr type,
+          BBlock *parent,
+          Value *i32);
 };
 
 GIMC_NAMESPACE_END

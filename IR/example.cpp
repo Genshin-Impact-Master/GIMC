@@ -310,7 +310,46 @@ int main(int argc, char** args) {
   
   // 由 IRBuilder 发射 LLVM 代码
   builder.emitIRModule(myModule);
-  
+
+  /**
+   * eg.7. 支持浮点数运算与整数浮点数转换
+   * int main() {
+          float x = 1.2, y = 3.62;
+          int z = 2;
+          x = ((float)z + y/(x-2)) * 6;
+          return x;
+      }
+      结果 241
+   */
+  newModule(builder, myModule);
+  //  初始化变量
+  Instruction *eg7_x_ptr = builder.createAllocaInst(floatPointerType);
+  Instruction *eg7_y_ptr = builder.createAllocaInst(floatPointerType);
+  Instruction *eg7_z_ptr = builder.createAllocaInst(int32PointerType);
+  builder.createStoreInst(new ConstFloatValue(1.2f), eg7_x_ptr);
+  builder.createStoreInst(new ConstFloatValue(3.62f), eg7_y_ptr);
+  builder.createStoreInst(new ConstIntValue(2), eg7_z_ptr);
+  // signed int 2 fp
+  Instruction *eg7_load_z = builder.createLoadInst("z1", i32Type, eg7_z_ptr);
+  Instruction *eg7_i2fp_z = builder.createInt2FpInst("i2fp", eg7_load_z);
+  // 浮点数加减乘除
+  Instruction *eg7_load_y = builder.createLoadInst("y1", floatType, eg7_y_ptr);
+  Instruction *eg7_load_x = builder.createLoadInst("x1", floatType, eg7_x_ptr);
+  Instruction *eg7_sub = builder.createBinaryInst(InstKind::Subf, eg7_load_x, new ConstFloatValue(2.0));
+  Instruction *eg7_div = builder.createBinaryInst(InstKind::Divf, eg7_load_y, eg7_sub);
+  Instruction *eg7_add = builder.createBinaryInst(InstKind::Addf, eg7_i2fp_z, eg7_div);
+  Instruction *eg7_mul = builder.createBinaryInst(InstKind::Mulf, eg7_add, new ConstFloatValue(6.0));
+  // fp 2 signed int
+  builder.createStoreInst(eg7_mul, eg7_x_ptr);
+  Instruction *eg7_load_x2 = builder.createLoadInst(floatType, eg7_x_ptr);
+  Instruction *eg7_fp2i_x = builder.createFp2IntInst("fp2i", eg7_load_x2);
+  builder.createRetInst(eg7_fp2i_x);
+
+  builder.emitIRModule(myModule);
+
+
+
+
   // 关闭 builder 的 irout 文件输出流
   builder.close();
 }

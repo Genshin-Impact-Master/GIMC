@@ -10,6 +10,7 @@ baseTypePtr i1Type = std::make_shared<IntegerType>(1);
 baseTypePtr floatType = std::make_shared<FloatType>();
 baseTypePtr voidType = std::make_shared<VoidType>();
 baseTypePtr int32PointerType = std::make_shared<PointerType>(i32Type);
+baseTypePtr floatPointerType = std::make_shared<PointerType>(floatType);
 
 std::string PointerType::getDetailName() {
   if (!isArray()) {

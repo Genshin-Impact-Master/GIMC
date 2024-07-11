@@ -99,3 +99,29 @@ GEP::GEP(const std::string &name,
             ops_.push_back(ptr);
             ops_.push_back(new ConstIntValue(AddrLenPtr, offset));
           }
+
+Fp2Int::Fp2Int(const std::string &name,
+                baseTypePtr type,
+                BBlock *parent,
+                Value *fp) : Instruction(name, type, InstKind::Fp2Int, parent) {
+                  // 对于类型检查
+                  if (!TypeBase::isFloat(fp->getType())) {
+                    // 若 fp 的类型非浮点数
+                    fprintf(stderr, "Not a float!\n");
+                    exit(1);
+                  }
+                  ops_.push_back(fp);
+                }
+
+Int2Fp::Int2Fp(const std::string &name,
+                baseTypePtr type,
+                BBlock *parent,
+                Value *i32) : Instruction(name, type, InstKind::Int2Fp, parent) {
+                  // 对于类型检查
+                  if (!TypeBase::isInteger(i32->getType())) {
+                    // 若 i32 的类型非整数
+                    fprintf(stderr, "Not a int!\n");
+                    exit(1);
+                  }
+                  ops_.push_back(i32);
+                }

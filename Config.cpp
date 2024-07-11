@@ -4,8 +4,8 @@ USING_GIMC_NAMESPACE
 GIMC_NAMESPACE_BEGIN
 
 std::vector<std::string> ST_Insts = {
-  "BinaryOPBegin", "add ", "sub ", "mul ", "sdiv ", "BinaryOPEND", "alloca ", "store ", "load ",
-  "call ", "ret ", "icmp ", "br "
+  "BinaryOPBegin", "add ", "sub ", "mul ", "sdiv ", "fadd ", "fsub ", "fmul ", "fdiv ", "BinaryOPEND", "alloca ", "store ", "load ",
+  "call ", "ret ", "icmp ", "br ", "gep ", " fptosi ", "sitofp "
 };
 
 
