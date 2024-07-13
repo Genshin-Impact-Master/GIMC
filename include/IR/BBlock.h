@@ -6,6 +6,7 @@
 #include "Function.h"
 #include <string>
 #include <vector>
+#include <unordered_set>
 #include "../Utils/IList.h"
 
 USING_GIMC_NAMESPACE
@@ -22,7 +23,11 @@ friend class IRBuilder;
 private:
   Function *parent_;                                          // 指向所属的 Function
   IList<BBlock, Instruction> instList_;                       // 侵入式链表，结点全为 instruction  
-  INode<BBlock> blkNode_;                                     // 自身对应一个 BBlock 的结点
+  INode<BBlock> blkNode_;                                     // 自身对应一个 BBlock 的侵入式链表结点
+
+  // CFG 组件
+  std::unordered_set<BBlock*> pres_;                                   // 该基本块的前驱结点
+  std::unordered_set<BBlock*> succs_;                                  // 该基本块的后继结点
 public:
   BBlock(const std::string &name, baseTypePtr type, Function *parent);
   
@@ -43,6 +48,18 @@ public:
 
   // 获取 Instruction List
   IList<BBlock, Instruction> &getInstList() {return instList_;}
+
+  // 获取前驱结点链表
+  std::unordered_set<BBlock*>& getPres() {return pres_;}
+
+  // 获取后继结点链表
+  std::unordered_set<BBlock*>& getSuccs() {return succs_;}
+
+  // 向前驱结点链表中添加结点
+  void addPreBBlock(BBlock *bBlk) {pres_.insert(bBlk);}
+
+  // 向后继结点链表中添加结点
+  void addSuccBBlock(BBlock *bBlk) {succs_.insert(bBlk);}
 };
 
 

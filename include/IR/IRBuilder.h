@@ -118,8 +118,14 @@ public:
   /**
    * 创建 icmp 指令 
   */
-  Instruction* createIcmpInst(const std::string &name, CondKind kind, Value *first, Value *second, BBlock *parent = nullptr);
-  Instruction* createIcmpInst(CondKind kind, Value *first, Value *second, BBlock *parent = nullptr);
+  Instruction* createIcmpInst(const std::string &name, ICondKind kind, Value *first, Value *second, BBlock *parent = nullptr);
+  Instruction* createIcmpInst(ICondKind kind, Value *first, Value *second, BBlock *parent = nullptr);
+
+  /**
+   * 创建 fcmp 指令
+   */
+  Instruction* createFcmpInst(const std::string &name, FCondKind kind, Value *first, Value *second, BBlock *parent = nullptr);
+  Instruction* createFcmpInst(FCondKind kind, Value *first, Value *second, BBlock *parent = nullptr);
 
   /**
    * 创建 Br 指令，Br 指令不需要名称
@@ -144,6 +150,11 @@ public:
   Instruction* createInt2FpInst(const std::string &name, Value *i32, BBlock *parent = nullptr);
   Instruction* createInt2FpInst(Value *i32, BBlock *parent = nullptr);
 
+  /**
+   * 创建 Zext 指令
+   */
+  Instruction* createZextInst(const std::string &name, baseTypePtr type, Value *proto, BBlock *parent = nullptr);
+  Instruction* createZextInst(baseTypePtr type, Value *proto, BBlock *parent = nullptr);
   /**
    * 检查是否存在 BBlock
   */

@@ -20,6 +20,8 @@ add_executable(gimc_ir
   include/IR/Value.h
   include/Utils/ErrorConfig.h
   include/Utils/IList.h
+  include/Pass/Pass.h
+  include/Pass/Pres_Succs_Calculate.h
   include/Config.h
   Config.cpp
   IR/GlobalVar.cpp
@@ -32,6 +34,7 @@ add_executable(gimc_ir
   IR/example.cpp
   IR/IRBuilder.cpp
   IR/Value.cpp
+  Pass/Pres_Succs_Calculate.cpp
 )
 
 # 可执行文件 gimc 的依赖文件
@@ -42,7 +45,10 @@ add_executable(gimc_ir
 # 编译参数
 # SET( CMAKE_CXX_FLAGS "--std=c++17 -O2 -lm ")
 # 先支持调试
-SET( CMAKE_CXX_FLAGS "--std=c++17 -g -lm ")
+SET( CMAKE_CXX_FLAGS "--std=c++17 -g -lm")
+
+# 增加 graphviz 动态链接库
+target_link_libraries(gimc_ir -lgvc -lcgraph -lcdt)
 
 # build 目录位置
 set(CMAKE_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/build)

@@ -143,16 +143,28 @@ Instruction* IRBuilder::createRetInst(Value *retValue, BBlock *parent) {
   return createRetInst(std::to_string(parent->getCnt()), retValue, parent);
 }
 
-Instruction* IRBuilder::createIcmpInst(const std::string &name, CondKind kind, Value *first, Value *second, BBlock *parent) {
+Instruction* IRBuilder::createIcmpInst(const std::string &name, ICondKind kind, Value *first, Value *second, BBlock *parent) {
   parent = checkBlockParent(parent);
   Icmp *inst = new Icmp(name, i1Type, parent, kind, first, second);
   parent->addInst(inst);
   return inst;
 }
 
-Instruction* IRBuilder::createIcmpInst(CondKind kind, Value *first, Value *second, BBlock *parent) {
+Instruction* IRBuilder::createIcmpInst(ICondKind kind, Value *first, Value *second, BBlock *parent) {
   parent = checkBlockParent(parent);
   return createIcmpInst(std::to_string(parent->getCnt()), kind, first, second, parent);
+}
+
+Instruction* IRBuilder::createFcmpInst(const std::string &name, FCondKind kind, Value *first, Value *second, BBlock *parent) {
+  parent = checkBlockParent(parent);
+  Fcmp *inst = new Fcmp(name, i1Type, parent, kind, first, second);
+  parent->addInst(inst);
+  return inst;
+}
+
+Instruction* IRBuilder::createFcmpInst(FCondKind kind, Value *first, Value *second, BBlock *parent) {
+  parent = checkBlockParent(parent);
+  return createFcmpInst(std::to_string(parent->getCnt()), kind, first, second, parent);
 }
 
 Instruction* IRBuilder::createBrInst(Value *cond, BBlock *ifTure, BBlock *ifFalse, BBlock *parent) {
@@ -207,6 +219,18 @@ Instruction* IRBuilder::createFp2IntInst(const std::string &name, Value *fp, BBl
 Instruction* IRBuilder::createFp2IntInst(Value *i32, BBlock *parent) {
   parent = checkBlockParent(parent);
   return createFp2IntInst(std::to_string(parent->getCnt()), i32, parent);
+}
+
+Instruction* IRBuilder::createZextInst(const std::string &name, baseTypePtr type, Value *proto, BBlock *parent) {
+  parent = checkBlockParent(parent);
+  Zext *inst = new Zext(name, type, parent, proto);
+  parent->addInst(inst);
+  return inst;
+}
+
+Instruction* IRBuilder::createZextInst(baseTypePtr type, Value *proto, BBlock *parent) {
+  parent = checkBlockParent(parent);
+  return createZextInst(std::to_string(parent->getCnt()), type, proto, parent);
 }
 /******************************************************************************/
 /*                                生成 LLVM IR                                */
@@ -278,7 +302,7 @@ void IRBuilder::emitIRInst(Instruction *inst) {
   if (inst->kind_ > InstKind::BinaryOPBegin && inst->kind_ < InstKind::BinaryOpEnd) {
     BinaryInst* i = dynamic_cast<BinaryInst*>(inst);
     irout << '\t' << i->getFullName() << " = " << INST_STRING << i->getTypeName() << " "
-          << i->ops_[0]->getFullName() << ", " << i->ops_[1]->getFullName() << std::endl;
+          << i->getLhs()->getFullName() << ", " << i->getRhs()->getFullName() << std::endl;
   }
   // alloca 指令
   else if (inst->kind_ == InstKind::Alloca) {
@@ -290,14 +314,14 @@ void IRBuilder::emitIRInst(Instruction *inst) {
   // store 指令
   else if (inst->kind_ == InstKind::Store) {
     Store *i = dynamic_cast<Store*>(inst);
-    irout << "\tstore " << i->ops_[0]->getTypeName() << " " << i->ops_[0]->getFullName();
-        irout << ", ptr " << i->ops_[1]->getFullName()<< std::endl;
+    irout << "\tstore " << i->getInput()->getTypeName() << " " << i->getInput()->getFullName();
+        irout << ", ptr " << i->getPtr()->getFullName()<< std::endl;
   }
   // load 指令
   else if (inst->kind_ == InstKind::Load) {
     Load *i = dynamic_cast<Load*>(inst);
     irout << '\t' << i->getFullName() << " = " << INST_STRING
-          << i->getTypeName() << ", ptr " << i->ops_[0]->getFullName()<< std::endl;
+          << i->getTypeName() << ", ptr " << i->getPtr()->getFullName()<< std::endl;
   }
   // call 指令
   else if (inst->kind_ == InstKind::Call) {
@@ -308,8 +332,8 @@ void IRBuilder::emitIRInst(Instruction *inst) {
     }
     else irout << '\t';
     irout << INST_STRING
-          << i->ops_[0]->getTypeName() << " " << i->ops_[0]->getFullName() << "(";
-    std::vector<Value*> &argus = i->argus_;
+          << i->getFunc()->getTypeName() << " " << i->getFunc()->getFullName() << "(";
+    std::vector<Value*> &argus = i->getArgus();
     for (int i = 0; i < static_cast<int>(argus.size()) - 1; i++) {
       irout << argus[i]->getTypeName() << " " << argus[i]->getFullName() << ",";
     }
@@ -322,46 +346,58 @@ void IRBuilder::emitIRInst(Instruction *inst) {
   else if (inst->kind_ == InstKind::Ret) {
     Ret *i = dynamic_cast<Ret*>(inst);
     irout << '\t' << INST_STRING << i->getTypeName() << " "
-          << i->ops_[0]->getFullName() << std::endl;
+          << i->getRetValue()->getFullName() << std::endl;
   }
   // icmp 指令
   else if (inst->kind_ == InstKind::Icmp) {
     Icmp *i = dynamic_cast<Icmp*>(inst);
-    irout << '\t' << i->getFullName() << " = " << INST_STRING << ST_Conds[static_cast<int>(i->ckind_)]
-          << i->ops_[0]->getTypeName() << " " << i->ops_[0]->getFullName() << ", " << i->ops_[1]->getFullName() << std::endl; 
+    irout << '\t' << i->getFullName() << " = " << INST_STRING << ST_IConds[static_cast<int>(i->ckind_.iCond)]
+          << i->getFirst()->getTypeName() << " " << i->getFirst()->getFullName() << ", " << i->getSecond()->getFullName() << std::endl; 
   } 
+  // fcmp 指令
+  else if (inst->kind_ == InstKind::Fcmp) {
+    Fcmp *i = dynamic_cast<Fcmp*>(inst);
+    irout << '\t' << i->getFullName() << " = " << INST_STRING << ST_FConds[static_cast<int>(i->ckind_.fCond)]
+          << i->getFirst()->getTypeName() << " " << i->getFirst()->getFullName() << ", " << i->getSecond()->getFullName() << std::endl; 
+  }
   // Br 指令
   else if (inst->kind_ == InstKind::Br) {
     Br *i = dynamic_cast<Br*>(inst);
     irout << '\t' << INST_STRING;
-    if (i->ops_[0] != nullptr && i->ops_[1] != nullptr && i->ops_[2] != nullptr) {
+    if (!i->isUnconditional()) {
       // 有条件跳转
-      Value *cond = i->ops_[0];
+      Value *cond = i->getCond();
       irout << cond->getTypeName() << " " << cond->getFullName() << ", label "
-            << i->ops_[1]->getFullName() << ", label " << i->ops_[2]->getFullName() << std::endl; 
+            << i->getTrueBBlk()->getFullName() << ", label " << i->getFalseBBlk()->getFullName() << std::endl; 
     }
-    else if (i->ops_[0] == nullptr && i->ops_[1]) {
+    else {
       // 无条件跳转
-      irout << "label " << i->ops_[1]->getFullName() << std::endl;
+      irout << "label " << i->getTrueBBlk()->getFullName() << std::endl;
     }
   }
   // GEP 指令
   else if (inst->kind_ == InstKind::GEP) {
     GEP *i = dynamic_cast<GEP*>(inst);
-    Value *ptr = i->ops_[0];
-    ConstIntValue *offset = dynamic_cast<ConstIntValue*>(i->ops_[1]);
+    Value *ptr = i->getPtr();
+    ConstIntValue *offset = dynamic_cast<ConstIntValue*>(i->getOffsetValue());
     irout << '\t' << inst->getFullName() << " = getelementptr inbounds " << ptr->getType()->getDetailName()
           << ", ptr " << ptr->getFullName() << ", " << AddrLenPtr->getName() << " 0, " 
           << AddrLenPtr->getName() << " " << std::to_string(offset->getInt()) << std::endl;
   }
-  // Int2Fp 指令
+  // Int2Fp | Fp2Int 指令
   else if (inst->kind_ == InstKind::Int2Fp || inst->kind_ == InstKind::Fp2Int) {
     Instruction *i = dynamic_cast<Int2Fp*>(inst);
     if (i == nullptr) {
       i = dynamic_cast<Fp2Int*>(inst);
     }
     Value *i32 = i->ops_[0];
-    irout << '\t' << inst->getFullName() << " = " << INST_STRING << i32->getTypeName() << " " 
+    irout << '\t' << i->getFullName() << " = " << INST_STRING << i32->getTypeName() << " " 
           << i32->getFullName() << " to " << i->getTypeName() << std::endl; 
+  }
+  else if (inst->kind_ == InstKind::Zext) {
+    Zext *i = dynamic_cast<Zext*>(inst);
+    Value *proto = i->getProto();
+    irout << '\t' << i->getFullName() << " = " << INST_STRING << proto->getTypeName()
+          << proto->getFullName() << " to " << i->getTypeName() << std::endl; 
   }
 }

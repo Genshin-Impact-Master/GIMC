@@ -4,6 +4,7 @@
 #include "../include/IR/IRBuilder.h"
 #include "../include/IR/Type.h"
 #include "../include/Config.h"
+#include "../include/Pass/Pres_Succs_Calculate.h"
 
 USING_GIMC_NAMESPACE
 
@@ -16,7 +17,7 @@ Function *putch;
 Function *putint;
 Function *getch;
 Function *getint;
-Function *memset;
+Function *memset_;
 
 // 每个 example 必须包含
 Function *myFunc;                               // main 函数
@@ -30,7 +31,7 @@ Module* initialize(IRBuilder &builder) {
   putint = builder.createFunction("putint", voidType, putint_arguTypes);
   getch = builder.createFunction("getch", i32Type, Zero_Argu_Type_List);
   getint = builder.createFunction("getint", i32Type, Zero_Argu_Type_List);              // getint 为零参函数，使用全局零参空向量，见 Config.cpp
-  memset = builder.createFunction("myMemset", voidType, memset_arguTypes);
+  memset_ = builder.createFunction("myMemset", voidType, memset_arguTypes);
   putch_arguTypes.push_back(i32Type);
   putint_arguTypes.push_back(i32Type);
   memset_arguTypes.push_back(std::make_shared<PointerType>(i32Type));  
@@ -47,7 +48,7 @@ void addLib() {
   declares->push_back(getint);
   declares->push_back(putch);
   declares->push_back(putint);
-  declares->push_back(memset);
+  declares->push_back(memset_);
 
   // Module 中加入 main
   defs->push_back(myFunc);
@@ -181,7 +182,7 @@ int main(int argc, char** args) {
   builder.createCallInst("call4", putch, eg3_argus2);
   builder.createRetInst(new ConstIntValue(0));
  
-    // 由 IRBuilder 发射 LLVM 代码
+  // 由 IRBuilder 发射 LLVM 代码
   builder.emitIRModule(myModule);
 
 
@@ -204,7 +205,7 @@ int main(int argc, char** args) {
 
   Instruction *eg4_call1 = builder.createCallInst("call1", getint, Zero_Argu_List);
   Instruction *eg4_call2 = builder.createCallInst("call2", getint, Zero_Argu_List);
-  Instruction *eg4_cmp = builder.createIcmpInst("icmp", CondKind::Sle, eg4_call1, eg4_call2);
+  Instruction *eg4_cmp = builder.createIcmpInst("icmp", ICondKind::Sle, eg4_call1, eg4_call2);
   // 首先为 entry BBlock 新建两个后继 BBlock if_true,if_false，以及最终汇合 BBlock if_end
   BBlock *eg4_if_end = builder.createBBlock("eg4_if_end", voidType);
   Instruction *eg4_ret = builder.createRetInst(new ConstIntValue(0));
@@ -226,6 +227,15 @@ int main(int argc, char** args) {
 
   // 由 IRBuilder 发射 LLVM 代码
   builder.emitIRModule(myModule);
+
+  /**
+   * eg 4.1 前驱后继结点 PASS 检测，绘制 CFG
+   */
+  Pres_Succs_Calculate::calculate_Func(myFunc);
+#ifdef PRINT_CFG
+  // 使用 graphviz 画 main 的数据流图
+  myFunc->drawCFG();
+#endif
 
   /**
    * eg.5 支持全局变量
@@ -301,7 +311,7 @@ int main(int argc, char** args) {
   eg6_argus_1.push_back(eg6_gep_5);
   eg6_argus_1.push_back(new ConstIntValue(0));
   eg6_argus_1.push_back(new ConstIntValue(3*2*4));
-  builder.createCallInst(memset, eg6_argus_1);
+  builder.createCallInst(memset_, eg6_argus_1);
   Instruction *eg6_c_0_1 = builder.createLoadInst("c_0_1", i32Type, eg6_gep_4);
   std::vector<Value*> eg6_argus_2;
   eg6_argus_2.push_back(eg6_c_0_1);
@@ -347,8 +357,33 @@ int main(int argc, char** args) {
 
   builder.emitIRModule(myModule);
 
+  /**
+   * eg.8. 支持浮点数比较与整数求余操作
+   * int main() {
+   *  float x = 0.2;
+   *  int m = 2;
+   *  return x > (m % 2);
+   * }
+   * // 返回 1
+   */
+  newModule(builder, myModule);
+  // 初始化变量
+  Instruction *eg8_x_ptr = builder.createAllocaInst(floatPointerType);
+  Instruction *eg8_m_ptr = builder.createAllocaInst(int32PointerType);
+  builder.createStoreInst(new ConstFloatValue(0.2f), eg8_x_ptr);
+  builder.createStoreInst(new ConstIntValue(2), eg8_m_ptr);
+  // 计算 m % 2
+  Instruction *eg8_load_m = builder.createLoadInst("load_m", i32Type, eg8_m_ptr);
+  Instruction *eg8_m_rem_2 = builder.createBinaryInst(InstKind::SRem, eg8_load_m, new ConstIntValue(2));
+  // 注意 float 与 int 相比较会隐式地将 int 强转为 float
+  Instruction *eg8_i2fp_rem = builder.createInt2FpInst("i2fp", eg8_m_rem_2);
+  Instruction *eg8_load_x = builder.createLoadInst(floatType, eg8_x_ptr);
+  Instruction *eg8_fcmp = builder.createFcmpInst("fcmp", FCondKind::Ogt, eg8_load_x, eg8_i2fp_rem);
+  // 注意 icmp 与 fcmp 均是 bool 类型，需要零拓展至 i32
+  Instruction *eg8_zext = builder.createZextInst("zext", i32Type, eg8_fcmp);
+  builder.createRetInst(eg8_zext);
 
-
+  builder.emitIRModule(myModule);
 
   // 关闭 builder 的 irout 文件输出流
   builder.close();

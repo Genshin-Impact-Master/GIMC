@@ -13,12 +13,6 @@ Instruction::Instruction(const std::string &name,
                          BBlock *parent,
                          std::vector<Value*> argus) : Value(name, type), kind_(kind), parent_(parent), argus_(argus), instNode_(INode<Instruction>(nullptr, this)) {}
 
-Instruction::Instruction(const std::string &name,
-                         baseTypePtr type,
-                         InstKind kind,
-                         BBlock *parent,
-                         CondKind ckind) : Value(name, type), kind_(kind), parent_(parent), ckind_(ckind), instNode_(INode<Instruction>(nullptr, this)) {}
-
 Instruction::Instruction(baseTypePtr type, InstKind kind, BBlock *parent) :
                          Instruction(std::to_string(parent->getCnt()),
                                      type, kind, parent) {}
@@ -73,9 +67,21 @@ Ret::Ret(const std::string &name,
 Icmp::Icmp(const std::string &name,
       baseTypePtr type,
       BBlock *parent,
-      CondKind kind,
+      ICondKind kind,
       Value *first,
-      Value *second) : Instruction(name, type, InstKind::Icmp, parent, kind) {
+      Value *second) : Instruction(name, type, InstKind::Icmp, parent) {
+        ckind_.iCond = kind;
+        ops_.push_back(first);
+        ops_.push_back(second);
+      }
+
+Fcmp::Fcmp(const std::string &name,
+      baseTypePtr type,
+      BBlock *parent,
+      FCondKind kind,
+      Value *first,
+      Value *second) : Instruction(name, type, InstKind::Fcmp, parent) {
+        ckind_.fCond = kind;
         ops_.push_back(first);
         ops_.push_back(second);
       }
@@ -90,6 +96,19 @@ Br::Br(const std::string &name,
           ops_.push_back(ifTrue);
           ops_.push_back(ifFalse);
         }
+
+bool Br::isUnconditional() {
+  Value *cond = ops_[0];
+  Value *ifTure = ops_[1];
+  Value *ifFalse = ops_[2];
+  if (ifTure && ifFalse == nullptr && cond == nullptr)
+    return true;
+  else if (ifTure && cond && ifFalse)
+    return false;
+  else
+    fprintf(stderr, "Br 指令参数异常\n");
+  exit(1);
+}
 
 GEP::GEP(const std::string &name,
           baseTypePtr type,

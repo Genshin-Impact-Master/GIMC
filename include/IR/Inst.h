@@ -22,6 +22,7 @@ enum class InstKind {
   Sub,
   Mul,
   Div,
+  SRem,
   Addf,
   Subf,
   Mulf,
@@ -33,26 +34,45 @@ enum class InstKind {
   Call,
   Ret,
   Icmp,
+  Fcmp,
   Br,
   GEP,
   Fp2Int,
-  Int2Fp
+  Int2Fp,
+  Zext
 };
 
 /**
  * Icmp 比较条件的类型
 */
-enum class CondKind {
-  Eq,
-  Ne,
-  Ugt,
-  Uge,
-  Ult,
-  Ule,
-  Sgt,
-  Sge,
-  Slt,
-  Sle
+enum class ICondKind {
+  Eq,                 // 相等
+  Ne,                 // 不等
+  Ugt,                // 无符号 大于
+  Uge,                // 无符号 大于等于
+  Ult,                // 无符号 小于
+  Ule,                // 无符号 小于等于
+  Sgt,                // 有符号 大于
+  Sge,                // 有符号 大于等于
+  Slt,                // 有符号 小于
+  Sle                 // 有符号 小于
+};
+
+/**
+ * Fcmp 比较条件的类型
+ */
+enum class FCondKind {
+  Oeq,                // 等于
+  Ogt,                // 大于
+  Oge,                // 大于等于
+  Olt,                // 小于
+  Ole,                // 小于等于
+  One                 // 不等于
+};
+
+union CondKind {
+  FCondKind fCond;
+  ICondKind iCond;
 };
 
 /**
@@ -67,7 +87,7 @@ private:
 protected:
   std::vector<Value*> ops_;         // 可能用到的操作数
   std::vector<Value*> argus_;       // 参数列表，仅 Call 用到
-  CondKind ckind_;                  // 在 icmp 指令中的 compare 类型
+  CondKind ckind_;                  // 在 icmp 指令或 fcmp 指令中的 compare 类型
 public:
   Instruction(const std::string &name,
               baseTypePtr type,
@@ -107,6 +127,15 @@ public:
              Value *lhs,
              Value *rhs);
   
+  // 获取左操作数
+  Value *getLhs() {
+    return ops_[0];
+  }
+
+  // 获取右操作数
+  Value *getRhs() {
+    return ops_[1];
+  }
 };
 
 /**
@@ -138,6 +167,16 @@ public:
         BBlock *parent,
         Value *input,
         Value *ptr);
+  
+  // 获取存取的数据
+  Value *getInput() {
+    return ops_[0];
+  }
+
+  // 获取 store 存入的内存指针 
+  Value *getPtr() {
+    return ops_[1];
+  }
 };
 
 class Load final : public Instruction {
@@ -150,6 +189,9 @@ public:
        baseTypePtr type,
        BBlock *parent,
        Value *ptr);
+  
+  // 获取需要加载的指针
+  Value *getPtr() {return ops_[0];} 
 };
 
 class Call final : public Instruction {
@@ -164,6 +206,12 @@ public:
         BBlock *parent,
         Function *func,
         std::vector<Value*> &argus);
+
+  // 获取所调用的 Function
+  Function *getFunc() {return dynamic_cast<Function*>(ops_[0]);}
+
+  // 获取所 Call 函数的参数链表
+  std::vector<Value*> &getArgus() {return argus_;}
 };
 
 /**
@@ -180,6 +228,9 @@ public:
       baseTypePtr type,
       BBlock *parent,
       Value* retValue);
+  
+  // 获取返回值
+  Value *getRetValue() {return ops_[0];}
 };
 
 /**
@@ -194,9 +245,37 @@ public:
   Icmp(const std::string &name,
       baseTypePtr type,
       BBlock *parent,
-      CondKind kind,
+      ICondKind kind,
       Value *first,
       Value *second);
+
+  // 获取第一个数据
+  Value *getFirst() {return ops_[0];}
+
+  // 获取第二个数据
+  Value *getSecond() {return ops_[1];}
+};
+
+/**
+ * Fcmp 指令 比较两个 float
+ */
+class Fcmp final : public Instruction {
+public:
+  /**
+   * @param kind 表示比较类型
+   */
+  Fcmp(const std::string &name,
+      baseTypePtr type,
+      BBlock *parent,
+      FCondKind kind,
+      Value *first,
+      Value *second);
+  
+  // 获取第一个数据
+  Value *getFirst() {return ops_[0];}
+
+  // 获取第二个数据
+  Value *getSecond() {return ops_[1];}
 };
 
 /**
@@ -214,6 +293,18 @@ public:
       Value *cond,
       BBlock *ifTrue,
       BBlock *ifFalse);
+  
+  // 判断是否为无条件跳转
+  bool isUnconditional();
+
+  // 获取条件值
+  Value *getCond() {return ops_[0];}
+
+  // 获取 条件为 True 的 BBlock
+  BBlock *getTrueBBlk() {return dynamic_cast<BBlock*>(ops_[1]);}
+
+  // 获取 条件为 False 的 BBlock
+  BBlock *getFalseBBlk() {return dynamic_cast<BBlock*>(ops_[2]);}
 };
 
 /**
@@ -230,6 +321,15 @@ public:
       BBlock *parent,
       Value *ptr,
       int offset);
+
+  // GEP 指令数组基址
+  Value* getPtr() {return ops_[0];}
+
+  // 获得偏移量的 ConstIntValue
+  Value* getOffsetValue() {return ops_[1];}
+
+  // 获得偏移量，相较于 getOffsetValue 是直接得到一个 int
+  int getOffset() {return dynamic_cast<ConstIntValue*>(ops_[1])->getInt();}
 };
 
 /**
@@ -241,6 +341,9 @@ public:
           baseTypePtr type,
           BBlock *parent,
           Value *fp);
+
+  // 获取待转换的 Float Value
+  Value *getFp() {return ops_[0];}
 };
 
 /**
@@ -252,6 +355,23 @@ public:
           baseTypePtr type,
           BBlock *parent,
           Value *i32);
+  // 获取待转换的 Int Value
+  Value *getInt() {return ops_[0];}
+};
+
+class Zext final : public Instruction {
+public:
+  /**
+   * @param proto 需要改变的 Value 类型
+   * @param type 最终的数据类型
+   */
+  Zext(const std::string &name,
+        baseTypePtr type,
+        BBlock *parent,
+        Value *proto) : Instruction(name, type, InstKind::Zext, parent) {ops_.push_back(proto);}
+
+  // 获得零拓展前的 Value
+  Value *getProto() {return ops_[0];}
 };
 
 GIMC_NAMESPACE_END

@@ -9,6 +9,10 @@
 #include <string>
 #include <vector>
 
+#ifdef PRINT_CFG
+#include <graphviz/gvc.h>
+#endif
+
 GIMC_NAMESPACE_BEGIN
 USING_GIMC_NAMESPACE
 
@@ -22,6 +26,9 @@ private:
   int cnt = 0;                                            // function 中的递增命名计数器 
   std::vector<baseTypePtr> &arguTypes_;                   // 参数类型链表，注意是引用不是新的一个
   IList<Function, BBlock> blkList_;                       // 侵入式链表，结点全为 BBlock
+
+  // 构建 CFG
+  BBlock *exit_;                                           // 虚拟的 BBlock，作为函数的出口
 public:
   Function(const std::string &fName, baseTypePtr funcType, std::vector<baseTypePtr> &arguTypes);
 
@@ -35,6 +42,14 @@ public:
 
   // 获取 BBlock List
   IList<Function, BBlock> &getBBlockList() {return blkList_;}
+
+  // 获取 Function 出口 BBlock
+  BBlock *getExitBBlock() {return exit_;}
+
+#ifdef PRINT_CFG
+  // 利用 graphviz 绘制 CFG
+  void drawCFG();
+#endif
 };
 
 GIMC_NAMESPACE_END

@@ -74,6 +74,18 @@ public:
   INode<NodeOwner> *getHeadPtr() {
     return &head_;
   }
+
+  // 判断链表是否为空
+  bool isEmpty() {
+    return rear_ == &head_;
+  }
+
+  // 获取最后一个结点
+  INode<NodeOwner> *getRearPtr() {
+    if (isEmpty())
+      return nullptr;
+    return rear_;
+  }
 };
 
 GIMC_NAMESPACE_END
