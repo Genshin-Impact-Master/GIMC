@@ -60,6 +60,9 @@ public:
 
   // 向后继结点链表中添加结点
   void addSuccBBlock(BBlock *bBlk) {succs_.insert(bBlk);}
+
+  // 向涉及到的两个 BBlock 分别添加到彼此的前驱或后继链表
+  static void addEdge(BBlock *head, BBlock *rear) {head->addSuccBBlock(rear); rear->addPreBBlock(head);}
 };
 
 

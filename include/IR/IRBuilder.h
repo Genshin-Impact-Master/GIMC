@@ -206,6 +206,8 @@ public:
   // 切换选中基本块
   void setChosedBBlock(BBlock *bBlock) {chosedBBlock_ = bBlock;}
 
+  void setEntry(BBlock *bBlk) {chosedFunc_->setEntry(bBlk);}
+
 };
 
 GIMC_NAMESPACE_END

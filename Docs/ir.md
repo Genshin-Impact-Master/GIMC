@@ -17,6 +17,8 @@ Value
             > Subf
             > Divf
             > Mulf
+            > And
+            > Or
         > Alloca
         > Store
         > Load
@@ -38,6 +40,8 @@ TypeBase
 ## 类设计解释
 ### Instruction 类
 含有 `TypeBase` 原因是在 SSA 中，每条指令实际上指代的是一个 __值__ 
+#### def-use 关系
+Instruction 中的 `ops_`成员变量就是代表着该 Value Use 的 Value，而此条 Instruction 指代的 Value 就是被 define 的。
 
 ## LLVM IR
 ### LLVM IR Type 
@@ -113,6 +117,18 @@ label
 ### LLVM IR Instruction
 LLVM IR 指令 [参考链接](https://llvm.org/docs/LangRef.html#instruction-reference)
 #### 部分二元操作
+**and** 指令
+为位运算 &
+```llvm
+<result> = and <ty> <op1>, <op2>   ; yields ty:result
+```
+注意 type 可以 i32
+**or** 指令
+为位运算 |
+```llvm
+<result> = or <ty> <op1>, <op2>   ; yields ty:result
+```
+注意 type 可以是 i32，不一定必须 i1
 **srem** 指令
 整数 符号求余操作
 ```llvm
@@ -271,5 +287,14 @@ ordered 的含义为 两个操作数均非 QNAN（Quiet NAN）和 SNAN（Singali
 SSA Value 中 def-use,use-def 通过双向引用来维护，维护该双向引用的数据结构叫 "Use"
 
 #### 求 CFG 的支配树
+* **前驱后继结点**[(Pres_Succs_Calculate.h)](../include/Pass/Pres_Succs_Calculate.h)
 为 BBlock 类型添加 pres 向量与 succs 向量（表示其前驱和后继）
 为每个基本块额外添加一个 exit 结点。
+* **每个结点支配集计算**
+  * 直白算法：
+    > dom = {}
+    while dom is changing:
+    $\quad$for vertex in CFG:
+    $\quad\quad$$dom[vertex]$ $=$ ${vertex}$ $\;\cup\;\cdot\cap(dom[p]\;|\;for\; p \;in\; vertex.pres)$
+  * [Lengauer-Tarjan 算法原文](https://dl.acm.org/doi/pdf/10.1145/357062.357071)
+  [算法解读](https://www.cnblogs.com/meowww/p/6475952.html)

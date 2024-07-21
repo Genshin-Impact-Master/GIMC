@@ -6,6 +6,10 @@ USING_GIMC_NAMESPACE
 Function::Function(const std::string &fName, baseTypePtr funcType, std::vector<baseTypePtr> &arguTypes)
                   : Value(fName, funcType), arguTypes_(arguTypes), blkList_(IList<Function, BBlock>(this)) , exit_(new BBlock("exit_", voidType, this)) {
                     this->setLocalPrefix(false);
+                    for (auto ty : arguTypes_) {
+                      Value val = Value(std::to_string(getCnt()), ty);
+                      argus_.push_back(val);
+                    }
                   }
 
 void Function::clearFunc() { 

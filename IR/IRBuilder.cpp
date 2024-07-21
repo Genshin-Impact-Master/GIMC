@@ -253,14 +253,18 @@ void IRBuilder::emitIRModule(Module *module) {
 }
 
 void IRBuilder::emitIRFuncDef(Function *func) {
+  if (func->getEntryBBlock() == nullptr) {
+    fprintf(stdout, "请先设置函数入口基本块\n");
+  }
   std::vector<baseTypePtr> &arguTypes = func->arguTypes_;
+  std::vector<Value> &argus = func->getArgus();
   irout <<"define " << func->getTypeName() << " " << func->getFullName()
         << "(";
   for (int i = 0; i < static_cast<int>(arguTypes.size()) - 1; i++) {
-    irout << arguTypes[i]->getName() << ",";
+    irout << arguTypes[i]->getName() << " " << argus[i].getFullName() << ",";
   }
   if (arguTypes.size() != 0) {
-    irout << arguTypes.back()->getName();  
+    irout << arguTypes.back()->getName() << " " << argus.back().getFullName();  
   }
   irout << ") {" << std::endl;
 

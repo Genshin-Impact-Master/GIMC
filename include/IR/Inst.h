@@ -27,6 +27,8 @@ enum class InstKind {
   Subf,
   Mulf,
   Divf,
+  And,
+  Or,
   BinaryOpEnd,
   Alloca,
   Store,

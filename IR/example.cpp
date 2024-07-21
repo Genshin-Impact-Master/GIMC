@@ -5,6 +5,7 @@
 #include "../include/IR/Type.h"
 #include "../include/Config.h"
 #include "../include/Pass/Pres_Succs_Calculate.h"
+#include "../include/Pass/Domination.h"
 
 USING_GIMC_NAMESPACE
 
@@ -72,6 +73,8 @@ void newModule(IRBuilder &builder, Module *module) {
 
   // 创建基本块 entry
   entry = builder.createBBlock("entry", voidType);
+
+  myFunc->setEntry(entry);
 
   // 加入库函数
   addLib();
@@ -384,6 +387,107 @@ int main(int argc, char** args) {
   builder.createRetInst(eg8_zext);
 
   builder.emitIRModule(myModule);
+
+  /**
+   * eg.9. 支配树算法测试
+   */
+  newModule(builder, myModule);
+  std::unordered_map<char, BBlock*> eg_9_nodes;
+  for (char tmp = 'A'; tmp <= 'L'; tmp++) {
+    BBlock *bBlk = builder.createBBlock(std::string(1, tmp), voidType);
+    eg_9_nodes[tmp] = bBlk;
+  }
+  BBlock *eg_9_r = builder.createBBlock("R", voidType);
+  myFunc->setEntry(eg_9_r);
+  // BBlock *a = builder.createBBlock("A", voidType);
+  // BBlock *b = builder.createBBlock("B", voidType);
+  // BBlock *c = builder.createBBlock("C", voidType);
+  // BBlock *d = builder.createBBlock("D", voidType);
+  // BBlock *e = builder.createBBlock("E", voidType);
+  // BBlock *f = builder.createBBlock("F", voidType);
+  // BBlock *g = builder.createBBlock("G", voidType);
+  // BBlock *h = builder.createBBlock("H", voidType);
+  // BBlock *i = builder.createBBlock("I", voidType);
+  // BBlock *j = builder.createBBlock("J", voidType);
+  // BBlock *k = builder.createBBlock("K", voidType);
+
+  BBlock::addEdge(eg_9_r, eg_9_nodes['A']);
+  BBlock::addEdge(eg_9_r, eg_9_nodes['B']);
+  BBlock::addEdge(eg_9_r, eg_9_nodes['C']);
+  BBlock::addEdge(eg_9_nodes['A'], eg_9_nodes['D']);
+  BBlock::addEdge(eg_9_nodes['B'], eg_9_nodes['E']);
+  BBlock::addEdge(eg_9_nodes['B'], eg_9_nodes['A']);
+  BBlock::addEdge(eg_9_nodes['B'], eg_9_nodes['D']);
+  BBlock::addEdge(eg_9_nodes['C'], eg_9_nodes['F']);
+  BBlock::addEdge(eg_9_nodes['C'], eg_9_nodes['G']);
+  BBlock::addEdge(eg_9_nodes['D'], eg_9_nodes['L']);
+  BBlock::addEdge(eg_9_nodes['E'], eg_9_nodes['H']);
+  BBlock::addEdge(eg_9_nodes['F'], eg_9_nodes['I']);
+  BBlock::addEdge(eg_9_nodes['G'], eg_9_nodes['I']);
+  BBlock::addEdge(eg_9_nodes['G'], eg_9_nodes['J']);
+  BBlock::addEdge(eg_9_nodes['H'], eg_9_nodes['E']);
+  BBlock::addEdge(eg_9_nodes['H'], eg_9_nodes['K']);
+  BBlock::addEdge(eg_9_nodes['I'], eg_9_nodes['K']);
+  BBlock::addEdge(eg_9_nodes['J'], eg_9_nodes['I']);
+  BBlock::addEdge(eg_9_nodes['K'], eg_9_nodes['I']);
+  BBlock::addEdge(eg_9_nodes['K'], eg_9_r);
+  BBlock::addEdge(eg_9_nodes['L'], eg_9_nodes['H']);
+
+#ifdef PRINT_CFG
+  // 使用 graphviz 画 main 的数据流图
+  myFunc->drawCFG();
+#endif
+  // Domination dom(myFunc);
+  // dom.calculate();
+
+  /**
+   * eg.10. 支持函数形参调用，and or neg 指令
+   * 
+   * int foo(float x, int y, int z) {
+   *  return !x && y || z;
+   * }
+   * 
+   * int main() {
+   *  return foo(2, 0, 3);
+   * }
+   * 结果 true
+   */
+  // newModule(builder, myModule);
+  // std::vector<baseTypePtr> eg_10_foo_argu_ty;
+  // eg_10_foo_argu_ty.push_back(floatType);
+  // eg_10_foo_argu_ty.push_back(i32Type);
+  // eg_10_foo_argu_ty.push_back(i32Type);
+  // Function *eg_10_foo = builder.createFunction("foo", i32Type, eg_10_foo_argu_ty);
+  // BBlock *eg_10_foo_entry = builder.createBBlock("entry", voidType, eg_10_foo);
+  // eg_10_foo->setEntry(eg_10_foo_entry);       // 将 BBlock 加入其中
+  // // 获取函数形参作为变量，注意作为变量规范做法则需要 load store
+  // std::vector<Value> &eg_10_foo_argus = eg_10_foo->getArgus();
+  // Instruction *eg_10_x_ptr = builder.createAllocaInst("x_ptr", floatPointerType);
+  // Instruction *eg_10_y_ptr = builder.createAllocaInst("y_ptr", floatPointerType);
+  // Instruction *eg_10_z_ptr = builder.createAllocaInst("z_ptr", floatPointerType);
+  //   // 注意此时因为是 Value* 指针所以要用取址符  
+  // builder.createStoreInst(&eg_10_foo_argus[0], eg_10_x_ptr);
+  // builder.createStoreInst(&eg_10_foo_argus[1], eg_10_y_ptr);
+  // builder.createStoreInst(&eg_10_foo_argus[2], eg_10_z_ptr);
+  // Instruction *eg_10_x_load = builder.createLoadInst(floatType, eg_10_x_ptr);
+  // Instruction *eg_10_fcmp = builder.createFcmpInst(FCondKind::One, new ConstFloatValue(0), eg_10_x_load);
+  // // 因为若 x==0.0，即不满足 && 左式，直接跳转到 ret 步骤 
+  // BBlock *eg_10_or_rhs = builder.createBrInst();
+  // Instruction *eg_10_y_load = builder.createLoadInst(i32Type, eg_10_y_ptr);
+  // Instruction *eg_10_z_load = builder.createLoadInst(i32Type, eg_10_z_ptr);
+  // // 
+  // BBlock *eg_10_or_lhs = builder.createBBlock
+  // defs->push_back(eg_10_foo);   // 将函数加入定义中
+  // builder.setChosedFunc(myFunc);
+  // builder.setChosedBBlock(entry);
+  // std::vector<Value*> eg_10_call_argus;
+  // eg_10_call_argus.push_back(new ConstFloatValue(2));
+  // eg_10_call_argus.push_back(new ConstIntValue(0));
+  // eg_10_call_argus.push_back(new ConstIntValue(3));
+  // Instruction *eg_10_call = builder.createCallInst(eg_10_foo, eg_10_call_argus);
+  // builder.createRetInst(eg_10_call);
+
+  // builder.emitIRModule(myModule);
 
   // 关闭 builder 的 irout 文件输出流
   builder.close();

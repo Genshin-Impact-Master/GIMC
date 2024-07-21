@@ -52,9 +52,10 @@ private:
   INode<NodeOwner> head_;             // 侵入式链表头结点
   INode<NodeOwner> *rear_;            // 链表尾部
   ListOwner *listOwner_;              // 该侵入式链表的拥有者
+  int size_;                            // 计数器，初始化为 0
 public:
   IList<ListOwner, NodeOwner>(INode<NodeOwner> *rear, ListOwner *listOwner)
-                       : rear_(rear), listOwner_(listOwner), head_(nullptr, nullptr) {}
+                       : rear_(rear), listOwner_(listOwner), head_(nullptr, nullptr), size_(0) {}
 
   IList<ListOwner, NodeOwner>(ListOwner *listOwner) : listOwner_(listOwner), rear_(nullptr), head_(nullptr, nullptr) {
                                 clear();
@@ -62,12 +63,14 @@ public:
 
   void clear() {
     rear_ = &head_; // 链表尾部等于头部
+    size_ = 0;
   }
 
   // 添加一个结点到链表结尾
   void append(INode<NodeOwner> &node) {
     rear_->setNext(&node);
     rear_ = &node;
+    size_++;
   }
 
   // 获取头结点指针
@@ -77,7 +80,7 @@ public:
 
   // 判断链表是否为空
   bool isEmpty() {
-    return rear_ == &head_;
+    return size_ == 0;
   }
 
   // 获取最后一个结点
@@ -86,6 +89,9 @@ public:
       return nullptr;
     return rear_;
   }
+
+  // 获取链表元素个数
+  int getSize() {return size_;}
 };
 
 GIMC_NAMESPACE_END

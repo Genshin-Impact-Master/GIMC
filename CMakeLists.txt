@@ -22,6 +22,7 @@ add_executable(gimc_ir
   include/Utils/IList.h
   include/Pass/Pass.h
   include/Pass/Pres_Succs_Calculate.h
+  include/Pass/Domination.h
   include/Config.h
   Config.cpp
   IR/GlobalVar.cpp
@@ -35,6 +36,7 @@ add_executable(gimc_ir
   IR/IRBuilder.cpp
   IR/Value.cpp
   Pass/Pres_Succs_Calculate.cpp
+  Pass/Domination.cpp
 )
 
 # 可执行文件 gimc 的依赖文件
