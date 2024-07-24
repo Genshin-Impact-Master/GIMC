@@ -599,7 +599,6 @@ UnaryExp: LEFT_PARENTHESES Exp RIGHT_PARENTHESES {
     | LVal {
         auto tmp = new UnaryExp();
         tmp -> addExp(ExpPtr($1));
-        tmp -> addOp(UnaryOpType::UO_POS);
         tmp -> addType(ExpType::ET_LVAL);
         $$ = (Exp*)(tmp);
         printf("UnaryExp Find\n");
@@ -607,7 +606,6 @@ UnaryExp: LEFT_PARENTHESES Exp RIGHT_PARENTHESES {
     | Number {
         auto tmp = new UnaryExp();
         tmp -> addExp(ExpPtr($1));
-        tmp -> addOp(UnaryOpType::UO_POS);
         if ($1 -> getIsFloat()) tmp -> addType(ExpType::ET_FLOAT);
         else tmp -> addType(ExpType::ET_INT);
         $$ = (Exp*)(tmp);
@@ -618,7 +616,6 @@ UnaryExp: LEFT_PARENTHESES Exp RIGHT_PARENTHESES {
         tmp -> addIdentifier($1);
         auto tmp2 = new UnaryExp();
         tmp2 -> addExp(ExpPtr(tmp));
-        tmp2 -> addOp(UnaryOpType::UO_POS);
         tmp2 -> addType(ExpType::ET_FUNC); 
         $$ = (Exp*)(tmp2);
         printf("UnaryExp Find\n");
@@ -629,21 +626,26 @@ UnaryExp: LEFT_PARENTHESES Exp RIGHT_PARENTHESES {
         tmp -> addArgs(FuncRParamsPtr($3));
         auto tmp2 = new UnaryExp();
         tmp2 -> addExp(ExpPtr(tmp));
-        tmp2 -> addOp(UnaryOpType::UO_POS);
         tmp2 -> addType(ExpType::ET_FUNC); 
         $$ = (Exp*)(tmp2);
         printf("UnaryExp Find\n");
     }
     | ADD UnaryExp{
-        auto tmp = (UnaryExp*) $2;
-        tmp -> addOp(UnaryOpType::UO_POS);
-        $$ = (Exp*)(tmp);
+        auto tmp = $2;
+        auto tmp2 = new BinaryExp();
+        tmp2 -> addExp1(ExpPtr(tmp));
+        tmp2 -> addExp2(ExpPtr(new Number(0, 0, false)));
+        tmp2 -> addOp(BinOpType::OP_ADD);
+        $$ = (Exp*)(tmp2);
         printf("UnaryExp Find\n");
     }
     | SUB UnaryExp{
-        auto tmp = (UnaryExp*) $2;
-        tmp -> addOp(UnaryOpType::UO_NEG);
-        $$ = (Exp*)(tmp);
+        auto tmp = $2;
+        auto tmp2 = new BinaryExp();
+        tmp2 -> addExp2(ExpPtr(tmp));
+        tmp2 -> addExp1(ExpPtr(new Number(0, 0, false)));
+        tmp2 -> addOp(BinOpType::OP_SUB);
+        $$ = (Exp*)(tmp2);
         printf("UnaryExp Find\n");
         
     }
@@ -841,7 +843,7 @@ ConstExp: AddExp {
 %%
 
 
-/* int main(int argc, char *argv[]){
+int main(int argc, char *argv[]){
     ++ argv;
     if (argc > 0) yyin = fopen(argv[0], "r");
     else {
@@ -850,7 +852,7 @@ ConstExp: AddExp {
     }
     yyparse();
     std::cout << root << std::endl;
-} */
+}
 
 CompUnit* parse(char *filename) {
     yyin = fopen(filename, "r");
