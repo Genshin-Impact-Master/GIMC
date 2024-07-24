@@ -1,18 +1,19 @@
 #ifndef DOMINATION_H
 #define DOMINATION_H
 
-#include "Pass.h"
 #include <unordered_map>
 #include <unordered_set>
 #include "../IR/Function.h"
 
+
 USING_GIMC_NAMESPACE
 GIMC_NAMESPACE_BEGIN
 
-class Domination : public Pass {
+class Domination {
 private:
-  //一个函数中总的支配集合，map 中键为基本块 vertex，值为 vertex 对应支配集。   
-  std::unordered_map<BBlock*, std::unordered_set<BBlock*>> doms_;
+  // 一个函数中总的支配集合，map 中键为基本块 vertex，值为 vertex 对应支配边界集。   
+  std::unordered_map<BBlock*, std::unordered_set<BBlock*>> domFrontier;
+  std::unordered_map<BBlock*, std::vector<BBlock*>> succs;              // 支配树中某结点的后继结点
   BBlock* root;
 
   // int size;                                                          // 待计算 function 中的 BBlock 结点个数
@@ -23,12 +24,15 @@ private:
   std::unordered_map<BBlock*, BBlock*> ancestor;                        // 
   std::vector<BBlock*> vertex;                                          // 按 DFS 遍历顺序保存 BBlock* 结点 
   std::unordered_map<BBlock*, std::unordered_set<BBlock*>> bucket;      // 提供映射：结点->该结点所半支配的结点集合
-  int cnt;                                                              // DFS 遍历时为各个结点编号
+  int cnt = 0;                                                          // DFS 遍历时为各个结点编号
+  bool isInitialize = false;                                            // 在 calculate 执行前需要初始化  
 public:
   // Domination 的构造函数
-  Domination(Function *func);
+  Domination() {}
 
-  // 支配集合的计算过程
+  void initialize(Function *func);
+
+  // 支配树的计算过程，并更新 domFrontier
   void calculate();
 
   // 深度优先遍历，构建生成树，并为结点编号
@@ -45,7 +49,18 @@ public:
   BBlock* eval(BBlock *node);
 
   void compress(BBlock *v);
+
+  // 获取或计算全结点支配边界集合 
+  std::unordered_map<BBlock*, std::unordered_set<BBlock*>> getFrontier();
   
+  // 获取支配树先序遍历 DFS
+  std::unordered_map<BBlock*, std::vector<BBlock*>>& getDomSuccs();
+
+  // 获取支配树 root
+  BBlock *getRoot() {return root;}
+
+  // 递归 DFS 支配树
+  // void domDFS(std::vector<BBlock*> &domTree, BBlock *v);
 };
 
 GIMC_NAMESPACE_END

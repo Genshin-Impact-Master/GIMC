@@ -28,6 +28,7 @@ Value
         > Fcmp
         > Br
         > Gep
+        > Phi
     > BBlock
 TypeBase
     > IntegerType
@@ -280,6 +281,19 @@ ordered 的含义为 两个操作数均非 QNAN（Quiet NAN）和 SNAN（Singali
 %Y = zext i1 true to i32              ; yields i32:1
 ```
 
+**Phi** 指令
+向 SSA 中插入 phi 结点，必须插入在基本块的所有其他指令前。
+语法
+```llvm
+<result> = phi [fast-math-flags] <ty> [ <val0>, <label0>], ...
+```
+例子
+```llvm
+Loop:       ; Infinite loop that counts from 0 on up...
+  %indvar = phi i32 [ 0, %LoopHeader ], [ %nextindvar, %Loop ]
+  %nextindvar = add i32 %indvar, 1
+  br label %Loop
+```
 ## 优化相关
 ### mem2reg & phi 指令
 [优化参考阅读](https://buaa-se-compiling.github.io/miniSysY-tutorial/challenge/mem2reg/help.html)
@@ -289,7 +303,7 @@ SSA Value 中 def-use,use-def 通过双向引用来维护，维护该双向引�
 #### 求 CFG 的支配树
 * **前驱后继结点**[(Pres_Succs_Calculate.h)](../include/Pass/Pres_Succs_Calculate.h)
 为 BBlock 类型添加 pres 向量与 succs 向量（表示其前驱和后继）
-为每个基本块额外添加一个 exit 结点。
+为每个基本块额外添加一个 exit 结点。（？需要吗？）
 * **每个结点支配集计算**
   * 直白算法：
     > dom = {}

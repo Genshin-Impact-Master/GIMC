@@ -11,14 +11,20 @@ GIMC_NAMESPACE_BEGIN
 template<class Owner>
 class INode {
 private:
-  INode<Owner> *next_;       // 下一个链接域结点
-  Owner *owner_;             // 该链接域结点的拥有者
+  INode<Owner> *next_;        // 下一个链接域结点
+  INode<Owner> *pre_;         // 上一个链接域结点
+  Owner *owner_;              // 该链接域结点的拥有者
 public:
-  INode<Owner>(INode<Owner> *next, Owner *owner) : next_(next), owner_(owner) {}
+  INode<Owner>(INode<Owner> *next, INode<Owner> *pre, Owner *owner) : next_(next), pre_(pre), owner_(owner) {}
 
   // 设置下一个结点指针
   void setNext(INode<Owner> *next) {
     next_ = next;
+  }
+
+  // 设置上一个结点指针
+  void setPre(INode<Owner> *pre) {
+    pre_ = pre;
   }
 
   // 修改结点拥有者
@@ -29,6 +35,11 @@ public:
   // 返回下一个结点指针
   INode<Owner> *getNext() {
     return next_;
+  }
+
+  // 返回上一个结点指针
+  INode<Owner> *getPre() {
+    return pre_;
   }
 
   // 判断是否到达链表尾部
@@ -57,7 +68,7 @@ public:
   IList<ListOwner, NodeOwner>(INode<NodeOwner> *rear, ListOwner *listOwner)
                        : rear_(rear), listOwner_(listOwner), head_(nullptr, nullptr), size_(0) {}
 
-  IList<ListOwner, NodeOwner>(ListOwner *listOwner) : listOwner_(listOwner), rear_(nullptr), head_(nullptr, nullptr) {
+  IList<ListOwner, NodeOwner>(ListOwner *listOwner) : listOwner_(listOwner), rear_(nullptr), head_(nullptr, nullptr, nullptr) {
                                 clear();
                               }
 
@@ -69,8 +80,33 @@ public:
   // 添加一个结点到链表结尾
   void append(INode<NodeOwner> &node) {
     rear_->setNext(&node);
+    node.setPre(rear_);
     rear_ = &node;
     size_++;
+  }
+
+  // 添加一个结点到链表头部
+  void add2Head(INode<NodeOwner> &node) {
+    INode<NodeOwner> *next = head_.getNext();
+    node.setNext(head_.getNext());
+    node.setPre(&head_);
+    if (next) {
+      next->setPre(&node); 
+    }
+    head_.setNext(&node);
+    size_++;
+  }
+
+  // 删除结点
+  void remove(INode<NodeOwner> &node) {
+    INode<NodeOwner> *pre = node.getPre();
+    INode<NodeOwner> *next = node.getNext();
+    if (pre) {
+      pre->setNext(next);
+    }
+    if (next) {
+      next->setPre(pre);
+    }
   }
 
   // 获取头结点指针

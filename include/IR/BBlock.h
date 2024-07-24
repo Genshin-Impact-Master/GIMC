@@ -40,6 +40,12 @@ public:
   // 插入指令到侵入式链表末端
   void addInst(Instruction* inst);
 
+  // 插入指定到侵入式链表头部
+  void addHeadInst(Instruction *inst);
+
+  // 删除某条指令
+  void rmInst(Instruction *inst);
+
   // 清空基本块中的指令，注意是删除
   void clearBBlock();
 
@@ -63,6 +69,9 @@ public:
 
   // 向涉及到的两个 BBlock 分别添加到彼此的前驱或后继链表
   static void addEdge(BBlock *head, BBlock *rear) {head->addSuccBBlock(rear); rear->addPreBBlock(head);}
+
+  // 输出 BBLock 到 中端
+  void coutBBlock();
 };
 
 

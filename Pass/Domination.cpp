@@ -1,32 +1,12 @@
 #include "../include/Pass/Domination.h"
 #include "../include/IR/BBlock.h"
 #include "../include/Pass/Pres_Succs_Calculate.h"
-#include "vector"
+#include <vector>
+#include <iostream>
 
-Domination::Domination(Function *func) : cnt(0), root(func->getEntryBBlock()) {
-  // bool change = true;
-  // while (change) {
-  //   change = false;
-  //   INode<BBlock> *bBlkNode = func->getBBlockList().getHeadPtr();
-  //   while (!bBlkNode->isEnd()) {
-  //     bBlkNode = bBlkNode->getNext();
-  //     BBlock *bBlk = bBlkNode->getOwner();
-
-  //     if (bBlk->getSuccs().empty() && bBlk->getPres().empty()) {
-  //       // 说明没有进行前驱和后继结点的计算，因为添加了 exit_结点，
-  //       // 所以即使只有一个基本块（一个函数必须包含 entry 块），也必然会有前驱或后继结点
-
-  //       // 重新计算前驱与后继
-  //       Pres_Succs_Calculate::calculate_Func(func);
-  //     }
-
-  //     if (doms_.find(bBlk) != doms_.end()) {
-  //       // 找到结点
-        
-  //     }
-  //   }
-  // }
-
+void Domination::initialize(Function *func) {
+  isInitialize = true;
+  root = func->getEntryBBlock();
   // 将 semi, dom, parent 等初始化
   INode<BBlock> *iterator = func->getBBlockList().getHeadPtr();
   while (iterator->getNext()) {
@@ -37,13 +17,16 @@ Domination::Domination(Function *func) : cnt(0), root(func->getEntryBBlock()) {
     parent[bBlk] = nullptr;
     ancestor[bBlk] = nullptr;
   }
-
 }
 
 void Domination::calculate() {
+  if (!isInitialize) {
+    fprintf(stderr, "请先调用初始化函数\n");
+    exit(1);
+  }
   dfs(root);
   // 注意为从 0 开始
-  for (int i = cnt - 1; i > 1; i--) {
+  for (int i = cnt - 1; i >= 1; i--) {
     BBlock *w = vertex[i];
   // step 2
     for (auto v : w->getPres()) {
@@ -76,9 +59,11 @@ void Domination::calculate() {
     }
   }
   dom[root] = root;
-  for (int i = 0; i < cnt; i++) {
-    fprintf(stdout, "the idom for %s is %s", vertex[i]->getName().c_str(), dom[vertex[i]]->getName().c_str());
-  }
+
+  // 打印查看
+  // for (int i = 0; i < cnt; i++) {
+  //   fprintf(stdout, "the idom for %s is %s\n", vertex[i]->getName().c_str(), dom[vertex[i]]->getName().c_str());
+  // }
 }
 
 void Domination::dfs(BBlock *v) {
@@ -113,3 +98,63 @@ GIMC::BBlock* Domination::eval(BBlock *node) {
   compress(node);
   return label[node];
 }
+
+std::unordered_map<GIMC::BBlock*, std::vector<GIMC::BBlock*>>& Domination::getDomSuccs() {
+  // 根据获取支配树信息 DFS 顺序
+  if (!succs.empty()) {
+    return succs;
+  }
+  for (int i = 1; i < cnt; i++) {
+    if (succs.find(dom[vertex[i]]) == succs.end()) {
+      std::vector<BBlock*> succ;
+      succs[dom[vertex[i]]] = succ;
+    }
+    succs[dom[vertex[i]]].push_back(vertex[i]);
+  }
+  // domDFS(domDFS, root); 
+  return succs;
+}
+
+std::unordered_map<BBlock*, std::unordered_set<BBlock*>> Domination::getFrontier(){
+  if (domFrontier.size() != 0) {
+    return domFrontier;
+  }
+  // 计算每个结点的直接支配边
+  getDomSuccs();
+  for (auto v : vertex) {
+    // v 的直接支配 BBlock
+    for (auto BBlk : succs[v]) {
+      std::unordered_set<BBlock*> set;
+      // 将 BBlock 的后继结点加入 v 的支配边界
+      for (auto frontier : BBlk->getSuccs()) {
+        set.insert(frontier);
+      }
+      domFrontier[v] = set;
+    }
+    // 如果没有直接支配的结点，则将其后继结点加入支配边界
+    if (succs[v].size() == 0) {
+      std::unordered_set<BBlock*> set;
+      for (auto frontier : v->getSuccs()) {
+        set.insert(frontier);
+      }
+      domFrontier[v] = set;
+    }
+  }
+
+  // 打印检验
+  for (auto v : vertex) {
+    for (auto frontier : domFrontier[v]) {
+      std::cout << "the frontier for " << v->getFullName() << " is " << frontier->getFullName() << std::endl;
+    }
+  }
+
+  return domFrontier;
+}
+
+// void Domination::domDFS(std::vector<BBlock*> &domTree, BBlock *v) {
+//   // 由于支配树特性，如此遍历不会重复
+//   domTree.push_back(v);
+//   for (auto succ : succs[v]) {
+//     domDFS(domTree, succ);
+//   }
+// }

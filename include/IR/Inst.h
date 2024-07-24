@@ -5,6 +5,7 @@
 #include "BBlock.h"
 #include "Value.h"
 #include "Type.h"
+#include <unordered_map>
 GIMC_NAMESPACE_BEGIN
 
 class TypeBase;
@@ -41,7 +42,8 @@ enum class InstKind {
   GEP,
   Fp2Int,
   Int2Fp,
-  Zext
+  Zext,
+  Phi
 };
 
 /**
@@ -85,10 +87,8 @@ friend class IRBuilder;
 private:
   InstKind kind_;                   // 指令的种类
   BBlock *parent_;                  // 指示包含该指令的 BBlock
-  INode<Instruction> instNode_;      // 自身对应于一个 Instruction 结点
+  INode<Instruction> instNode_;     // 自身对应于一个 Instruction 结点
 protected:
-  std::vector<Value*> ops_;         // 可能用到的操作数
-  std::vector<Value*> argus_;       // 参数列表，仅 Call 用到
   CondKind ckind_;                  // 在 icmp 指令或 fcmp 指令中的 compare 类型
 public:
   Instruction(const std::string &name,
@@ -99,17 +99,16 @@ public:
               baseTypePtr type,
               InstKind kind,
               BBlock *parent,
-              std::vector<Value*> argus);
-  Instruction(const std::string &name,
-              baseTypePtr type,
-              InstKind kind,
-              BBlock *parent,
               CondKind ckind);
   Instruction(baseTypePtr type, InstKind kind, BBlock *parent);
   Instruction(InstKind kind, BBlock *parent);
   Instruction(const std::string &name, InstKind kind, BBlock *parent);
   virtual ~Instruction() = default;
   INode<Instruction> &getNode() {return instNode_;};
+  void calculateDef_Uses();
+  bool isAllocaInst() {return kind_ == InstKind::Alloca;}
+  BBlock *getParent() {return parent_;}
+  InstKind getKind() {return kind_;}
 };
 
 /**
@@ -212,8 +211,8 @@ public:
   // 获取所调用的 Function
   Function *getFunc() {return dynamic_cast<Function*>(ops_[0]);}
 
-  // 获取所 Call 函数的参数链表
-  std::vector<Value*> &getArgus() {return argus_;}
+  // 获取所 Call 函数的参数链表，注意从 1 开始
+  std::vector<Value*> &getArgus() {return ops_;}
 };
 
 /**
@@ -300,13 +299,29 @@ public:
   bool isUnconditional();
 
   // 获取条件值
-  Value *getCond() {return ops_[0];}
+  Value *getCond() {
+    if (isUnconditional()) {
+      fprintf(stderr, "为无条件跳转，没有 Cond\n");
+      exit(1);
+    }
+    return ops_[0];
+  }
 
   // 获取 条件为 True 的 BBlock
-  BBlock *getTrueBBlk() {return dynamic_cast<BBlock*>(ops_[1]);}
+  BBlock *getTrueBBlk() {
+    if (isUnconditional())
+      return dynamic_cast<BBlock*>(ops_[0]);
+    return dynamic_cast<BBlock*>(ops_[1]);
+  }
 
   // 获取 条件为 False 的 BBlock
-  BBlock *getFalseBBlk() {return dynamic_cast<BBlock*>(ops_[2]);}
+  BBlock *getFalseBBlk() {
+    if (isUnconditional()) {
+      fprintf(stderr, "无条件跳转，没有 False 基本块");
+      exit(1);
+    }
+    return dynamic_cast<BBlock*>(ops_[2]);
+  }
 };
 
 /**
@@ -376,6 +391,22 @@ public:
   Value *getProto() {return ops_[0];}
 };
 
+class Phi final : public Instruction {
+public:
+  /**
+   * @param maps 按照 Value，BBlock 为一组的方式存储进向量中
+   */
+  Phi(const std::string &name,
+      baseTypePtr type,
+      BBlock *parent,
+      std::vector<Value*> maps);
+
+  // 获取 phi 结点对应的变量
+  Value *getAllocaPtr() {return ops_[0];}   // 由于构建 phi 结点时默认首先插入变量的 alloca 指令
+
+  // 获取 ops
+  std::vector<Value*>& getOps() {return ops_;}
+};
 GIMC_NAMESPACE_END
 
 #endif //INST_H_

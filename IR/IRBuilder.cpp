@@ -338,10 +338,10 @@ void IRBuilder::emitIRInst(Instruction *inst) {
     irout << INST_STRING
           << i->getFunc()->getTypeName() << " " << i->getFunc()->getFullName() << "(";
     std::vector<Value*> &argus = i->getArgus();
-    for (int i = 0; i < static_cast<int>(argus.size()) - 1; i++) {
+    for (int i = 1; i < static_cast<int>(argus.size()) - 1; i++) {
       irout << argus[i]->getTypeName() << " " << argus[i]->getFullName() << ",";
     }
-    if (argus.size() != 0) {
+    if (argus.size() != 1) {
       irout << argus.back()->getTypeName() << " " << argus.back()->getFullName();  
     }
     irout << ")" << std::endl;
@@ -403,5 +403,17 @@ void IRBuilder::emitIRInst(Instruction *inst) {
     Value *proto = i->getProto();
     irout << '\t' << i->getFullName() << " = " << INST_STRING << proto->getTypeName()
           << proto->getFullName() << " to " << i->getTypeName() << std::endl; 
+  }
+  else if (inst->kind_ == InstKind::Phi) {
+    Phi *i = dynamic_cast<Phi*>(inst);
+    irout << '\t' << i->getFullName() << " = " << INST_STRING << i->getTypeName() << " ";
+    std::vector<Value*> &ops = i->getOps();
+    int size = static_cast<int>(ops.size());
+    for (int k = 1; k < size - 2; k += 2) {
+      irout << "[" << ops[k]->getFullName() << ", " << ops[k+1]->getFullName() << "], ";
+    }
+    for (int k = size - 2; k < size; k += 2) {
+      irout << "[" << ops[k]->getFullName() << ", " << ops[k+1]->getFullName() << "]" << std::endl;
+    }
   }
 }

@@ -6,6 +6,8 @@
 #include "../include/Config.h"
 #include "../include/Pass/Pres_Succs_Calculate.h"
 #include "../include/Pass/Domination.h"
+#include "../include/Pass/Mem2reg.h"
+#include "../include/Pass/PassManager.h"
 
 USING_GIMC_NAMESPACE
 
@@ -234,10 +236,10 @@ int main(int argc, char** args) {
   /**
    * eg 4.1 前驱后继结点 PASS 检测，绘制 CFG
    */
-  Pres_Succs_Calculate::calculate_Func(myFunc);
+  // Pres_Succs_Calculate::calculate_Func(myFunc);
 #ifdef PRINT_CFG
   // 使用 graphviz 画 main 的数据流图
-  myFunc->drawCFG();
+  // myFunc->drawCFG();
 #endif
 
   /**
@@ -399,17 +401,6 @@ int main(int argc, char** args) {
   }
   BBlock *eg_9_r = builder.createBBlock("R", voidType);
   myFunc->setEntry(eg_9_r);
-  // BBlock *a = builder.createBBlock("A", voidType);
-  // BBlock *b = builder.createBBlock("B", voidType);
-  // BBlock *c = builder.createBBlock("C", voidType);
-  // BBlock *d = builder.createBBlock("D", voidType);
-  // BBlock *e = builder.createBBlock("E", voidType);
-  // BBlock *f = builder.createBBlock("F", voidType);
-  // BBlock *g = builder.createBBlock("G", voidType);
-  // BBlock *h = builder.createBBlock("H", voidType);
-  // BBlock *i = builder.createBBlock("I", voidType);
-  // BBlock *j = builder.createBBlock("J", voidType);
-  // BBlock *k = builder.createBBlock("K", voidType);
 
   BBlock::addEdge(eg_9_r, eg_9_nodes['A']);
   BBlock::addEdge(eg_9_r, eg_9_nodes['B']);
@@ -437,8 +428,48 @@ int main(int argc, char** args) {
   // 使用 graphviz 画 main 的数据流图
   myFunc->drawCFG();
 #endif
-  // Domination dom(myFunc);
-  // dom.calculate();
+  Domination eg9_dom;
+  eg9_dom.initialize(myFunc);
+  eg9_dom.calculate();
+
+  /**
+   * eg.10. 支持 phi 指令
+      int main() {
+        int x, cond = 1;
+        if (cond > 0)
+            x = 1;
+        else
+            x = -1;
+        return x;
+      }
+   */
+  newModule(builder, myModule);
+  Instruction *eg_10_x_ptr =  builder.createAllocaInst("x", int32PointerType);
+  Instruction *eg_10_cond_ptr =  builder.createAllocaInst("cond", int32PointerType);
+  builder.createStoreInst(new ConstIntValue(1), eg_10_cond_ptr);
+  Instruction *eg_10_load_cond = builder.createLoadInst("load_cond", i32Type, eg_10_cond_ptr);
+  Instruction *eg_10_cmp = builder.createIcmpInst(ICondKind::Sgt, eg_10_load_cond, new ConstIntValue(0));
+  BBlock *eg_10_if_then = builder.createBBlock("if_then", voidType);
+  BBlock *eg_10_if_else = builder.createBBlock("if_else", voidType);
+  BBlock *eg_10_if_end = builder.createBBlock("if_end", voidType);
+  builder.setChosedBBlock(entry);
+  Instruction *eg_10_entry_br = builder.createBrInst(eg_10_cmp, eg_10_if_then, eg_10_if_else);
+  builder.setChosedBBlock(eg_10_if_then);
+  builder.createStoreInst(new ConstIntValue(1), eg_10_x_ptr);
+  builder.createBrInst(nullptr, eg_10_if_end, nullptr);
+  builder.setChosedBBlock(eg_10_if_else);
+  builder.createStoreInst(new ConstIntValue(-1), eg_10_x_ptr);
+  builder.createBrInst(nullptr, eg_10_if_end, nullptr);
+  builder.setChosedBBlock(eg_10_if_end);
+  Instruction *eg_10_load_x = builder.createLoadInst(i32Type, eg_10_x_ptr);
+  builder.createRetInst(eg_10_load_x);
+
+  PassManager eg_10_pm(myFunc);
+  eg_10_pm.mem2reg();
+
+  builder.emitIRModule(myModule);
+
+
 
   /**
    * eg.10. 支持函数形参调用，and or neg 指令
