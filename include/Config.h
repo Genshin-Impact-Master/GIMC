@@ -6,6 +6,7 @@
 #define GIMC_NAMESPACE_END }                          // GIMC namespace
 #define USING_GIMC_NAMESPACE using namespace GIMC;
 #define ADDR_LENGTH 64                                // 机器字长
+#define PRINT_CFG                                     // 设置此宏，将 CFG 生成出来
 
 #include <string>
 #include <vector>
@@ -23,7 +24,8 @@ typedef std::shared_ptr<TypeBase> baseTypePtr;          // 数据类型基类指
  * @see IR/Inst.h
 */
 extern std::vector<std::string> ST_Insts;
-extern std::vector<std::string> ST_Conds;
+extern std::vector<std::string> ST_IConds;
+extern std::vector<std::string> ST_FConds;
 
 // 定义一个空参数列表，所有零参函数在 call 时均使用此列表
 extern std::vector<Value*> Zero_Argu_List;

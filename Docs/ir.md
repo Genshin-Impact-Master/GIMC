@@ -17,14 +17,18 @@ Value
             > Subf
             > Divf
             > Mulf
+            > And
+            > Or
         > Alloca
         > Store
         > Load
         > Call
         > Ret
         > Icmp
+        > Fcmp
         > Br
         > Gep
+        > Phi
     > BBlock
 TypeBase
     > IntegerType
@@ -37,38 +41,9 @@ TypeBase
 ## 类设计解释
 ### Instruction 类
 含有 `TypeBase` 原因是在 SSA 中，每条指令实际上指代的是一个 __值__ 
+#### def-use 关系
+Instruction 中的 `ops_`成员变量就是代表着该 Value Use 的 Value，而此条 Instruction 指代的 Value 就是被 define 的。
 
-### 侵入式链表
-**为什么要采用侵入式链表？**
-
-// 借鉴 22 年萝杨空队解释
-* 在对于 Instructions 进行迭代时，因为需要进行删减操作，如果直接使用 vector，其内置迭代器对修改敏感。(但似乎普通的链表也能做到)
-* 还有一个好处是，可以直接通过 Instruction，就可以得到在链表中的位置
-
-**侵入式链表简述**
-[参考链接](http://t.csdnimg.cn/pScaX)
-简单而言，就是将链接域的指针所存放的数据，从**整个结构体**的地址，转换为存放**链接域**地址
-```c
-// 存放链接域的结点
-struct INode {
-  struct INode *next;
-  Node *owner;
-};
-
-// 整个结构体
-typedef struct Node {
-  Data data;            // 数据信息
-  struct INode iNode;   // 链接域结点 
-} Node;
-
-// 侵入式链表
-struct IList {
-  struct INode *rear;   // 链表尾部
-  struct INode head;    // 头结点
-};
-```
-如此一来，迭代的就是链接域结点，那么如何通过结点得到整个数据结构的地址呢？
-* 解决方案：通过向链接域结点中添加 `struct Node` 的地址，作为其变量来获得。
 ## LLVM IR
 ### LLVM IR Type 
 [LLVM IR Type 参考链接](https://llvm.org/docs/LangRef.html#type-system)
@@ -142,6 +117,38 @@ label
 
 ### LLVM IR Instruction
 LLVM IR 指令 [参考链接](https://llvm.org/docs/LangRef.html#instruction-reference)
+#### 部分二元操作
+**and** 指令
+为位运算 &
+```llvm
+<result> = and <ty> <op1>, <op2>   ; yields ty:result
+```
+注意 type 可以 i32
+**or** 指令
+为位运算 |
+```llvm
+<result> = or <ty> <op1>, <op2>   ; yields ty:result
+```
+注意 type 可以是 i32，不一定必须 i1
+**srem** 指令
+整数 符号求余操作
+```llvm
+<result> = srem <ty> <op1>, <op2>   ; yields ty:result
+```
+返回一个除法的 "remainder"（余数）
+```llvm
+;eg
+<result> = srem i32 4, %var          ; yields i32:result = 4 % %var
+```
+
+**frem** 指令
+```llvm
+<result> = frem [fast-math flags]* <ty> <op1>, <op2>   ; yields ty:result
+```
+执行浮点数求余 fmod.(GIMC 中应该不用实现，浮点数进行 % 应当会发生类型转换)
+```llvm
+<result> = frem float 4.0, %var          ; yields float:result = 4.0 % %var
+```
 #### Terminator Instruction 终结指令（基本块的结尾）
 终结指令产生的为 control flow 而非 value
 __ret__ 指令
@@ -243,3 +250,65 @@ sle: signed less or equal
 <result> = icmp ule i16 -4, 5        ; yields: result=false
 <result> = icmp sge i16  4, 5        ; yields: result=false
 ```
+**fcmp** 指令
+```llvm
+<result> = fcmp [fast-math flags]* <cond> <ty> <op1>, <op2>     ; yields i1 or <N x i1>:result
+```
+`cond` 类型（节选）
+```llvm
+oeq: ordered and equal
+
+ogt: ordered and greater than
+
+oge: ordered and greater than or equal
+
+olt: ordered and less than
+
+ole: ordered and less than or equal
+
+one: ordered and not equal
+```
+ordered 的含义为 两个操作数均非 QNAN（Quiet NAN）和 SNAN（Singaling NAN）。QNAN 与 SNAN 的不同之处在于，QNAN 的尾数部分最高位定义为 1，SNAN 最高位定义为 0；QNAN 一般表示未定义的算术运算结果，最常见的莫过于除 0 运算；SNAN 一般被用于标记未初始化的值，以此来捕获异常。
+
+**zext to** 指令
+零拓展
+```llvm
+<result> = zext <ty> <value> to <ty2>             ; yields ty2
+```
+```llvm
+; eg
+%X = zext i32 257 to i64              ; yields i64:257
+%Y = zext i1 true to i32              ; yields i32:1
+```
+
+**Phi** 指令
+向 SSA 中插入 phi 结点，必须插入在基本块的所有其他指令前。
+语法
+```llvm
+<result> = phi [fast-math-flags] <ty> [ <val0>, <label0>], ...
+```
+例子
+```llvm
+Loop:       ; Infinite loop that counts from 0 on up...
+  %indvar = phi i32 [ 0, %LoopHeader ], [ %nextindvar, %Loop ]
+  %nextindvar = add i32 %indvar, 1
+  br label %Loop
+```
+## 优化相关
+### mem2reg & phi 指令
+[优化参考阅读](https://buaa-se-compiling.github.io/miniSysY-tutorial/challenge/mem2reg/help.html)
+
+SSA Value 中 def-use,use-def 通过双向引用来维护，维护该双向引用的数据结构叫 "Use"
+
+#### 求 CFG 的支配树
+* **前驱后继结点**[(Pres_Succs_Calculate.h)](../include/Pass/Pres_Succs_Calculate.h)
+为 BBlock 类型添加 pres 向量与 succs 向量（表示其前驱和后继）
+为每个基本块额外添加一个 exit 结点。（？需要吗？）
+* **每个结点支配集计算**
+  * 直白算法：
+    > dom = {}
+    while dom is changing:
+    $\quad$for vertex in CFG:
+    $\quad\quad$$dom[vertex]$ $=$ ${vertex}$ $\;\cup\;\cdot\cap(dom[p]\;|\;for\; p \;in\; vertex.pres)$
+  * [Lengauer-Tarjan 算法原文](https://dl.acm.org/doi/pdf/10.1145/357062.357071)
+  [算法解读](https://www.cnblogs.com/meowww/p/6475952.html)

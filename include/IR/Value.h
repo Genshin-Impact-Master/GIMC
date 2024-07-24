@@ -21,9 +21,11 @@ private:
   static const std::string FUNC_OR_GLOBAL_PREFIX;   // 全局变量 or 函数
   std::string fullName;                             // emit LLVM 时用到的全称
   std::string prefix;                               // emit LLVM 时用到的前缀
-
+  std::vector<Value*> uses_;                        // 在哪些 Value 中被用到
   // @C++_Learn 因为 TypeBase 里面有纯虚函数，故 TypeBase 不能被实例化，只能传递其引用 or 指针
   baseTypePtr type_;                                // Value 的数据类型的指针
+protected:
+  std::vector<Value*> ops_;                        // 用到了哪些 Value
 public:
   /**
    * @todo 带名称 Value 初始化
@@ -66,6 +68,11 @@ public:
   baseTypePtr getType() {return type_;}
 
   const std::string getTypeName() {return getType()->getName();}
+
+  // 获得使用本 Value 的值的链表
+  std::vector<Value*>& getUses() {return uses_;}
+  // 获得本变量使用的值的链表
+  std::vector<Value*>& getDefs() {return ops_;}
 
   virtual ~Value() = default;
 };

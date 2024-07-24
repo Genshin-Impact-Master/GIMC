@@ -4,6 +4,10 @@
 #include "../include/IR/IRBuilder.h"
 #include "../include/IR/Type.h"
 #include "../include/Config.h"
+#include "../include/Pass/Pres_Succs_Calculate.h"
+#include "../include/Pass/Domination.h"
+#include "../include/Pass/Mem2reg.h"
+#include "../include/Pass/PassManager.h"
 
 USING_GIMC_NAMESPACE
 
@@ -16,7 +20,7 @@ Function *putch;
 Function *putint;
 Function *getch;
 Function *getint;
-Function *memset;
+Function *memset_;
 
 // 每个 example 必须包含
 Function *myFunc;                               // main 函数
@@ -30,7 +34,7 @@ Module* initialize(IRBuilder &builder) {
   putint = builder.createFunction("putint", voidType, putint_arguTypes);
   getch = builder.createFunction("getch", i32Type, Zero_Argu_Type_List);
   getint = builder.createFunction("getint", i32Type, Zero_Argu_Type_List);              // getint 为零参函数，使用全局零参空向量，见 Config.cpp
-  memset = builder.createFunction("myMemset", voidType, memset_arguTypes);
+  memset_ = builder.createFunction("myMemset", voidType, memset_arguTypes);
   putch_arguTypes.push_back(i32Type);
   putint_arguTypes.push_back(i32Type);
   memset_arguTypes.push_back(std::make_shared<PointerType>(i32Type));  
@@ -47,7 +51,7 @@ void addLib() {
   declares->push_back(getint);
   declares->push_back(putch);
   declares->push_back(putint);
-  declares->push_back(memset);
+  declares->push_back(memset_);
 
   // Module 中加入 main
   defs->push_back(myFunc);
@@ -71,6 +75,8 @@ void newModule(IRBuilder &builder, Module *module) {
 
   // 创建基本块 entry
   entry = builder.createBBlock("entry", voidType);
+
+  myFunc->setEntry(entry);
 
   // 加入库函数
   addLib();
@@ -181,7 +187,7 @@ int main(int argc, char** args) {
   builder.createCallInst("call4", putch, eg3_argus2);
   builder.createRetInst(new ConstIntValue(0));
  
-    // 由 IRBuilder 发射 LLVM 代码
+  // 由 IRBuilder 发射 LLVM 代码
   builder.emitIRModule(myModule);
 
 
@@ -204,7 +210,7 @@ int main(int argc, char** args) {
 
   Instruction *eg4_call1 = builder.createCallInst("call1", getint, Zero_Argu_List);
   Instruction *eg4_call2 = builder.createCallInst("call2", getint, Zero_Argu_List);
-  Instruction *eg4_cmp = builder.createIcmpInst("icmp", CondKind::Sle, eg4_call1, eg4_call2);
+  Instruction *eg4_cmp = builder.createIcmpInst("icmp", ICondKind::Sle, eg4_call1, eg4_call2);
   // 首先为 entry BBlock 新建两个后继 BBlock if_true,if_false，以及最终汇合 BBlock if_end
   BBlock *eg4_if_end = builder.createBBlock("eg4_if_end", voidType);
   Instruction *eg4_ret = builder.createRetInst(new ConstIntValue(0));
@@ -226,6 +232,15 @@ int main(int argc, char** args) {
 
   // 由 IRBuilder 发射 LLVM 代码
   builder.emitIRModule(myModule);
+
+  /**
+   * eg 4.1 前驱后继结点 PASS 检测，绘制 CFG
+   */
+  // Pres_Succs_Calculate::calculate_Func(myFunc);
+#ifdef PRINT_CFG
+  // 使用 graphviz 画 main 的数据流图
+  // myFunc->drawCFG();
+#endif
 
   /**
    * eg.5 支持全局变量
@@ -301,7 +316,7 @@ int main(int argc, char** args) {
   eg6_argus_1.push_back(eg6_gep_5);
   eg6_argus_1.push_back(new ConstIntValue(0));
   eg6_argus_1.push_back(new ConstIntValue(3*2*4));
-  builder.createCallInst(memset, eg6_argus_1);
+  builder.createCallInst(memset_, eg6_argus_1);
   Instruction *eg6_c_0_1 = builder.createLoadInst("c_0_1", i32Type, eg6_gep_4);
   std::vector<Value*> eg6_argus_2;
   eg6_argus_2.push_back(eg6_c_0_1);
@@ -347,8 +362,163 @@ int main(int argc, char** args) {
 
   builder.emitIRModule(myModule);
 
+  /**
+   * eg.8. 支持浮点数比较与整数求余操作
+   * int main() {
+   *  float x = 0.2;
+   *  int m = 2;
+   *  return x > (m % 2);
+   * }
+   * // 返回 1
+   */
+  newModule(builder, myModule);
+  // 初始化变量
+  Instruction *eg8_x_ptr = builder.createAllocaInst(floatPointerType);
+  Instruction *eg8_m_ptr = builder.createAllocaInst(int32PointerType);
+  builder.createStoreInst(new ConstFloatValue(0.2f), eg8_x_ptr);
+  builder.createStoreInst(new ConstIntValue(2), eg8_m_ptr);
+  // 计算 m % 2
+  Instruction *eg8_load_m = builder.createLoadInst("load_m", i32Type, eg8_m_ptr);
+  Instruction *eg8_m_rem_2 = builder.createBinaryInst(InstKind::SRem, eg8_load_m, new ConstIntValue(2));
+  // 注意 float 与 int 相比较会隐式地将 int 强转为 float
+  Instruction *eg8_i2fp_rem = builder.createInt2FpInst("i2fp", eg8_m_rem_2);
+  Instruction *eg8_load_x = builder.createLoadInst(floatType, eg8_x_ptr);
+  Instruction *eg8_fcmp = builder.createFcmpInst("fcmp", FCondKind::Ogt, eg8_load_x, eg8_i2fp_rem);
+  // 注意 icmp 与 fcmp 均是 bool 类型，需要零拓展至 i32
+  Instruction *eg8_zext = builder.createZextInst("zext", i32Type, eg8_fcmp);
+  builder.createRetInst(eg8_zext);
+
+  builder.emitIRModule(myModule);
+
+  /**
+   * eg.9. 支配树算法测试
+   */
+  newModule(builder, myModule);
+  std::unordered_map<char, BBlock*> eg_9_nodes;
+  for (char tmp = 'A'; tmp <= 'L'; tmp++) {
+    BBlock *bBlk = builder.createBBlock(std::string(1, tmp), voidType);
+    eg_9_nodes[tmp] = bBlk;
+  }
+  BBlock *eg_9_r = builder.createBBlock("R", voidType);
+  myFunc->setEntry(eg_9_r);
+
+  BBlock::addEdge(eg_9_r, eg_9_nodes['A']);
+  BBlock::addEdge(eg_9_r, eg_9_nodes['B']);
+  BBlock::addEdge(eg_9_r, eg_9_nodes['C']);
+  BBlock::addEdge(eg_9_nodes['A'], eg_9_nodes['D']);
+  BBlock::addEdge(eg_9_nodes['B'], eg_9_nodes['E']);
+  BBlock::addEdge(eg_9_nodes['B'], eg_9_nodes['A']);
+  BBlock::addEdge(eg_9_nodes['B'], eg_9_nodes['D']);
+  BBlock::addEdge(eg_9_nodes['C'], eg_9_nodes['F']);
+  BBlock::addEdge(eg_9_nodes['C'], eg_9_nodes['G']);
+  BBlock::addEdge(eg_9_nodes['D'], eg_9_nodes['L']);
+  BBlock::addEdge(eg_9_nodes['E'], eg_9_nodes['H']);
+  BBlock::addEdge(eg_9_nodes['F'], eg_9_nodes['I']);
+  BBlock::addEdge(eg_9_nodes['G'], eg_9_nodes['I']);
+  BBlock::addEdge(eg_9_nodes['G'], eg_9_nodes['J']);
+  BBlock::addEdge(eg_9_nodes['H'], eg_9_nodes['E']);
+  BBlock::addEdge(eg_9_nodes['H'], eg_9_nodes['K']);
+  BBlock::addEdge(eg_9_nodes['I'], eg_9_nodes['K']);
+  BBlock::addEdge(eg_9_nodes['J'], eg_9_nodes['I']);
+  BBlock::addEdge(eg_9_nodes['K'], eg_9_nodes['I']);
+  BBlock::addEdge(eg_9_nodes['K'], eg_9_r);
+  BBlock::addEdge(eg_9_nodes['L'], eg_9_nodes['H']);
+
+#ifdef PRINT_CFG
+  // 使用 graphviz 画 main 的数据流图
+  myFunc->drawCFG();
+#endif
+  Domination eg9_dom;
+  eg9_dom.initialize(myFunc);
+  eg9_dom.calculate();
+
+  /**
+   * eg.10. 支持 phi 指令
+      int main() {
+        int x, cond = 1;
+        if (cond > 0)
+            x = 1;
+        else
+            x = -1;
+        return x;
+      }
+   */
+  newModule(builder, myModule);
+  Instruction *eg_10_x_ptr =  builder.createAllocaInst("x", int32PointerType);
+  Instruction *eg_10_cond_ptr =  builder.createAllocaInst("cond", int32PointerType);
+  builder.createStoreInst(new ConstIntValue(1), eg_10_cond_ptr);
+  Instruction *eg_10_load_cond = builder.createLoadInst("load_cond", i32Type, eg_10_cond_ptr);
+  Instruction *eg_10_cmp = builder.createIcmpInst(ICondKind::Sgt, eg_10_load_cond, new ConstIntValue(0));
+  BBlock *eg_10_if_then = builder.createBBlock("if_then", voidType);
+  BBlock *eg_10_if_else = builder.createBBlock("if_else", voidType);
+  BBlock *eg_10_if_end = builder.createBBlock("if_end", voidType);
+  builder.setChosedBBlock(entry);
+  Instruction *eg_10_entry_br = builder.createBrInst(eg_10_cmp, eg_10_if_then, eg_10_if_else);
+  builder.setChosedBBlock(eg_10_if_then);
+  builder.createStoreInst(new ConstIntValue(1), eg_10_x_ptr);
+  builder.createBrInst(nullptr, eg_10_if_end, nullptr);
+  builder.setChosedBBlock(eg_10_if_else);
+  builder.createStoreInst(new ConstIntValue(-1), eg_10_x_ptr);
+  builder.createBrInst(nullptr, eg_10_if_end, nullptr);
+  builder.setChosedBBlock(eg_10_if_end);
+  Instruction *eg_10_load_x = builder.createLoadInst(i32Type, eg_10_x_ptr);
+  builder.createRetInst(eg_10_load_x);
+
+  PassManager eg_10_pm(myFunc);
+  eg_10_pm.mem2reg();
+
+  builder.emitIRModule(myModule);
 
 
+
+  /**
+   * eg.10. 支持函数形参调用，and or neg 指令
+   * 
+   * int foo(float x, int y, int z) {
+   *  return !x && y || z;
+   * }
+   * 
+   * int main() {
+   *  return foo(2, 0, 3);
+   * }
+   * 结果 true
+   */
+  // newModule(builder, myModule);
+  // std::vector<baseTypePtr> eg_10_foo_argu_ty;
+  // eg_10_foo_argu_ty.push_back(floatType);
+  // eg_10_foo_argu_ty.push_back(i32Type);
+  // eg_10_foo_argu_ty.push_back(i32Type);
+  // Function *eg_10_foo = builder.createFunction("foo", i32Type, eg_10_foo_argu_ty);
+  // BBlock *eg_10_foo_entry = builder.createBBlock("entry", voidType, eg_10_foo);
+  // eg_10_foo->setEntry(eg_10_foo_entry);       // 将 BBlock 加入其中
+  // // 获取函数形参作为变量，注意作为变量规范做法则需要 load store
+  // std::vector<Value> &eg_10_foo_argus = eg_10_foo->getArgus();
+  // Instruction *eg_10_x_ptr = builder.createAllocaInst("x_ptr", floatPointerType);
+  // Instruction *eg_10_y_ptr = builder.createAllocaInst("y_ptr", floatPointerType);
+  // Instruction *eg_10_z_ptr = builder.createAllocaInst("z_ptr", floatPointerType);
+  //   // 注意此时因为是 Value* 指针所以要用取址符  
+  // builder.createStoreInst(&eg_10_foo_argus[0], eg_10_x_ptr);
+  // builder.createStoreInst(&eg_10_foo_argus[1], eg_10_y_ptr);
+  // builder.createStoreInst(&eg_10_foo_argus[2], eg_10_z_ptr);
+  // Instruction *eg_10_x_load = builder.createLoadInst(floatType, eg_10_x_ptr);
+  // Instruction *eg_10_fcmp = builder.createFcmpInst(FCondKind::One, new ConstFloatValue(0), eg_10_x_load);
+  // // 因为若 x==0.0，即不满足 && 左式，直接跳转到 ret 步骤 
+  // BBlock *eg_10_or_rhs = builder.createBrInst();
+  // Instruction *eg_10_y_load = builder.createLoadInst(i32Type, eg_10_y_ptr);
+  // Instruction *eg_10_z_load = builder.createLoadInst(i32Type, eg_10_z_ptr);
+  // // 
+  // BBlock *eg_10_or_lhs = builder.createBBlock
+  // defs->push_back(eg_10_foo);   // 将函数加入定义中
+  // builder.setChosedFunc(myFunc);
+  // builder.setChosedBBlock(entry);
+  // std::vector<Value*> eg_10_call_argus;
+  // eg_10_call_argus.push_back(new ConstFloatValue(2));
+  // eg_10_call_argus.push_back(new ConstIntValue(0));
+  // eg_10_call_argus.push_back(new ConstIntValue(3));
+  // Instruction *eg_10_call = builder.createCallInst(eg_10_foo, eg_10_call_argus);
+  // builder.createRetInst(eg_10_call);
+
+  // builder.emitIRModule(myModule);
 
   // 关闭 builder 的 irout 文件输出流
   builder.close();
