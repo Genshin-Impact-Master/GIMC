@@ -1,4 +1,5 @@
 #include "../include/IR/IRBuilder.h"
+#define GET_CNT_NAME "_" + std::to_string(parent->getCnt())
 USING_GIMC_NAMESPACE
 
 /* C 语言实现可变参数 格式化输出字符串，弃用
@@ -79,7 +80,7 @@ Instruction* IRBuilder::createBinaryInst(InstKind kind, const std::string &name,
 
 Instruction* IRBuilder::createBinaryInst(InstKind kind, Value *lhs, Value *rhs, BBlock* parent) {
   parent = checkBlockParent(parent);
-  return createBinaryInst(kind, std::to_string(parent->getCnt()), lhs, rhs, parent);
+  return createBinaryInst(kind, GET_CNT_NAME, lhs, rhs, parent);
 }
 
 Instruction* IRBuilder::createAllocaInst(const std::string &name, baseTypePtr type, BBlock *parent) {
@@ -91,7 +92,7 @@ Instruction* IRBuilder::createAllocaInst(const std::string &name, baseTypePtr ty
 
 Instruction* IRBuilder::createAllocaInst(baseTypePtr type, BBlock *parent) {
   parent = checkBlockParent(parent);
-  return createAllocaInst(std::to_string(parent->getCnt()), type, parent);
+  return createAllocaInst(GET_CNT_NAME, type, parent);
 }
 
 Instruction* IRBuilder::createStoreInst(Value *input, Value *ptr, BBlock *parent) {
@@ -115,7 +116,7 @@ Instruction* IRBuilder::createLoadInst(const std::string &name, baseTypePtr type
 
 Instruction* IRBuilder::createLoadInst(baseTypePtr type, Value *ptr, BBlock *parent) {
   parent = checkBlockParent(parent);
-  return createLoadInst(std::to_string(parent->getCnt()), type, ptr, parent);
+  return createLoadInst(GET_CNT_NAME, type, ptr, parent);
 }
 
 Instruction* IRBuilder::createCallInst(const std::string &name, Function *func, std::vector<Value*> &argus, BBlock *parent) {
@@ -128,7 +129,7 @@ Instruction* IRBuilder::createCallInst(const std::string &name, Function *func, 
 
 Instruction* IRBuilder::createCallInst(Function *func, std::vector<Value*> &argus, BBlock *parent) {
   parent = checkBlockParent(parent);
-  return createCallInst(std::to_string(parent->getCnt()), func, argus, parent);
+  return createCallInst(GET_CNT_NAME, func, argus, parent);
 }
 
 Instruction* IRBuilder::createRetInst(const std::string &name, Value *retValue, BBlock *parent) {
@@ -140,7 +141,7 @@ Instruction* IRBuilder::createRetInst(const std::string &name, Value *retValue, 
   
 Instruction* IRBuilder::createRetInst(Value *retValue, BBlock *parent) {
   parent = checkBlockParent(parent);
-  return createRetInst(std::to_string(parent->getCnt()), retValue, parent);
+  return createRetInst(GET_CNT_NAME, retValue, parent);
 }
 
 Instruction* IRBuilder::createIcmpInst(const std::string &name, ICondKind kind, Value *first, Value *second, BBlock *parent) {
@@ -152,7 +153,7 @@ Instruction* IRBuilder::createIcmpInst(const std::string &name, ICondKind kind, 
 
 Instruction* IRBuilder::createIcmpInst(ICondKind kind, Value *first, Value *second, BBlock *parent) {
   parent = checkBlockParent(parent);
-  return createIcmpInst(std::to_string(parent->getCnt()), kind, first, second, parent);
+  return createIcmpInst(GET_CNT_NAME, kind, first, second, parent);
 }
 
 Instruction* IRBuilder::createFcmpInst(const std::string &name, FCondKind kind, Value *first, Value *second, BBlock *parent) {
@@ -164,7 +165,7 @@ Instruction* IRBuilder::createFcmpInst(const std::string &name, FCondKind kind, 
 
 Instruction* IRBuilder::createFcmpInst(FCondKind kind, Value *first, Value *second, BBlock *parent) {
   parent = checkBlockParent(parent);
-  return createFcmpInst(std::to_string(parent->getCnt()), kind, first, second, parent);
+  return createFcmpInst(GET_CNT_NAME, kind, first, second, parent);
 }
 
 Instruction* IRBuilder::createBrInst(Value *cond, BBlock *ifTure, BBlock *ifFalse, BBlock *parent) {
@@ -184,7 +185,7 @@ Instruction* IRBuilder::createBrInst(Value *cond, BBlock *ifTure, BBlock *ifFals
   return inst;
 }
 
-Instruction* IRBuilder::createGEPInst(const std::string &name, Value *ptr, int offset, BBlock *parent) {
+Instruction* IRBuilder::createGEPInst(const std::string &name, Value *ptr, Value *offset, BBlock *parent) {
   parent = checkBlockParent(parent);
   std::shared_ptr<PointerType> type = std::static_pointer_cast<PointerType>(ptr->getType());
   GEP *inst = new GEP(name, type->getBaseType(), parent, ptr, offset);
@@ -192,9 +193,9 @@ Instruction* IRBuilder::createGEPInst(const std::string &name, Value *ptr, int o
   return inst;
 }
 
-Instruction* IRBuilder::createGEPInst(Value *ptr, int offset, BBlock *parent) {
+Instruction* IRBuilder::createGEPInst(Value *ptr, Value *offset, BBlock *parent) {
   parent = checkBlockParent(parent);
-  return createGEPInst(std::to_string(parent->getCnt()), ptr, offset, parent);
+  return createGEPInst(GET_CNT_NAME, ptr, offset, parent);
 }
 
 Instruction* IRBuilder::createInt2FpInst(const std::string &name, Value *i32, BBlock *parent) {
@@ -206,7 +207,7 @@ Instruction* IRBuilder::createInt2FpInst(const std::string &name, Value *i32, BB
 
 Instruction* IRBuilder::createInt2FpInst(Value *i32, BBlock *parent) {
   parent = checkBlockParent(parent);
-  return createInt2FpInst(std::to_string(parent->getCnt()), i32, parent);
+  return createInt2FpInst(GET_CNT_NAME, i32, parent);
 }
 
 Instruction* IRBuilder::createFp2IntInst(const std::string &name, Value *fp, BBlock *parent) {
@@ -218,7 +219,7 @@ Instruction* IRBuilder::createFp2IntInst(const std::string &name, Value *fp, BBl
 
 Instruction* IRBuilder::createFp2IntInst(Value *i32, BBlock *parent) {
   parent = checkBlockParent(parent);
-  return createFp2IntInst(std::to_string(parent->getCnt()), i32, parent);
+  return createFp2IntInst(GET_CNT_NAME, i32, parent);
 }
 
 Instruction* IRBuilder::createZextInst(const std::string &name, baseTypePtr type, Value *proto, BBlock *parent) {
@@ -230,8 +231,21 @@ Instruction* IRBuilder::createZextInst(const std::string &name, baseTypePtr type
 
 Instruction* IRBuilder::createZextInst(baseTypePtr type, Value *proto, BBlock *parent) {
   parent = checkBlockParent(parent);
-  return createZextInst(std::to_string(parent->getCnt()), type, proto, parent);
+  return createZextInst(GET_CNT_NAME, type, proto, parent);
 }
+
+Instruction* IRBuilder::createPhiInst(const std::string &name, baseTypePtr type, std::vector<Value*> argus, BBlock *parent) {
+  parent = checkBlockParent(parent);
+  Phi *inst = new Phi(name, type, parent, argus);
+  parent->addInst(inst);
+  return inst;
+}
+
+Instruction* IRBuilder::createPhiInst(baseTypePtr type, std::vector<Value*> argus, BBlock *parent) {
+  parent = checkBlockParent(parent);
+  return createPhiInst(GET_CNT_NAME, type, argus, parent);
+}
+
 /******************************************************************************/
 /*                                生成 LLVM IR                                */
 /*****************************************************************************/

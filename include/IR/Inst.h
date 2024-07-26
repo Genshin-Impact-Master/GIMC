@@ -337,12 +337,12 @@ public:
       baseTypePtr type,
       BBlock *parent,
       Value *ptr,
-      int offset);
+      Value *offset);
 
   // GEP 指令数组基址
   Value* getPtr() {return ops_[0];}
 
-  // 获得偏移量的 ConstIntValue
+  // 获得偏移量的 Value
   Value* getOffsetValue() {return ops_[1];}
 
   // 获得偏移量，相较于 getOffsetValue 是直接得到一个 int

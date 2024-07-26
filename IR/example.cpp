@@ -295,7 +295,7 @@ int main(int argc, char** args) {
   globals->push_back(eg6_b);
   
   // GEP 指令
-  Instruction *eg6_gep_1 = builder.createGEPInst("b_1_ptr", eg6_b, 1);
+  Instruction *eg6_gep_1 = builder.createGEPInst("b_1_ptr", eg6_b, new ConstIntValue(1));
   Instruction *eg6_b_1 = builder.createLoadInst("b_1", i32Type, eg6_gep_1);
   std::vector<Value*> eg6_argus;
   eg6_argus.push_back(eg6_b_1);
@@ -305,13 +305,13 @@ int main(int argc, char** args) {
   baseTypePtr eg6_ty_2 = std::make_shared<PointerType>(i32Type, 2);
   baseTypePtr eg6_ty_3 = std::make_shared<PointerType>(eg6_ty_2, 4);
   Instruction *eg6_c_ptr = builder.createAllocaInst(eg6_ty_3);
-  Instruction *eg6_gep_2 = builder.createGEPInst("c_0_ptr", eg6_c_ptr, 0);
-  Instruction *eg6_gep_3 = builder.createGEPInst("c_0_0_ptr", eg6_gep_2, 0);
-  Instruction *eg6_gep_4 = builder.createGEPInst("c_0_1_ptr", eg6_gep_2, 1);
+  Instruction *eg6_gep_2 = builder.createGEPInst("c_0_ptr", eg6_c_ptr, new ConstIntValue(0));
+  Instruction *eg6_gep_3 = builder.createGEPInst("c_0_0_ptr", eg6_gep_2, new ConstIntValue(0));
+  Instruction *eg6_gep_4 = builder.createGEPInst("c_0_1_ptr", eg6_gep_2, new ConstIntValue(1));
   builder.createStoreInst(new ConstIntValue(3), eg6_gep_3);
   builder.createStoreInst(new ConstIntValue(4), eg6_gep_4);
   // 调用 memset 函数
-  Instruction *eg6_gep_5 = builder.createGEPInst("c_1_ptr", eg6_c_ptr, 1);
+  Instruction *eg6_gep_5 = builder.createGEPInst("c_1_ptr", eg6_c_ptr, new ConstIntValue(1));
   std::vector<Value*> eg6_argus_1;
   eg6_argus_1.push_back(eg6_gep_5);
   eg6_argus_1.push_back(new ConstIntValue(0));
@@ -472,7 +472,7 @@ int main(int argc, char** args) {
 
 
   /**
-   * eg.10. 支持函数形参调用，and or neg 指令
+   * eg.11. 支持函数形参调用，&& 和 || 的控制流程
    * 
    * int foo(float x, int y, int z) {
    *  return !x && y || z;
@@ -483,42 +483,68 @@ int main(int argc, char** args) {
    * }
    * 结果 true
    */
-  // newModule(builder, myModule);
-  // std::vector<baseTypePtr> eg_10_foo_argu_ty;
-  // eg_10_foo_argu_ty.push_back(floatType);
-  // eg_10_foo_argu_ty.push_back(i32Type);
-  // eg_10_foo_argu_ty.push_back(i32Type);
-  // Function *eg_10_foo = builder.createFunction("foo", i32Type, eg_10_foo_argu_ty);
-  // BBlock *eg_10_foo_entry = builder.createBBlock("entry", voidType, eg_10_foo);
-  // eg_10_foo->setEntry(eg_10_foo_entry);       // 将 BBlock 加入其中
-  // // 获取函数形参作为变量，注意作为变量规范做法则需要 load store
-  // std::vector<Value> &eg_10_foo_argus = eg_10_foo->getArgus();
-  // Instruction *eg_10_x_ptr = builder.createAllocaInst("x_ptr", floatPointerType);
-  // Instruction *eg_10_y_ptr = builder.createAllocaInst("y_ptr", floatPointerType);
-  // Instruction *eg_10_z_ptr = builder.createAllocaInst("z_ptr", floatPointerType);
-  //   // 注意此时因为是 Value* 指针所以要用取址符  
-  // builder.createStoreInst(&eg_10_foo_argus[0], eg_10_x_ptr);
-  // builder.createStoreInst(&eg_10_foo_argus[1], eg_10_y_ptr);
-  // builder.createStoreInst(&eg_10_foo_argus[2], eg_10_z_ptr);
-  // Instruction *eg_10_x_load = builder.createLoadInst(floatType, eg_10_x_ptr);
-  // Instruction *eg_10_fcmp = builder.createFcmpInst(FCondKind::One, new ConstFloatValue(0), eg_10_x_load);
-  // // 因为若 x==0.0，即不满足 && 左式，直接跳转到 ret 步骤 
-  // BBlock *eg_10_or_rhs = builder.createBrInst();
-  // Instruction *eg_10_y_load = builder.createLoadInst(i32Type, eg_10_y_ptr);
-  // Instruction *eg_10_z_load = builder.createLoadInst(i32Type, eg_10_z_ptr);
-  // // 
-  // BBlock *eg_10_or_lhs = builder.createBBlock
-  // defs->push_back(eg_10_foo);   // 将函数加入定义中
-  // builder.setChosedFunc(myFunc);
-  // builder.setChosedBBlock(entry);
-  // std::vector<Value*> eg_10_call_argus;
-  // eg_10_call_argus.push_back(new ConstFloatValue(2));
-  // eg_10_call_argus.push_back(new ConstIntValue(0));
-  // eg_10_call_argus.push_back(new ConstIntValue(3));
-  // Instruction *eg_10_call = builder.createCallInst(eg_10_foo, eg_10_call_argus);
-  // builder.createRetInst(eg_10_call);
+  newModule(builder, myModule);
+  std::vector<baseTypePtr> eg_11_foo_argu_ty;
+  eg_11_foo_argu_ty.push_back(floatType);
+  eg_11_foo_argu_ty.push_back(i32Type);
+  eg_11_foo_argu_ty.push_back(i32Type);
+  Function *eg_11_foo = builder.createFunction("foo", i32Type, eg_11_foo_argu_ty);
+  BBlock *eg_11_foo_entry = builder.createBBlock("entry", voidType, eg_11_foo);
+  eg_11_foo->setEntry(eg_11_foo_entry);       // 将 BBlock 加入其中
+  // 获取函数形参作为变量，注意作为变量规范做法则需要 load store
+  std::vector<Value> &eg_11_foo_argus = eg_11_foo->getArgus();
+  Instruction *eg_11_x_ptr = builder.createAllocaInst("x_ptr", floatPointerType);
+  Instruction *eg_11_y_ptr = builder.createAllocaInst("y_ptr", floatPointerType);
+  Instruction *eg_11_z_ptr = builder.createAllocaInst("z_ptr", floatPointerType);
+    // 注意此时因为是 Value* 指针所以要用取址符  
+  builder.createStoreInst(&eg_11_foo_argus[0], eg_11_x_ptr);
+  builder.createStoreInst(&eg_11_foo_argus[1], eg_11_y_ptr);
+  builder.createStoreInst(&eg_11_foo_argus[2], eg_11_z_ptr);
+  // 对于整个表达式构建两个基本块 true,false
+  BBlock *eg_11_false = builder.createBBlock("false", voidType, eg_11_foo);
+  BBlock *eg_11_true = builder.createBBlock("true", voidType, eg_11_foo);
+  // 针对 || 构建 1 个额外基本块（二叉树中 || 为根结点）
+  BBlock *eg_11_or_A1p_false = builder.createBBlock("or_a1p_false", voidType, eg_11_foo);
+  // 针对 && 构建 1 个 额外基本块
+  BBlock *eg_11_and_A1_true = builder.createBBlock("and_a1_true", voidType, eg_11_foo);
+    // 在 entry 基本块计算 && 的 A1（左侧表达式），并条件跳转到 a1_true 或 ||_A1_false（即 || 的第一个表达式为 false）
+  Instruction *eg_11_x_load = builder.createLoadInst(floatType, eg_11_x_ptr, eg_11_foo_entry);
+  Instruction *eg_11_fcmp = builder.createFcmpInst(FCondKind::One, new ConstFloatValue(0), eg_11_x_load, eg_11_foo_entry);
+  Instruction *eg_11_and_a1_br = builder.createBrInst(eg_11_fcmp, eg_11_and_A1_true, eg_11_or_A1p_false, eg_11_foo_entry);
+    // 在 &&_A1_true 基本块计算 && 的 A2（右侧表达式），并条件跳转到 true 或 ||_A1_false
+  Instruction *eg_11_y_load = builder.createLoadInst(i32Type, eg_11_y_ptr, eg_11_and_A1_true);
+  Instruction *eg_11_icmp_y = builder.createIcmpInst(ICondKind::Eq, new ConstIntValue(0), eg_11_y_load, eg_11_and_A1_true);
+  Instruction *eg_11_and_a2_br = builder.createBrInst(eg_11_icmp_y, eg_11_true, eg_11_or_A1p_false, eg_11_and_A1_true);
+    //  在 ||_A1'_false 基本块计算 || 的 A2'，条件跳转到 true 或 false
+  Instruction *eg_11_z_load = builder.createLoadInst(i32Type, eg_11_z_ptr, eg_11_or_A1p_false);
+  Instruction *eg_11_icmp_z = builder.createIcmpInst(ICondKind::Eq, new ConstIntValue(0), eg_11_z_load, eg_11_or_A1p_false);
+  Instruction *eg_11_or_a2p_br = builder.createBrInst(eg_11_icmp_z, eg_11_true, eg_11_false, eg_11_or_A1p_false);
+  // 在 true 和 false 中设置两种 return 值的设置。（llvm 会隐式分配局部变量 %return），在 true 和 false 中分别给两个附上不同值。
+  // true 和 false 基本块会回流到一起，即 if() {xxx;} else {yyy;} zzz; 中 zzz 的部分。
+  BBlock *eg_11_end = builder.createBBlock("end", voidType, eg_11_foo);
+  Instruction *eg_11_br_true = builder.createBrInst(nullptr, eg_11_end, nullptr, eg_11_true);
+  Instruction *eg_11_br_false = builder.createBrInst(nullptr, eg_11_end, nullptr, eg_11_false);
+  // 这里使用 phi 指令，从那个基本块流过来就用谁的值。
+  std::vector<Value*> tmps;
+  Value *eg_11_tmp = new Value("tmp", int32PointerType);      // 这里需要有一个类型为 i32* 的 Value 作为 phi 指令的占位符，phi 指令的数据类型取决于
+  tmps.push_back(eg_11_tmp);
+  tmps.push_back(new ConstIntValue(1));         // 一个值对应一个基本块，先存入 Value* 后存入 BBlock*
+  tmps.push_back(eg_11_true);
+  tmps.push_back(new ConstIntValue(0));
+  tmps.push_back(eg_11_false);
+  Instruction *eg_11_phi = builder.createPhiInst("phi", i32Type, tmps, eg_11_end);
+  builder.createRetInst(eg_11_phi);
+  defs->push_back(eg_11_foo);   // 将函数加入定义中
+  builder.setChosedFunc(myFunc);
+  builder.setChosedBBlock(entry);
+  std::vector<Value*> eg_11_call_argus;
+  eg_11_call_argus.push_back(new ConstFloatValue(2));
+  eg_11_call_argus.push_back(new ConstIntValue(0));
+  eg_11_call_argus.push_back(new ConstIntValue(3));
+  Instruction *eg_11_call = builder.createCallInst(eg_11_foo, eg_11_call_argus);
+  builder.createRetInst(eg_11_call);
 
-  // builder.emitIRModule(myModule);
+  builder.emitIRModule(myModule);
 
   // 关闭 builder 的 irout 文件输出流
   builder.close();
