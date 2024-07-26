@@ -10,7 +10,7 @@
 #include <vector>
 
 #ifdef PRINT_CFG
-#include <graphviz/gvc.h>
+// #include <graphviz/gvc.h>
 #endif
 
 GIMC_NAMESPACE_BEGIN

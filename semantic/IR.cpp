@@ -62,11 +62,13 @@ pair<Value*,bool> parseExp(ExpPtr exp, bool is_cond){
             auto tmp = dynamic_pointer_cast<Number>(exp);
             return pair<Value*,bool>(new ConstIntValue(tmp -> getIntVal()), true);
         }
+
         case ExpType::ET_FLOAT :{
             exp -> addResType (BaseType::B_FLOAT);
             auto tmp = dynamic_pointer_cast<Number>(exp);
             return pair<Value*,bool>(new ConstFloatValue(tmp -> getFloatVal()), true);
         }
+
         case ExpType::ET_FUNC :{
             // 函数调用先检查是否存在该函数
             auto tmp = dynamic_pointer_cast<FuncCall>(exp);
@@ -84,6 +86,29 @@ pair<Value*,bool> parseExp(ExpPtr exp, bool is_cond){
             else{
                 exp -> addResType(sym_tb.find_func(tmp -> getIdentifier()) -> _ret_type);
                 return pair<Value*,bool>(parseFuncCall(exp), false);
+            }
+        }
+        case ExpType::ET_LVAL: {
+            auto tmp = dynamic_pointer_cast<LVal>(exp);
+            // 变量不存在
+            if (!sym_tb.check_var(tmp -> getIdentifier())){
+                error_msg = "variable " + tmp -> getIdentifier() + " not defined";
+                error_handle();
+            }
+            auto var_node = sym_tb.find_var(tmp -> getIdentifier());
+            exp -> addResType(var_node -> _type);
+            // 变量是数组
+            if (var_node->_is_array){
+                // 是否取到了数
+                if (tmp -> getDims().size() != var_node->_dims.size()){
+                    error_msg = "array " + tmp -> getIdentifier() + " expects " + std::to_string(var_node->_dims.size()) + " dimensions, but " + std::to_string(tmp -> getDims().size()) + " given";
+                    error_handle();
+                }
+                return pair<Value*,bool>(parseArrayLval(tmp, var_node), false);
+            }
+            // 变量不是数组
+            else {
+                if 
             }
         }
         case ExpType::ET_BIN :{
@@ -126,10 +151,62 @@ pair<Value*,bool> parseExp(ExpPtr exp, bool is_cond){
                     else return pair<Value*, bool>(builder.createBinaryInst(InstKind::Div, left.first, right.first), left.second && right.second);
                 }
                 case BinOpType::OP_MOD :{
-                    return pair<Value*, bool>(builder.createBinaryInst(InstKind::Mod, left.first, right.first), left.second && right.second);
+                    return pair<Value*, bool>(builder.createBinaryInst(InstKind::SRem, left.first, right.first), left.second && right.second);
                 }
+                case BinOpType::OP_GTE :{
+                    if (!is_cond) {
+                        error_msg = "boolean type expression is not supported";
+                        error_handle();
+                    }
+                    if (is_float) return pair<Value*, bool>(builder.createFcmpInst(FCondKind::Oge, left.first, right.first), left.second && right.second);
+                    else return pair<Value*, bool>(builder.createIcmpInst(ICondKind::Sge, left.first, right.first), left.second && right.second);
+                }
+                case BinOpType::OP_EQ :{
+                    if (!is_cond) {
+                        error_msg = "boolean type expression is not supported";
+                        error_handle();
+                    }
+                    if (is_float) return pair<Value*, bool>(builder.createFcmpInst(FCondKind::Oeq, left.first, right.first), left.second && right.second);
+                    else return pair<Value*, bool>(builder.createIcmpInst(ICondKind::Eq, left.first, right.first), left.second && right.second);
+                }
+                case BinOpType::OP_NEQ :{
+                    if (!is_cond) {
+                        error_msg = "boolean type expression is not supported";
+                        error_handle();
+                    }
+                    if (is_float) return pair<Value*, bool>(builder.createFcmpInst(FCondKind::One, left.first, right.first), left.second && right.second);
+                    else return pair<Value*, bool>(builder.createIcmpInst(ICondKind::Ne, left.first, right.first), left.second && right.second);
+                }
+                case BinOpType::OP_GT: {
+                    if (!is_cond) {
+                        error_msg = "boolean type expression is not supported";
+                        error_handle();
+                    }
+                    if (is_float) return pair<Value*, bool>(builder.createFcmpInst(FCondKind::Ogt, left.first, right.first), left.second && right.second);
+                    else return pair<Value*, bool>(builder.createIcmpInst(ICondKind::Sgt, left.first, right.first), left.second && right.second);
+                }
+                case BinOpType::OP_LT: {
+                    if (!is_cond) {
+                        error_msg = "boolean type expression is not supported";
+                        error_handle();
+                    }
+                    if (is_float) return pair<Value*, bool>(builder.createFcmpInst(FCondKind::Olt, left.first, right.first), left.second && right.second);
+                    else return pair<Value*, bool>(builder.createIcmpInst(ICondKind::Slt, left.first, right.first), left.second && right.second);
+                }
+                case BinOpType::OP_LTE: {
+                    if (!is_cond) {
+                        error_msg = "boolean type expression is not supported";
+                        error_handle();
+                    }
+                    if (is_float) return pair<Value*, bool>(builder.createFcmpInst(FCondKind::Ole, left.first, right.first), left.second && right.second);
+                    else return pair<Value*, bool>(builder.createIcmpInst(ICondKind::Sle, left.first, right.first), left.second && right.second);
+                }
+                default: {
+                    error_msg = "unsupported binary operator";
+                    error_handle();
+                }   
             }
-
         }
     }
 }
+

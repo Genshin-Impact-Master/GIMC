@@ -13,6 +13,13 @@ struct VarNode {
     bool _is_array;
     bool _is_float;
     bool _is_const;
+    // 非数组 
+    int _const_int;
+    float _const_float;
+    // 数组
+    vector<int> _dims;
+    vector<float> _const_float_vals;
+    vector<int> _const_int_vals;
     Value* _inst;
     VarNode(BaseType type, string identifier, bool is_array,  bool is_const, bool is_float, Value* inst):
         _type(type), _identifier(identifier), _is_array(is_array), _is_const(is_const), _is_float(is_float), _inst(inst) {}
