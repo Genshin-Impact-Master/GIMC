@@ -124,9 +124,9 @@ GEP::GEP(const std::string &name,
           baseTypePtr type,
           BBlock *parent,
           Value *ptr,
-          int offset) : Instruction(name, type, InstKind::GEP, parent) {
+          Value *offset) : Instruction(name, type, InstKind::GEP, parent) {
             ops_.push_back(ptr);
-            ops_.push_back(new ConstIntValue(AddrLenPtr, offset));
+            ops_.push_back(offset);
             calculateDef_Uses();
           }
 
