@@ -135,8 +135,8 @@ public:
   /**
    * 创建 GEP 指令
    */
-  Instruction* createGEPInst(const std::string &name, Value *ptr, int offset, BBlock *parent = nullptr);
-  Instruction* createGEPInst(Value *ptr, int offset, BBlock *parent  = nullptr);
+  Instruction* createGEPInst(const std::string &name, Value *ptr, Value *offset, BBlock *parent = nullptr);
+  Instruction* createGEPInst(Value *ptr, Value *offset, BBlock *parent  = nullptr);
 
   /**
    * 创建 Fp2Int 指令
@@ -155,6 +155,14 @@ public:
    */
   Instruction* createZextInst(const std::string &name, baseTypePtr type, Value *proto, BBlock *parent = nullptr);
   Instruction* createZextInst(baseTypePtr type, Value *proto, BBlock *parent = nullptr);
+
+  /**
+   * 创建 Phi 指令
+   * @param type 创建的 phi 指令注意类型为实际的数据类型而非变量指针 ptr
+   */
+  Instruction* createPhiInst(const std::string &name, baseTypePtr type, std::vector<Value*> argus, BBlock *parent = nullptr);
+  Instruction* createPhiInst(baseTypePtr type, std::vector<Value*> argus, BBlock *parent = nullptr);
+
   /**
    * 检查是否存在 BBlock
   */
@@ -205,6 +213,8 @@ public:
   void setChosedFunc(Function *func) {chosedFunc_ = func;}
   // 切换选中基本块
   void setChosedBBlock(BBlock *bBlock) {chosedBBlock_ = bBlock;}
+
+  void setEntry(BBlock *bBlk) {chosedFunc_->setEntry(bBlk);}
 
 };
 

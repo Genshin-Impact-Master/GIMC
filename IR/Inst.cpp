@@ -1,17 +1,12 @@
 #include "../include/IR/Inst.h"
+#include <iostream>
 
 USING_GIMC_NAMESPACE
 
 Instruction::Instruction(const std::string &name,
                          baseTypePtr type,
                          InstKind kind,
-                         BBlock *parent) : Value(name, type), kind_(kind), parent_(parent), instNode_(INode<Instruction>(nullptr, this)) {}
-
-Instruction::Instruction(const std::string &name,
-                         baseTypePtr type,
-                         InstKind kind,
-                         BBlock *parent,
-                         std::vector<Value*> argus) : Value(name, type), kind_(kind), parent_(parent), argus_(argus), instNode_(INode<Instruction>(nullptr, this)) {}
+                         BBlock *parent) : Value(name, type), kind_(kind), parent_(parent), instNode_(INode<Instruction>(nullptr, nullptr, this)) {}
 
 Instruction::Instruction(baseTypePtr type, InstKind kind, BBlock *parent) :
                          Instruction(std::to_string(parent->getCnt()),
@@ -21,7 +16,13 @@ Instruction::Instruction(InstKind kind, BBlock *parent) : Instruction(i32Type, k
 
 Instruction::Instruction(const std::string &name, InstKind kind, BBlock *parent) :
                          Instruction(name, i32Type, kind, parent) {}
-                         
+
+void Instruction::calculateDef_Uses() {
+  for (auto op : ops_) {
+    op->getUses().push_back(this);
+  }
+}
+
 BinaryInst::BinaryInst(const std::string &name,
                         baseTypePtr type,
                         InstKind kind,
@@ -31,6 +32,7 @@ BinaryInst::BinaryInst(const std::string &name,
                         : Instruction(name, type, kind, parent) {
                           ops_.push_back(lhs);
                           ops_.push_back(rhs);
+                          calculateDef_Uses();
                         }
 
 Store::Store(const std::string &name,
@@ -40,6 +42,7 @@ Store::Store(const std::string &name,
               Value *ptr) : Instruction(name, type, InstKind::Store, parent) {
                 ops_.push_back(input);
                 ops_.push_back(ptr);
+                calculateDef_Uses();
               } 
 
 Load::Load(const std::string &name,
@@ -47,14 +50,19 @@ Load::Load(const std::string &name,
             BBlock *parent,
             Value *ptr) : Instruction(name, type, InstKind::Load, parent){
               ops_.push_back(ptr);
+              calculateDef_Uses();
             }
 
 Call::Call(const std::string &name,
             baseTypePtr type,
             BBlock *parent,
             Function *func,
-            std::vector<Value*> &argus) : Instruction(name, type, InstKind::Call, parent, argus) {
+            std::vector<Value*> &argus) : Instruction(name, type, InstKind::Call, parent) {
               ops_.push_back(func);
+              for (auto argu : argus) {
+                ops_.push_back(argu);
+              }
+              calculateDef_Uses();
             }
 
 Ret::Ret(const std::string &name,
@@ -62,6 +70,7 @@ Ret::Ret(const std::string &name,
           BBlock *parent,
           Value* retValue) : Instruction(name, type, InstKind::Ret, parent) {
             ops_.push_back(retValue);
+            calculateDef_Uses();
           }
 
 Icmp::Icmp(const std::string &name,
@@ -73,6 +82,7 @@ Icmp::Icmp(const std::string &name,
         ckind_.iCond = kind;
         ops_.push_back(first);
         ops_.push_back(second);
+        calculateDef_Uses();
       }
 
 Fcmp::Fcmp(const std::string &name,
@@ -84,6 +94,7 @@ Fcmp::Fcmp(const std::string &name,
         ckind_.fCond = kind;
         ops_.push_back(first);
         ops_.push_back(second);
+        calculateDef_Uses();
       }
 
 Br::Br(const std::string &name,
@@ -92,21 +103,20 @@ Br::Br(const std::string &name,
         Value *cond,
         BBlock *ifTrue,
         BBlock *ifFalse) : Instruction(name, type, InstKind::Br, parent) {
-          ops_.push_back(cond);
+          if (cond != nullptr)
+            ops_.push_back(cond);
           ops_.push_back(ifTrue);
-          ops_.push_back(ifFalse);
+          if (ifFalse != nullptr)
+            ops_.push_back(ifFalse);
+          calculateDef_Uses();
         }
 
 bool Br::isUnconditional() {
-  Value *cond = ops_[0];
-  Value *ifTure = ops_[1];
-  Value *ifFalse = ops_[2];
-  if (ifTure && ifFalse == nullptr && cond == nullptr)
+  if (ops_.size() == 1)
     return true;
-  else if (ifTure && cond && ifFalse)
+  else if(ops_.size() == 3)
     return false;
-  else
-    fprintf(stderr, "Br 指令参数异常\n");
+  fprintf(stderr, "Br 指令参数异常\n");
   exit(1);
 }
 
@@ -114,9 +124,10 @@ GEP::GEP(const std::string &name,
           baseTypePtr type,
           BBlock *parent,
           Value *ptr,
-          int offset) : Instruction(name, type, InstKind::GEP, parent) {
+          Value *offset) : Instruction(name, type, InstKind::GEP, parent) {
             ops_.push_back(ptr);
-            ops_.push_back(new ConstIntValue(AddrLenPtr, offset));
+            ops_.push_back(offset);
+            calculateDef_Uses();
           }
 
 Fp2Int::Fp2Int(const std::string &name,
@@ -130,6 +141,7 @@ Fp2Int::Fp2Int(const std::string &name,
                     exit(1);
                   }
                   ops_.push_back(fp);
+                  calculateDef_Uses();
                 }
 
 Int2Fp::Int2Fp(const std::string &name,
@@ -143,4 +155,16 @@ Int2Fp::Int2Fp(const std::string &name,
                     exit(1);
                   }
                   ops_.push_back(i32);
+                  calculateDef_Uses();
                 }
+
+Phi::Phi(const std::string &name,
+      baseTypePtr type,
+      BBlock *parent,
+      std::vector<Value*> maps) : Instruction(name, type, InstKind::Phi, parent) {
+        for (auto map : maps) {
+          ops_.push_back(map);
+        }
+        calculateDef_Uses();
+        std::cout << "新建的 phi 指令是 " << ops_[0]->getFullName() << " 的 phi 结点" << std::endl; 
+      }

@@ -14,6 +14,7 @@ void Pres_Succs_Calculate::calculate_Func(Function *func) {
   while (!bBlkNode->isEnd()) {
     bBlkNode = bBlkNode->getNext();
     BBlock *chosenBBlk = bBlkNode->getOwner();
+    // fprintf(stdout, "The chosen BBlock is %s \n", chosenBBlk->getName().c_str());
     Instruction *terminator = chosenBBlk->getInstList().getRearPtr()->getOwner(); 
     Br *branch = dynamic_cast<Br*>(terminator);
     if (branch) {
@@ -43,8 +44,8 @@ void Pres_Succs_Calculate::calculate_Func(Function *func) {
       }
       
       // 将 Function 中虚拟的 BBlock exit 作为结束结点
-      chosenBBlk->addSuccBBlock(func->getExitBBlock());
-      func->getExitBBlock()->addPreBBlock(chosenBBlk);
+      // chosenBBlk->addSuccBBlock(func->getExitBBlock());
+      // func->getExitBBlock()->addPreBBlock(chosenBBlk);
     }
   }
 }

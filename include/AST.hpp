@@ -122,6 +122,7 @@ class Visitor;
 #define ArrayInitValPtr shared_ptr<ArrayInitVal>
 #define ParamArrayDimPtr shared_ptr<ParamArrayDim>
 #define UnaryExpPtr shared_ptr<UnaryExp>
+#define BinaryExpPtr shared_ptr<BinaryExp>
 
 class BaseNode {
 public:
@@ -416,10 +417,13 @@ public:
 class Exp {
 private:
     ExpType _type;
+    BaseType _res_type;
 public:
     virtual ~Exp() = default;
     void addType(ExpType type){_type=type;}
+    void addResType(BaseType res_type){_res_type=res_type;}
     ExpType getType(){return _type;}
+    BaseType getResType(){return _res_type;}
 };
 
 class BinaryExp : public Exp {
@@ -441,6 +445,7 @@ private:
     ExpPtr _exp;
     UnaryOpType _op;
 public:
+    UnaryExp(){_op = UnaryOpType::UO_POS;_exp = nullptr;}
     void addExp(ExpPtr exp){_exp=exp;}
     void addOp(UnaryOpType op){_op=op;}
     ExpPtr getExp(){return _exp;}

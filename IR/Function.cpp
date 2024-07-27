@@ -6,6 +6,10 @@ USING_GIMC_NAMESPACE
 Function::Function(const std::string &fName, baseTypePtr funcType, std::vector<baseTypePtr> &arguTypes)
                   : Value(fName, funcType), arguTypes_(arguTypes), blkList_(IList<Function, BBlock>(this)) , exit_(new BBlock("exit_", voidType, this)) {
                     this->setLocalPrefix(false);
+                    for (auto ty : arguTypes_) {
+                      Value val = Value(std::to_string(getCnt()), ty);
+                      argus_.push_back(val);
+                    }
                   }
 
 void Function::clearFunc() { 
@@ -34,14 +38,14 @@ void Function::drawCFG() {
   funcGraph = agopen(getName().data(), Agstrictdirected, nullptr);
   INode<BBlock> *nodeBBlk = getBBlockList().getHeadPtr();
 
-  // 首先创立所有结点，包括 exit_
+  // 首先创立所有结点，包括 exit_，不要 exit_ 也可
   while (!nodeBBlk->isEnd()) {
     nodeBBlk = nodeBBlk->getNext();
     BBlock *bBlk = nodeBBlk->getOwner();
     Agnode_t *n;
     n = agnode(funcGraph, bBlk->getName().data(), true);             // true 表示若结点不存在则新建（按照名字查找）
   }
-  Agnode_t *n = agnode(funcGraph, getExitBBlock()->getName().data(), true);
+  // Agnode_t *n = agnode(funcGraph, getExitBBlock()->getName().data(), true);
 
   nodeBBlk = getBBlockList().getHeadPtr();
 
