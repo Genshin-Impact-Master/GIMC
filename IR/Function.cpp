@@ -55,7 +55,7 @@ void Function::drawCFG() {
     BBlock *bBlk = nodeBBlk->getOwner();
     Agnode_t *n = agnode(funcGraph, bBlk->getName().data(), false);  // false 表示找不到结点则返回 null
     std::unordered_set<BBlock*> &pres = bBlk->getPres();
-    std::unordered_set<BBlock*> &succs = bBlk->getSuccs();
+    std::set<BBlock*> &succs = bBlk->getSuccs();
     if (!succs.empty()) {
       for (const auto &succ : succs) {
         Agnode_t *m = agnode(funcGraph, succ->getName().data(), false);
