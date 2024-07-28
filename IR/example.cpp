@@ -315,7 +315,7 @@ int main(int argc, char** args) {
   std::vector<Value*> eg6_argus_1;
   eg6_argus_1.push_back(eg6_gep_5);
   eg6_argus_1.push_back(new ConstIntValue(0));
-  eg6_argus_1.push_back(new ConstIntValue(3*2*4));
+  eg6_argus_1.push_back(new ConstIntValue(2*4));
   builder.createCallInst(memset_, eg6_argus_1);
   Instruction *eg6_c_0_1 = builder.createLoadInst("c_0_1", i32Type, eg6_gep_4);
   std::vector<Value*> eg6_argus_2;
