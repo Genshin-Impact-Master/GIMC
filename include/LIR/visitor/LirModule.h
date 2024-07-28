@@ -14,11 +14,11 @@ USING_GIMC_NAMESPACE
 class LirModule {
     private :
         std::map<std::string, GlobalVar*> globalvars;
-        std::list<Function*> functions;
+        std::list<LirFunction*> lirfunctions;
         
     public:
         std::map<std::string, GlobalVar*> &getGlobalvars() {return globalvars;}
-        std::list<Function*> &getFunctions() {return functions;}
+        std::list<LirFunction*> &getFunctions() {return lirfunctions;}
 };
 
 

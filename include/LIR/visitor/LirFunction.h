@@ -9,9 +9,23 @@ USING_GIMC_NAMESPACE
 
 class LirFunction {
     private:
+        std::string lirFuncName;
+        int paramsCnt; //全体参数数量
         int fparamsCnt; //浮点参数数量
         int iparamsCnt; //整型参数数量
+        baseTypePtr returnType;
         LirBlock prologue;
+        std::vector<Value> paramter;
+
+    public:
+        LirFunction(std::string name, int paramsCnt);
+        void setLirFuncParams(std::vector<Value> &lirFuncParams);
+        void setIParamsCnt(int intcnt);
+        void setFParamsCnt(int floatcnt);
+        void setReturnType(baseTypePtr returnType);
+        
+
+
         
 
 

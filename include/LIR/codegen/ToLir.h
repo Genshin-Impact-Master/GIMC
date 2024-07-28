@@ -20,7 +20,7 @@ class ToLir {
     private:
         std::map<Value*, LirOperand*> valMap;
         std::map<Function*, LirFunction*> funcMap;
-        std::map<BBlock, LirBlock> blockMap;
+        std::map<BBlock*, LirBlock*> blockMap;
         std::map<GlobalVar*, LirOperand*> globalMap;
 
         Module irModule;
