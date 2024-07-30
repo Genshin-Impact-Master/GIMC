@@ -546,6 +546,47 @@ int main(int argc, char** args) {
 
   builder.emitIRModule(myModule);
 
+  /**
+   * eg.12. 支持 void 返回值
+   * void f(int a) {
+      putint(a);
+      return;
+    }
+    int main() {
+      f(getint());
+    }
+   */
+  newModule(builder, myModule);
+  std::vector<baseTypePtr> eg_12_f_ty;
+  eg_12_f_ty.push_back(i32Type);
+  Function *eg_12_f = builder.createFunction("f", voidType, eg_12_f_ty);
+  BBlock *eg_12_f_entry = builder.createBBlock("entry", voidType, eg_12_f);
+  eg_12_f->setEntry(eg_12_f_entry);       // 将 BBlock 加入其中
+  builder.setChosedBBlock(eg_12_f_entry);
+  std::vector<Value> eg_12_params = eg_12_f->getArgus();
+  Instruction *eg_12_a_ptr = builder.createAllocaInst("a_ptr", int32PointerType);
+  builder.createStoreInst(&eg_12_params[0], eg_12_a_ptr);
+  Instruction *eg_12_load = builder.createLoadInst("a", i32Type, eg_12_a_ptr);
+  // 调用 putint
+  std::vector<Value*> eg_12_putint_argus;
+  eg_12_putint_argus.push_back(eg_12_load);
+  Instruction *eg_12_call = builder.createCallInst(putint, eg_12_putint_argus);
+  builder.createRetInst(&voidValue);
+  // 记得加入 module 的 defs
+  defs->push_back(eg_12_f);
+
+  // 构建 main 
+  builder.setChosedFunc(myFunc);
+  builder.setChosedBBlock(entry);
+
+  Instruction *eg_12_call_1 = builder.createCallInst(getint, Zero_Argu_List);
+  std::vector<Value*> eg_12_f_argus;
+  eg_12_f_argus.push_back(eg_12_call_1);
+  Instruction *eg_12_call_2 = builder.createCallInst(eg_12_f, eg_12_f_argus);
+  builder.createRetInst(new ConstIntValue(0));
+  
+  builder.emitIRModule(myModule);
+
   // 关闭 builder 的 irout 文件输出流
   builder.close();
 }

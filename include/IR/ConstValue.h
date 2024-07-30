@@ -8,7 +8,7 @@
 #include <memory>
 #include <iomanip>
 #include <sstream>
-
+#include <iostream>
 
 GIMC_NAMESPACE_BEGIN
 
@@ -58,6 +58,15 @@ public:
   std::string getData() override {
     return std::to_string(getInt());
   }
+
+  // 重载 getHash 函数 
+  uint32_t getHash() override {
+    if (!isHashed()) {
+      std::cout << "I'm in int's get Hash" <<std::endl;
+      setHashCode(std::hash<int>()(value_.i));
+    }
+    return getHash();
+  }
 };
 
 class ConstFloatValue final : public ConstValue {
@@ -74,6 +83,15 @@ public:
 
   // 返回 符号浮点数
   float getFloat() {return value_.f;}
+
+  // 重载 getHash 函数
+  uint32_t getHash() override {
+    if (!isHashed()) {
+      std::cout << "I'm in int's get Hash" <<std::endl;
+      setHashCode(std::hash<int>()(value_.f));
+    }
+    return getHash();
+  }
 };
 
 GIMC_NAMESPACE_END

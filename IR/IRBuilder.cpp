@@ -363,8 +363,11 @@ void IRBuilder::emitIRInst(Instruction *inst) {
   // ret 指令
   else if (inst->kind_ == InstKind::Ret) {
     Ret *i = dynamic_cast<Ret*>(inst);
-    irout << '\t' << INST_STRING << i->getTypeName() << " "
-          << i->getRetValue()->getFullName() << std::endl;
+    irout << '\t' << INST_STRING << i->getTypeName() << " ";
+    if (!TypeBase::isVoid(i->getType())) {
+      irout << i->getRetValue()->getFullName();
+    }
+    irout << std::endl;;
   }
   // icmp 指令
   else if (inst->kind_ == InstKind::Icmp) {

@@ -10,6 +10,7 @@ GIMC_NAMESPACE_BEGIN
 class PointerType;
 class IntegerType;
 class FloatType;
+class VoidType;
 
 // 基础类型，所有数据类型的基类
 class TypeBase {
@@ -34,6 +35,10 @@ public:
 
   bool static isPointer(baseTypePtr type) {
     return std::dynamic_pointer_cast<PointerType>(type) != nullptr;
+  }
+
+  bool static isVoid(baseTypePtr type) {
+    return std::dynamic_pointer_cast<VoidType>(type) != nullptr;
   }
 };  
 

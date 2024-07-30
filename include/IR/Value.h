@@ -7,6 +7,7 @@
 #include <memory> //@C++_Learn 用于智能指针 unique_ptr,shared_ptr...
 #include "Type.h"
 #include "../Utils/IList.h"
+#include <functional>
 GIMC_NAMESPACE_BEGIN
 
 class VoidType;
@@ -24,8 +25,11 @@ private:
   std::vector<Value*> uses_;                        // 在哪些 Value 中被用到
   // @C++_Learn 因为 TypeBase 里面有纯虚函数，故 TypeBase 不能被实例化，只能传递其引用 or 指针
   baseTypePtr type_;                                // Value 的数据类型的指针
+  bool isValid_ = true;                             // 是否有效（优化可能会删除）
+  uint32_t hashcode = 0;                            // 存储 hash 值，避免每次都要重新计算
+  bool hashed = false;                              // 记录是否进行了 hashcode 的计算
 protected:
-  std::vector<Value*> ops_;                        // 用到了哪些 Value
+  std::vector<Value*> ops_;                         // 用到了哪些 Value
 public:
   /**
    * @todo 带名称 Value 初始化
@@ -74,9 +78,45 @@ public:
   // 获得本变量使用的值的链表
   std::vector<Value*>& getDefs() {return ops_;}
 
+  bool isValid() {return isValid_;}
+
+  void setValid(bool v) {isValid_ = v;}
+
   virtual ~Value() = default;
+
+  virtual uint32_t getHash() {
+    if(!hashed) {
+      hashed = true;
+      hashcode = std::hash<std::string>()(getFullName());
+    }
+    return hashcode; 
+  }
+
+  bool isHashed() {return hashed;}
+
+  void setIsHashed(bool b) {hashed = b;}
+
+  void setHashCode(uint32_t v) {hashcode = v; hashed = true;}
+
+  /**
+   * 在替换 Value* 或新插入时维护 def-use 链表且将 hashed 设为 false
+   * @param newOne 新插入的 Value*
+   * @param pos 需要在 ops_ 中插入的位置，若为 -1 表示在尾部插入
+   **/ 
+  virtual void updateValue(Value* newOne, int pos) {
+    if (pos == -1) {
+      ops_.push_back(newOne);
+      hashed = false;
+      return;
+    }
+    ops_[pos] = newOne;
+    newOne->getUses().push_back(this);
+    hashed = false;
+  }
 };
 
+// 仅仅作为占位，实际上任何一个 voidType 的 Value 都 ok
+extern Value voidValue;
 GIMC_NAMESPACE_END
 
 
