@@ -57,6 +57,9 @@ public:
   // 获取函数形参
   std::vector<Value> &getArgus() {return argus_;}
 
+  // 获取函数参数类型链表
+  std::vector<baseTypePtr> &getArguTypes() {return arguTypes_;}
+
 #ifdef PRINT_CFG
   // 利用 graphviz 绘制 CFG
   void drawCFG();
