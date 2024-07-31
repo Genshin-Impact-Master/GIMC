@@ -111,7 +111,7 @@ public:
   InstKind getKind() {return kind_;}
   // 一般指令的 hash 计算 InstKind + ops_
   uint32_t getHash() override;
-
+  bool isEqual(Value *t) override;
 };
 
 /**
@@ -141,7 +141,7 @@ public:
     return ops_[1];
   }
 
-  // bool isEqual(Instruction *t) const override ;
+  bool isEqual(Value *t) override ;
 
   // 对于某些二元操作数，可以换位
   uint32_t getHash() override;

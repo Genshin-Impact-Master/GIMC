@@ -49,26 +49,45 @@ uint32_t Instruction::getHash() {
   return Value::getHash();
 }
 
-// bool BinaryInst::isEqual(Instruction *t) {
-//   InstKind myKind = getKind();
-//   if (myKind != t->getKind())
-//     return true;
-//   else {
-//     Value *a1,a2,b1,b2;
-//     a1 = ops_[0];
-//     a2 = ops_[1];
-//     b1 = t->ops_[0];
-//     b2 = t->ops_[1];
-//     if (a1 == b1 && a2 == b2) 
-//       return true;
-//     else {
-//       if (myKind == InstKind::Add || myKind == InstKind::Addf || myKind == InstKind::Mul || myKind == InstKind::Mulf) {
-//         return a1 == b2 && a2 == b1;
-//       }
-//       return false;
-//     }
-//   }
-// }
+bool Instruction::isEqual(Value *t) {
+  Instruction *inst = dynamic_cast<Instruction*>(t);
+  if (!inst)
+    return false;
+  if (kind_ != inst->getKind())
+    return false;
+  std::vector<Value*> &t_ops = inst->getDefs();
+  if (t_ops.size() != ops_.size())
+    return false;
+  for (int i = 0;  i < static_cast<int>(ops_.size()); i++) {
+    if (!ops_[i]->isEqual(t_ops[i]))
+      return false; 
+  }
+  return true;
+}
+
+bool BinaryInst::isEqual(Value *t) {
+  BinaryInst *inst = dynamic_cast<BinaryInst*>(t);
+  if (!inst) 
+    return false;
+  InstKind myKind = getKind();
+  if (myKind != inst->getKind())
+    return false;
+  else {
+    Value *a1,*a2,*b1,*b2;
+    a1 = ops_[0];
+    a2 = ops_[1];
+    b1 = t->getDefs()[0];
+    b2 = t->getDefs()[1];
+    if (a1 == b1 && a2 == b2) 
+      return true;
+    else {
+      if (myKind == InstKind::Add || myKind == InstKind::Addf || myKind == InstKind::Mul || myKind == InstKind::Mulf) {
+        return a1 == b2 && a2 == b1;
+      }
+      return false;
+    }
+  }
+}
 
 uint32_t BinaryInst::getHash() {
   if (!isHashed()) {

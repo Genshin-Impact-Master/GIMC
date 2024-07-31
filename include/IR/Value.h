@@ -113,6 +113,11 @@ public:
     newOne->getUses().push_back(this);
     hashed = false;
   }
+
+  // 对于普通的 Value *，只需对比他们两个是否相等即可。 
+  virtual bool isEqual(Value *t) {
+    return this == t;
+  }
 };
 
 // 仅仅作为占位，实际上任何一个 voidType 的 Value 都 ok

@@ -67,6 +67,15 @@ public:
     }
     return getHash();
   }
+
+  bool isEqual(Value *t) override {
+    ConstIntValue *con = dynamic_cast<ConstIntValue*>(t);
+    if (!con)
+      return false;
+    if (!(con->getInt() == getInt()))
+      return false;
+    return true;
+  }
 };
 
 class ConstFloatValue final : public ConstValue {
@@ -91,6 +100,16 @@ public:
       setHashCode(std::hash<int>()(value_.f));
     }
     return getHash();
+  }
+
+  // 重载 isEqual()
+  bool isEqual(Value *t) override {
+    ConstFloatValue *con = dynamic_cast<ConstFloatValue*>(t);
+    if (!con)
+      return false;
+    if (!(con->getFloat() == getFloat()))
+      return false;
+    return true;
   }
 };
 

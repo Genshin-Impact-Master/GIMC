@@ -90,7 +90,7 @@ void PassManager::GVN() {
     domination();
   // 检测是否为同一条指令，判断方法：Instruction 的 kind,ops_均相同。
   // 注意应当按照 支配树的 DFS 顺序进行基本块的遍历。
-  
+  dfs_GVN(dom.getRoot());
 }
 
 void PassManager::dfs_GVN(BBlock *v) {
@@ -98,19 +98,28 @@ void PassManager::dfs_GVN(BBlock *v) {
   std::size_t hash = 0;
   while (!instNode->isEnd()) {
     instNode = instNode->getNext();
-    Instruction *inst = instNode->getOwner();
-    hash = inst->getHash();
+    Instruction *checkInst = instNode->getOwner();
+    hash = checkInst->getHash();
     if (insts.find(hash) != insts.end()) {
-      // 找到 inst，表明极可能为含义相同的 Instruction.保险起见再对比一次
+      // 找到与 checkInst hash 值相同的 inst，表明极可能为含义相同的 Instruction.保险起见再对比一次
       Instruction *find = insts[hash];
 
       /* @保险 */
-      // if (!inst->isEqual(find)) continue;
+      if (!checkInst->isEqual(find)) continue;
       /*保险，再对比*/ 
 
-            
+      // 确认相同了，用已经在 Map 的值代替所有用到 checkInst 的指令的 defs
+      for (auto v : checkInst->getUses()) {
+        std::vector<Value*> &defs = v->getDefs();
+        for (int i = 0; i < static_cast<int>(defs.size()); i++) {
+          if (defs[i]->isEqual(checkInst)) {
+            v->updateValue(find, i);
+          }
+        }
+      }
     }
   }
-  // for (auto u : dom.getDomSuccs(v)) {
-  // }
+  for (auto u : dom.getDomSuccs()[v]) {
+    dfs_GVN(u);
+  }
 }
