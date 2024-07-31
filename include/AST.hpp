@@ -22,7 +22,7 @@ int last_column;
 
 
 enum BaseType {
-    B_VOID,B_INT,B_FLOAT
+    B_VOID,B_INT,B_FLOAT,B_ARRAY_PTR
 };
 enum StmtType {
     ST_IF,ST_WHILE,ST_BREAK,ST_CONTINUE,
@@ -38,6 +38,9 @@ enum BinOpType {
 };
 enum UnaryOpType {
     UO_POS,UO_NEG,UO_NOT
+};
+enum NodeType {
+    NT_STMT, NT_DECL, NT_FUNC
 };
 using namespace std;
 class BaseNode;
@@ -123,27 +126,28 @@ class Visitor;
 #define ParamArrayDimPtr shared_ptr<ParamArrayDim>
 #define UnaryExpPtr shared_ptr<UnaryExp>
 #define BinaryExpPtr shared_ptr<BinaryExp>
+#define BaseNodePtr shared_ptr<BaseNode>
+#define IfElseStmtPtr shared_ptr<IfElseStmt>
+#define WhileStmtPtr shared_ptr<WhileStmt>
+#define ReturnStmtPtr shared_ptr<ReturnStmt>
 
 class BaseNode {
 public:
     BaseNode(){};
     ~BaseNode(){};
-    void traverse(Visitor vis);
-
+    NodeType _node_type;
 };
 
 class CompUnit {
 private:
-    vector<DeclPtr> _decls;
-    vector<FuncDefPtr> _func_defs;
+    vector<BaseNodePtr> _decls;
 public:
     void addDecl (DeclPtr decl){_decls.pb(decl);};
-    void addFuncDef (FuncDefPtr fun_def){_func_defs.pb(fun_def);};
-    vector<DeclPtr> getDecl(){return _decls;};
-    vector<FuncDefPtr> getFuncDef(){return _func_defs;};
+    void addFuncDef (FuncDefPtr fun_def){_decls.pb(fun_def);};
+    vector<BaseNodePtr> getDecl(){return _decls;};
 };
 
-class Decl {
+class Decl: public BaseNode {
 private:
     ConstDeclPtr _const_decl;
     VarDeclPtr _var_decl;
@@ -279,7 +283,7 @@ public:
     vector<VarDefPtr> getVarDef() {return _var_defs;}
 };
 
-class FuncDef {
+class FuncDef: public BaseNode{
 private:
     BaseType _return_type;
     string _identifier;
@@ -296,6 +300,7 @@ public:
     string getIdentifier(){return _identifier;}
     FuncFParamsPtr getFuncFParams(){return _func_params;}
     BlockPtr getFuncBlock() {return _block;}
+    bool hasParam() {return _has_param;}
 };
 
 class FuncFParams {
@@ -332,13 +337,11 @@ public:
 
 class BlockItems {
 private:
-    vector<StmtPtr> _stmts;
-    vector<DeclPtr> _decls;
+    vector<BaseNodePtr> _stmts;
 public:
     void addStmt(StmtPtr stmt) {_stmts.pb(stmt);}
-    vector<StmtPtr> getStmt() {return _stmts;}  
-    void addDecl(DeclPtr decl) {_decls.pb(decl);}
-    vector<DeclPtr> getDecl() {return _decls;}
+    vector<BaseNodePtr> getStmt() {return _stmts;}  
+    void addDecl(DeclPtr decl) {_stmts.pb(decl);}
 };
 class Block {
 private:
@@ -348,7 +351,7 @@ public:
     BlockItemsPtr getBlockItem() {return _block_items;}
 };
 
-class Stmt {
+class Stmt: public BaseNode{
 private:
     StmtType _type;
 public:

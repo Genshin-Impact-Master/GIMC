@@ -150,11 +150,13 @@ CompUnit: CompUnit Decl{
 
 Decl: ConstDecl{
         $$ = new Decl();
+        $$ -> _node_type = NodeType::NT_DECL;
         $$ -> addConstDecl(ConstDeclPtr($1));
         printf("ConstDecl Find\n");
     }
     | VarDecl {
         $$ = new Decl();
+        $$ -> _node_type = NodeType::NT_DECL;
         $$ -> addVarDecl(VarDeclPtr($1));
         printf("VarDecl Find\n");
     };
@@ -231,7 +233,7 @@ ConstInitVals: ConstExp {
         $$ -> addConstExp(ConstExpPtr($1));
         printf("ConstInitVals Find\n");
     }
-    | ConstInitVals COMMA ConstExp {
+    | ConstArrayInitVal COMMA ConstArrayInitVal {
         $$ = $1;
         $$ -> addConstExp(ConstExpPtr($3));
         printf("ConstInitVals Find\n");
@@ -243,6 +245,11 @@ ConstArrayInitVal: LEFT_BRACES ConstInitVals RIGHT_BRACES {
         printf("ConsttInitVal Find\n");
     }
     | LEFT_BRACES RIGHT_BRACES {
+        $$ = new ConstArrayInitVal();
+        $$ -> addDimVal(ConstInitValsPtr(nullptr));
+        printf("ConstArrayInitVal Find\n");
+    }
+    | LEFT_BRACES ConstArrayInitVal RIGHT_BRACES{
         $$ = new ConstArrayInitVal();
         $$ -> addDimVal(ConstInitValsPtr(nullptr));
         printf("ConstArrayInitVal Find\n");
@@ -362,6 +369,7 @@ ArrayInitVal: LEFT_BRACES InitVals RIGHT_BRACES {
  /* FuncDef → FuncType Ident '(' [FuncFParams] ')' Block */
 FuncDef: BaseType IDENTIFIER LEFT_PARENTHESES FuncFParams RIGHT_PARENTHESES Block{
         $$ = new FuncDef();
+        $$ -> _node_type = NodeType::NT_FUNC;
         $$ -> addReturnType($1);
         $$ -> addIdentifier($2);
         $$ -> addParam(true);
@@ -371,6 +379,7 @@ FuncDef: BaseType IDENTIFIER LEFT_PARENTHESES FuncFParams RIGHT_PARENTHESES Bloc
     }
     | BaseType IDENTIFIER LEFT_PARENTHESES RIGHT_PARENTHESES Block{
         $$ = new FuncDef();
+        $$ -> _node_type = NodeType::NT_FUNC;
         $$ -> addReturnType($1);
         $$ -> addIdentifier($2);
         $$ -> addParam(false);
@@ -469,6 +478,7 @@ Stmt: LVal ASSIGN Exp SEMICOLON {
         assign -> addExp(ExpPtr($3));
         $$ = (Stmt*)(assign);
         $$ -> addType(StmtType::ST_ASSIGN);
+        $$ -> node_type = NodeType::NT_STMT;
         printf("Assign Stmt Find\n");
     }   
     | Exp SEMICOLON {
@@ -476,11 +486,13 @@ Stmt: LVal ASSIGN Exp SEMICOLON {
         exp -> addExp(ExpPtr($1));
         $$ = (Stmt*)(exp);
         $$ -> addType(StmtType::ST_EXP);
+        $$ -> node_type = NodeType::NT_STMT;
         printf("Exp Stmt Find\n");
     }
     | SEMICOLON {
         $$ = new Stmt();
         $$ -> addType(StmtType::ST_BLANK);
+        $$ -> node_type = NodeType::NT_STMT;
         printf("Blank Stmt Find\n");
     }
     | Block {
@@ -488,6 +500,7 @@ Stmt: LVal ASSIGN Exp SEMICOLON {
         block -> addBlock(BlockPtr($1));
         $$ = (Stmt*)(block);
         $$ -> addType(StmtType::ST_BLOCK);
+        $$ -> node_type = NodeType::NT_STMT;
         printf("Block Stmt Find\n");
     }
     | IF LEFT_PARENTHESES LOrExp RIGHT_PARENTHESES Stmt {
@@ -497,6 +510,7 @@ Stmt: LVal ASSIGN Exp SEMICOLON {
         ifelsestmt -> addElseStmt(StmtPtr(nullptr));
         $$ = (Stmt*)(ifelsestmt);
         $$ -> addType(StmtType::ST_IF);
+        $$ -> node_type = NodeType::NT_STMT;
         printf("If Stmt Find\n");
     }
     | IF LEFT_PARENTHESES LOrExp RIGHT_PARENTHESES Stmt ELSE Stmt {
@@ -506,6 +520,7 @@ Stmt: LVal ASSIGN Exp SEMICOLON {
         ifelsestmt -> addElseStmt(StmtPtr($7));
         $$ = (Stmt*)(ifelsestmt);
         $$ -> addType(StmtType::ST_IF);
+        $$ -> node_type = NodeType::NT_STMT;
         printf("If Else Stmt Find\n");
     }
     | WHILE LEFT_PARENTHESES LOrExp RIGHT_PARENTHESES Stmt {
@@ -514,16 +529,19 @@ Stmt: LVal ASSIGN Exp SEMICOLON {
         whilestmt -> addStmt(StmtPtr($5));
         $$ = (Stmt*)(whilestmt);
         $$ -> addType(StmtType::ST_WHILE);
+        $$ -> node_type = NodeType::NT_STMT;
         printf("While Stmt Find\n");
     }
     | BREAK SEMICOLON{
         $$ = new Stmt();
         $$ -> addType(StmtType::ST_BREAK);
+        $$ -> node_type = NodeType::NT_STMT;
         printf("Break Stmt Find\n");
     }
     | CONTINUE SEMICOLON {
         $$ = new Stmt();
         $$ -> addType(StmtType::ST_CONTINUE);
+        $$ -> node_type = NodeType::NT_STMT;
         printf("Continue Stmt Find\n");
     }
     | RETURN SEMICOLON {
@@ -531,6 +549,7 @@ Stmt: LVal ASSIGN Exp SEMICOLON {
         returnstmt -> addExp(nullptr);
         $$ = (Stmt*)(returnstmt);
         $$ -> addType(StmtType::ST_RETURN);
+        $$ -> node_type = NodeType::NT_STMT;
         printf("Return Stmt Find\n");
     }
     | RETURN Exp SEMICOLON {
@@ -538,6 +557,7 @@ Stmt: LVal ASSIGN Exp SEMICOLON {
         returnstmt -> addExp(ExpPtr($2));
         $$ = (Stmt*)(returnstmt);
         $$ -> addType(StmtType::ST_RETURN);
+        $$ -> node_type = NodeType::NT_STMT;
         printf("Return Stmt Find\n");
     };
 

@@ -39,10 +39,14 @@ struct SymbolTable {
     unordered_map<string, FuncNode*> _func_mp;
     SymbolTable() {
         _var_list = list<unordered_map<string, VarNode*>>();
+        _var_list.push_front(unordered_map<string, VarNode*>());
         _func_mp = unordered_map<string, FuncNode*>();
     }
     void enter_block() {
         _var_list.push_front(unordered_map<string, VarNode*>());
+    }
+    void exit_block() {
+        _var_list.pop_front();
     }
     void add_func(string identifier, BaseType ret_type, FuncFParamsPtr func_params, Function* entry) {
         _func_mp[identifier] = new FuncNode(ret_type, identifier, func_params, entry);
