@@ -213,6 +213,10 @@ public:
   void setChosedFunc(Function *func) {chosedFunc_ = func;}
   // 切换选中基本块
   void setChosedBBlock(BBlock *bBlock) {chosedBBlock_ = bBlock;}
+  // 获取当前正在构建的基本块
+  BBlock* getChosedBBlk() {return chosedBBlock_;}
+  // 获取当前正在构建的 Function
+  Function* getChosedFunc() {return chosedFunc_;}
 
   void setEntry(BBlock *bBlk) {chosedFunc_->setEntry(bBlk);}
 

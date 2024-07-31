@@ -26,6 +26,7 @@ void BBlock::addHeadInst(Instruction *inst) {
 
 void BBlock::rmInst(Instruction *inst) {
   instList_.remove(inst->getNode());
+  inst->setValid(false);
 }
 
 void BBlock::coutBBlock() {

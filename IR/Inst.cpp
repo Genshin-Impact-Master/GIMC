@@ -23,6 +23,73 @@ void Instruction::calculateDef_Uses() {
   }
 }
 
+// bool Instruction::isEqual(Instruction *t) {
+//   if (kind_ != t->getKind()) 
+//     return false;
+//   std::vector<Value*> defs_ = t->getDefs();
+//   if (ops_.size() != defs_.size())
+//     return false;
+//   for (int i = 0; i < static_cast<int>(ops_.size()); i++) {
+//     if (ops_[i]->isEqual(defs_[i])) {
+//       return false;
+//     }
+//   }
+//   return true;
+// }
+
+uint32_t Instruction::getHash() {
+  if (!isHashed()) {
+    std::cout << "我在 Instruction hash 计算" << std::endl;
+    uint32_t hash = std::hash<InstKind>()(kind_);
+    for (auto val : ops_) {
+      hash ^= val->getHash() + (hash << 6) + (hash >> 2);
+    }
+    setHashCode(hash);
+  }
+  return Value::getHash();
+}
+
+// bool BinaryInst::isEqual(Instruction *t) {
+//   InstKind myKind = getKind();
+//   if (myKind != t->getKind())
+//     return true;
+//   else {
+//     Value *a1,a2,b1,b2;
+//     a1 = ops_[0];
+//     a2 = ops_[1];
+//     b1 = t->ops_[0];
+//     b2 = t->ops_[1];
+//     if (a1 == b1 && a2 == b2) 
+//       return true;
+//     else {
+//       if (myKind == InstKind::Add || myKind == InstKind::Addf || myKind == InstKind::Mul || myKind == InstKind::Mulf) {
+//         return a1 == b2 && a2 == b1;
+//       }
+//       return false;
+//     }
+//   }
+// }
+
+uint32_t BinaryInst::getHash() {
+  if (!isHashed()) {
+    std::cout << "我在 二元 hash 计算" << std::endl;
+    InstKind myKind = getKind();
+    uint32_t hash = std::hash<InstKind>()(myKind);
+    if (myKind == InstKind::Add || myKind == InstKind::Addf || myKind == InstKind::Mul || myKind == InstKind::Mulf) {
+      for (auto val : ops_) {
+        hash ^= val->getHash();
+      }
+    }
+    else {
+      for (auto val : ops_) {
+        hash ^= val->getHash() + (hash << 6) + (hash >> 2);
+      }
+    }
+    setHashCode(hash);
+  }
+  return Value::getHash();
+}
+
 BinaryInst::BinaryInst(const std::string &name,
                         baseTypePtr type,
                         InstKind kind,
@@ -34,6 +101,8 @@ BinaryInst::BinaryInst(const std::string &name,
                           ops_.push_back(rhs);
                           calculateDef_Uses();
                         }
+
+// uint32_t BinaryInst::getHash(){}
 
 Store::Store(const std::string &name,
               baseTypePtr type,

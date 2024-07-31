@@ -106,7 +106,7 @@ void Mem2reg::varRenameDFS(BBlock *bBlk) {
             //   std::cout << varPtr->getFullName() << " 还剩 " << man->getFullName() <<std::endl;
             // }
             std::cout << "使用 " << newest->getFullName() << " 替换 " << v_defs[j]->getFullName() << std::endl;
-            v_defs[j] = newest;
+            v->updateValue(newest, j);
             break;
           }
         }
@@ -134,10 +134,8 @@ void Mem2reg::varRenameDFS(BBlock *bBlk) {
       }
       Value *varPtr = inst->getAllocaPtr();
       Value *newest = allocaStacks[varPtr].back();
-      std::vector<Value*> &phiOps = inst->getOps();
-      phiOps.push_back(newest);
-      phiOps.push_back(bBlk);
-      inst->calculateDef_Uses();
+      inst->updateValue(newest, -1);
+      inst->updateValue(bBlk, -1);
     }
   }
 

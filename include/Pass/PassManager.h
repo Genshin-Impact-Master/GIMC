@@ -8,6 +8,7 @@
 #include "Mem2reg.h"
 #include "Domination.h"
 #include "Pres_Succs_Calculate.h"
+#include "../IR/Inst.h"
 
 USING_GIMC_NAMESPACE
 GIMC_NAMESPACE_BEGIN
@@ -22,12 +23,20 @@ private:
   bool do_domination = false;
   bool do_mem2reg = false;
   bool do_def_use = false;
+  std::unordered_map<std::size_t, Instruction*> insts;  // 结合 std::hash 和异或计算 hash 值
 public:
   PassManager(Function *func) : func_(func) {}
+  // 计算 def-use
   void calDefUse();
+  // 计算前驱后继
   void pres_succs();
+
   void mem2reg();
+  //计算支配树 
   void domination();
+  // 公共子表达式消除
+  void GVN();
+  void dfs_GVN(BBlock *v);
 };
 
 GIMC_NAMESPACE_END
