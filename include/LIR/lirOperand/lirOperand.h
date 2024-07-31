@@ -21,6 +21,8 @@ class LirOperand {
         LirOperandKind OperandKind ;
 
     public:
+        LirOperand() {}
+
         LirOperand(LirOperandKind kind);
         
         bool isImm();
@@ -37,8 +39,6 @@ class LirOperand {
 
         std::string print();
 
-        //每个子类应当实现toString
-        virtual std::string toString() = 0; 
 
 
 

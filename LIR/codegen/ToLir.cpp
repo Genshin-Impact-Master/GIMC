@@ -63,7 +63,8 @@ LirModule ToLir::moduleGen() {
 
         if(func->getBBlockList().getSize() > 0) {
             INode<BBlock> *blockNode = func->getBBlockList().getHeadPtr();
-            while(blockNode != nullptr) {
+            while(!blockNode->isEnd()) {
+                blockNode = blockNode->getNext();
                 BBlock *block = blockNode->getOwner();
                 LirBlock lirBlock = LirBlock(&lirFunc, block->getName() + "_" + func->getName());
                 blockMap[block] = &lirBlock;
@@ -72,14 +73,15 @@ LirModule ToLir::moduleGen() {
         }
 
         INode<BBlock> *blockNode = func->getBBlockList().getHeadPtr();
-        while(blockNode != nullptr) {
+        while(!blockNode->isEnd()) {
+            blockNode = blockNode->getNext();
             BBlock *block = blockNode->getOwner();
             LirBlock *lirBlock = blockMap[block];
             for(BBlock* preBlock : block->getPres()) {
                 lirBlock->addPres(blockMap[preBlock]);
             }
 
-            std::unordered_set<BBlock*> lirSuccs = block->getSuccs();
+            std::set<BBlock*> lirSuccs = block->getSuccs();
             if(lirSuccs.size() == 1) {
                 lirBlock->setTrueLirSucc(blockMap[*lirSuccs.begin()]);
             }else if(lirSuccs.size() == 2) {
@@ -89,20 +91,142 @@ LirModule ToLir::moduleGen() {
         }
 
         
-
-        
-
-
-
-
-
-
-
+    
     }
 
-
-
-
+    for(Function* func : *(irModule.getFuncDefs())) {
+        LirFunction* lirFunc = funcMap[func];
+        INode<BBlock> *blockNode = func->getBBlockList().getHeadPtr();
+        while(!blockNode->isEnd()) {
+            blockNode = blockNode->getNext();
+            LirBlock* lirBlock = blockMap[blockNode->getOwner()];
+            globalMap.clear();
+            
+        }
+    }
 
     
+}
+
+void ToLir::instResolve(Function *func, BBlock *block) {
+    LirFunction* lirFunc = funcMap[func];
+    LirBlock* lirBlock = blockMap[block];
+    INode<Instruction> *instNode = block->getInstList().getHeadPtr();
+    while(!instNode->isEnd()) {
+        instNode = instNode->getNext();
+        Instruction* inst = instNode->getOwner();
+
+        //TODO:已经实现了整除加减乘除，需要实现其他二元指令
+        if(inst->getKind()> InstKind::BinaryOPBegin && inst->getKind() < InstKind::BinaryOpEnd) {
+            BinaryInst* i = dynamic_cast<BinaryInst*>(inst);
+            Value *lhs = i->getLhs();
+            Value *rhs = i->getRhs();
+            LirOperand lhsReg, rhsReg, dstReg;
+            LirInstKind lirInstKind;
+            switch (i->getKind())
+            {
+                
+            case InstKind::Add:
+                if(dynamic_cast<ConstValue*>(lhs)) {
+                    rhsReg = ToLir::operandResolve(lhs, lirFunc, lirBlock);
+                    lhsReg = ToLir::operandResolve(rhs, lirFunc, lirBlock);
+                }
+                else {
+                    lhsReg = ToLir::operandResolve(lhs, lirFunc, lirBlock);
+                    rhsReg = ToLir::operandResolve(rhs, lirFunc, lirBlock);
+                }
+                dstReg = ToLir::operandResolve(i, lirFunc, lirBlock);
+                lirInstKind = LirInstKind::Add;
+                LirBinary lirBin = LirBinary(lirInstKind, lirBlock, lhsReg, rhsReg, dstReg);
+                lirBlock->addInst(dynamic_cast<LirInst*>(&lirBin));
+                break;
+
+            case InstKind::Sub:
+                if(dynamic_cast<ConstValue*>(lhs)) {
+                    rhsReg = ToLir::operandResolve(lhs, lirFunc, lirBlock);
+                    lhsReg = ToLir::operandResolve(rhs, lirFunc, lirBlock);
+                    lirInstKind = LirInstKind::Rsb;//逆向减法
+                }else {
+                    lhsReg = ToLir::operandResolve(lhs, lirFunc, lirBlock);
+                    rhsReg = ToLir::operandResolve(rhs, lirFunc, lirBlock);
+                    lirInstKind =LirInstKind::Sub;
+                }
+                dstReg = ToLir::operandResolve(i, lirFunc, lirBlock);
+                LirBinary lirBin = LirBinary(lirInstKind, lirBlock, lhsReg, rhsReg, dstReg);
+                lirBlock->addInst(dynamic_cast<LirInst*>(&lirBin));
+                break;
+
+            case InstKind::Mul:
+                if(dynamic_cast<ConstValue*>(lhs)) {
+                    rhsReg = ToLir::operandResolve(lhs, lirFunc, lirBlock);
+                    lhsReg = ToLir::operandResolve(rhs, lirFunc, lirBlock);
+                }
+                else {
+                    lhsReg = ToLir::operandResolve(lhs, lirFunc, lirBlock);
+                    rhsReg = ToLir::operandResolve(rhs, lirFunc, lirBlock);
+                }
+                dstReg = ToLir::operandResolve(i, lirFunc, lirBlock);
+                lirInstKind = LirInstKind::Mul;
+                LirBinary lirBin = LirBinary(lirInstKind, lirBlock, lhsReg, rhsReg, dstReg);
+                lirBlock->addInst(dynamic_cast<LirInst*>(&lirBin));
+                break;
+
+            case InstKind::Div:
+            //除法不可以交换
+                lhsReg = ToLir::operandResolve(lhs, lirFunc, lirBlock);
+                rhsReg = ToLir::operandResolve(rhs, lirFunc, lirBlock);
+                dstReg = ToLir::operandResolve(i, lirFunc, lirBlock);
+                lirInstKind = LirInstKind::Mul;
+                LirBinary lirBin = LirBinary(lirInstKind, lirBlock, lhsReg, rhsReg, dstReg);
+                lirBlock->addInst(dynamic_cast<LirInst*>(&lirBin));
+                break;
+            
+            
+            
+            
+            
+            
+            default:
+                break;
+            }
+        }
+    }
+}
+
+
+LirOperand ToLir::operandResolve(Value* val, LirFunction* lirFunc, LirBlock* lirBlock) {
+    if(dynamic_cast<ConstValue*>(val)) {
+        return immResolve(val, lirFunc, lirBlock);
+    }
+    else {
+        if(TypeBase::isInteger(val->getType())) {
+            return IVReg();
+        }
+        else 
+            return FVReg();
+    }
+}
+
+LirOperand ToLir::immResolve(Value* val, LirFunction* lirFunc, LirBlock* lirBlock) {
+    if(dynamic_cast<ConstFloatValue*>(val)) {
+        return loadImmToFVReg(dynamic_cast<ConstFloatValue*>(val)->getFloat(), lirFunc, lirBlock);
+    } else {
+        
+    }
+}
+
+FVReg& ToLir::loadImmToFVReg(float val, LirFunction* lirFunc, LirBlock* lirBlock) {
+    FVReg reg = FVReg();
+    FImm fImm = FImm(val);
+    LirInstMove move = LirInstMove(*lirBlock, reg, fImm);
+    lirFunc->getImmMap().emplace(reg, move);
+    return reg;
+}
+
+IVReg& ToLir::loadImmToIVReg(int val, LirFunction* lirFunc, LirBlock* lirBlock) {
+    IVReg reg = IVReg();
+    IImm iImm = IImm(val);
+    LirInstMove move = LirInstMove(*lirBlock, reg, iImm);
+    lirFunc->getImmMap().emplace(reg, move);
+    return reg;
 }

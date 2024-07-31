@@ -12,6 +12,15 @@
 #include "BBlock.h"
 #include "Module.h"
 #include "Addr.h"
+#include "Inst.h"
+#include "FVReg.h"
+#include "IVReg.h"
+#include "Imm.h"
+#include "FImm.h"
+#include "IImm.h"
+#include "LirInst.h"
+#include "LirInstMove.h"
+#include "LirBinary.h"
 
 GIMC_NAMESPACE_BEGIN
 USING_GIMC_NAMESPACE
@@ -29,7 +38,11 @@ class ToLir {
     public:
         ToLir(Module irModule);
         LirModule moduleGen();
-
+        void instResolve(Function *func, BBlock *block);
+        LirOperand operandResolve(Value* val, LirFunction* lirFunc, LirBlock* lirBlock);
+        LirOperand immResolve(Value* val, LirFunction* lirFunc, LirBlock* lirBlock) ;
+        FVReg& loadImmToFVReg(float val, LirFunction* lirFunc, LirBlock* lirBlock);
+        IVReg& ToLir::loadImmToIVReg(int val, LirFunction* lirFunc, LirBlock* lirBlock);
 
         
 

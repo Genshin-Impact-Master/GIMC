@@ -2,6 +2,8 @@
 #define LIR_FUNC_H
 #include "Config.h"
 #include "lirOperand.h"
+#include "LirInstMove.h"
+#include <map>
 
 
 GIMC_NAMESPACE_BEGIN
@@ -16,6 +18,8 @@ class LirFunction {
         baseTypePtr returnType;
         LirBlock prologue;
         std::vector<Value> paramter;
+        std::map<LirOperand&, LirInstMove&> immMap;
+
 
     public:
         LirFunction(std::string name, int paramsCnt);
@@ -23,7 +27,7 @@ class LirFunction {
         void setIParamsCnt(int intcnt);
         void setFParamsCnt(int floatcnt);
         void setReturnType(baseTypePtr returnType);
-        
+        std::map<LirOperand&, LirInstMove&>& getImmMap();
 
 
         
