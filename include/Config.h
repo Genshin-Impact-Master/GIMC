@@ -7,6 +7,7 @@
 #define USING_GIMC_NAMESPACE using namespace GIMC;
 #define ADDR_LENGTH 64                                // 机器字长
 // #define PRINT_CFG                                     // 设置此宏，将 CFG 生成出来
+//#define PRINT_CFG                                     // 设置此宏，将 CFG 生成出来
 
 #include <string>
 #include <vector>

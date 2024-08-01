@@ -25,3 +25,9 @@ SSA Value 中 def-use,use-def 通过双向引用来维护，维护该双向引�
 [预测全局值编号的稀疏算法](https://dl.acm.org/doi/10.1145/543552.512536)
 我们果断选择 Brutal Force.
 
+如何进行 `isEqual` 的判断？
+  * 对于普通的 Value* 直接比较两指针是否相等即可。
+  * 对于 `ConstInt`,`ConstFloat` 需要比较两者的 `value_`.
+  * 对于普通的 `Instruction`，需要比较 `InstKind` 和 `ops_` 中的每一个 `Value*`
+  * 对于 `BinaryInst`，其中的 `Add`,`Addf`,`Mul`,`Mulf` 左右操作数可换位。
+

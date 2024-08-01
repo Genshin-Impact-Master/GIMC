@@ -1,0 +1,27 @@
+#ifndef LIR_IVREG_H
+#define LIR_IVREG_H
+#include "Config.h"
+#include "lirOperand.h"
+#include "Reg.h"
+
+GIMC_NAMESPACE_BEGIN
+USING_GIMC_NAMESPACE
+
+class IVReg : public Reg {
+    private:
+        static int count;
+        int id;
+    
+    public:
+        IVReg() : Reg(LirOperandKind::IVirtual), id(count++){};
+
+        IVReg(int id) : Reg(LirOperandKind::IVirtual), id(id){};
+
+        std::string toString();
+
+
+};
+
+GIMC_NAMESPACE_END
+
+#endif

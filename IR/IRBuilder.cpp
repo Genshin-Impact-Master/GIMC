@@ -246,6 +246,19 @@ Instruction* IRBuilder::createPhiInst(baseTypePtr type, std::vector<Value*> argu
   return createPhiInst(GET_CNT_NAME, type, argus, parent);
 }
 
+Instruction* IRBuilder::createInitMemInst(const std::string &name, baseTypePtr type, Value *ptr, int length, BBlock *parent) {
+  parent = checkBlockParent(parent);
+  InitMem *inst = new InitMem(name, type, parent, ptr, length);
+  parent->addInst(inst);
+  return inst;
+}
+
+Instruction* IRBuilder::createInitMemInst(baseTypePtr type, Value *ptr, int length, BBlock *parent) {
+  parent = checkBlockParent(parent);
+  return createInitMemInst(GET_CNT_NAME, type, ptr, length, parent);
+}
+
+
 /******************************************************************************/
 /*                                生成 LLVM IR                                */
 /*****************************************************************************/
@@ -272,7 +285,10 @@ void IRBuilder::emitIRFuncDef(Function *func) {
     fprintf(stdout, "请先设置函数入口基本块\n");
   }
   std::vector<baseTypePtr> &arguTypes = func->arguTypes_;
+  std::cout<< func->getFullName() << " " << func->getTypeName() << " " << func->arguTypes_.size() << std::endl;
   std::vector<Value> &argus = func->getArgus();
+  std::cout<< func->getFullName() << " " << func->getTypeName() << " " << argus.size() << std::endl;
+
   irout <<"define " << func->getTypeName() << " " << func->getFullName()
         << "(";
   for (int i = 0; i < static_cast<int>(arguTypes.size()) - 1; i++) {
@@ -327,8 +343,7 @@ void IRBuilder::emitIRInst(Instruction *inst) {
   else if (inst->kind_ == InstKind::Alloca) {
     Alloca *i = dynamic_cast<Alloca*>(inst);
     std::shared_ptr<PointerType> ptr = std::dynamic_pointer_cast<PointerType>(inst->getType()); 
-    irout << '\t' << i->getFullName() << " = " << INST_STRING << ptr->getName()
-          << ", i32 " << ptr->getArraySizeCnt() << std::endl; 
+    irout << '\t' << i->getFullName() << " = " << INST_STRING << ptr->getDetailName() << std::endl; 
   }
   // store 指令
   else if (inst->kind_ == InstKind::Store) {
@@ -433,5 +448,10 @@ void IRBuilder::emitIRInst(Instruction *inst) {
     for (int k = size - 2; k < size; k += 2) {
       irout << "[" << ops[k]->getFullName() << ", " << ops[k+1]->getFullName() << "]" << std::endl;
     }
+  }
+  else if (inst->kind_ == InstKind::InitMem) {
+    InitMem *i = dynamic_cast<InitMem*>(inst);
+    irout << '\t' << "call void @llvm.memset.po.i32(" << i->ops_[0]->getTypeName() << i->ops_[0]->getFullName() << ", i8 0, i32 "
+          << i->ops_[1]->getFullName() << ", i1 false)" << std::endl;
   }
 }

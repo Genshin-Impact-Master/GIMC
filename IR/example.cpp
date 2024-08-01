@@ -248,8 +248,10 @@ int main(int argc, char** args) {
    *  int a = 5;
       int h;
       int main() {
+          float man = 10.9;
           int b = getint();
           putint(a + b);
+          man + 1;
           return 0;
       }
   */
@@ -266,6 +268,9 @@ int main(int argc, char** args) {
   std::vector<Value*> eg5_args;
   eg5_args.push_back(eg5_add);
   builder.createCallInst(putint, eg5_args);
+  Instruction *eg5_man = builder.createAllocaInst("man", floatPointerType);
+  builder.createStoreInst(new ConstFloatValue(10.9), eg5_man);
+  builder.createLoadInst(floatType, eg5_man);
   builder.createRetInst(new ConstIntValue(0));
 
   builder.emitIRModule(myModule);
@@ -509,15 +514,15 @@ int main(int argc, char** args) {
   BBlock *eg_11_and_A1_true = builder.createBBlock("and_a1_true", voidType, eg_11_foo);
     // 在 entry 基本块计算 && 的 A1（左侧表达式），并条件跳转到 a1_true 或 ||_A1_false（即 || 的第一个表达式为 false）
   Instruction *eg_11_x_load = builder.createLoadInst(floatType, eg_11_x_ptr, eg_11_foo_entry);
-  Instruction *eg_11_fcmp = builder.createFcmpInst(FCondKind::One, new ConstFloatValue(0), eg_11_x_load, eg_11_foo_entry);
+  Instruction *eg_11_fcmp = builder.createFcmpInst(FCondKind::Oeq, new ConstFloatValue(0), eg_11_x_load, eg_11_foo_entry);
   Instruction *eg_11_and_a1_br = builder.createBrInst(eg_11_fcmp, eg_11_and_A1_true, eg_11_or_A1p_false, eg_11_foo_entry);
     // 在 &&_A1_true 基本块计算 && 的 A2（右侧表达式），并条件跳转到 true 或 ||_A1_false
   Instruction *eg_11_y_load = builder.createLoadInst(i32Type, eg_11_y_ptr, eg_11_and_A1_true);
-  Instruction *eg_11_icmp_y = builder.createIcmpInst(ICondKind::Eq, new ConstIntValue(0), eg_11_y_load, eg_11_and_A1_true);
+  Instruction *eg_11_icmp_y = builder.createIcmpInst(ICondKind::Ne, new ConstIntValue(0), eg_11_y_load, eg_11_and_A1_true);
   Instruction *eg_11_and_a2_br = builder.createBrInst(eg_11_icmp_y, eg_11_true, eg_11_or_A1p_false, eg_11_and_A1_true);
     //  在 ||_A1'_false 基本块计算 || 的 A2'，条件跳转到 true 或 false
   Instruction *eg_11_z_load = builder.createLoadInst(i32Type, eg_11_z_ptr, eg_11_or_A1p_false);
-  Instruction *eg_11_icmp_z = builder.createIcmpInst(ICondKind::Eq, new ConstIntValue(0), eg_11_z_load, eg_11_or_A1p_false);
+  Instruction *eg_11_icmp_z = builder.createIcmpInst(ICondKind::Ne, new ConstIntValue(0), eg_11_z_load, eg_11_or_A1p_false);
   Instruction *eg_11_or_a2p_br = builder.createBrInst(eg_11_icmp_z, eg_11_true, eg_11_false, eg_11_or_A1p_false);
   // 在 true 和 false 中设置两种 return 值的设置。（llvm 会隐式分配局部变量 %return），在 true 和 false 中分别给两个附上不同值。
   // true 和 false 基本块会回流到一起，即 if() {xxx;} else {yyy;} zzz; 中 zzz 的部分。
@@ -586,6 +591,25 @@ int main(int argc, char** args) {
   builder.createRetInst(new ConstIntValue(0));
   
   builder.emitIRModule(myModule);
+
+  /**
+   * eg_13 数组初始化
+   * int main(){
+   *    int a[3][3][2] = {};
+   *    return 0;
+   * }
+   */
+  newModule(builder, myModule);
+  baseTypePtr eg_13_ty_1 = std::make_shared<PointerType>(i32Type, 2);
+  baseTypePtr eg_13_ty_2 = std::make_shared<PointerType>(eg_13_ty_1, 3);
+  baseTypePtr eg_13_ty_3 = std::make_shared<PointerType>(eg_13_ty_2, 3);
+  Instruction *eg_13_a_ptr = builder.createAllocaInst(eg_13_ty_3);
+  // type 可以任意，因为不会用到，仅仅在初始化函数中用
+  builder.createInitMemInst(voidType, eg_13_a_ptr, 18 * 4);
+  builder.createRetInst(new ConstIntValue(0));
+
+  builder.emitIRModule(myModule);
+  
 
   // 关闭 builder 的 irout 文件输出流
   builder.close();

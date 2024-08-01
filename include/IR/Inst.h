@@ -43,7 +43,8 @@ enum class InstKind {
   Fp2Int,
   Int2Fp,
   Zext,
-  Phi
+  Phi,
+  InitMem
 };
 
 /**
@@ -111,7 +112,7 @@ public:
   InstKind getKind() {return kind_;}
   // 一般指令的 hash 计算 InstKind + ops_
   uint32_t getHash() override;
-
+  bool isEqual(Value *t) override;
 };
 
 /**
@@ -141,7 +142,7 @@ public:
     return ops_[1];
   }
 
-  // bool isEqual(Instruction *t) const override ;
+  bool isEqual(Value *t) override ;
 
   // 对于某些二元操作数，可以换位
   uint32_t getHash() override;
@@ -414,6 +415,19 @@ public:
 
   // 获取 ops
   std::vector<Value*>& getOps() {return ops_;}
+};
+
+class InitMem final : public Instruction {
+public:
+  /**
+   * 数组全初始化为 0
+   * @param length 将长度为 length 的字节数置为 0 （注意字节数为数组总长度 * 4）
+   */
+  InitMem(const std::string &name,
+          baseTypePtr type,
+          BBlock *parent,
+          Value *ptr,
+          int length);
 };
 GIMC_NAMESPACE_END
 

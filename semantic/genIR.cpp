@@ -719,7 +719,9 @@ void parseFuncDefine(FuncDefPtr func_def) {
         for (int i = 0; i < func_def->getFuncFParams()->getFuncFParam().size(); i++) 
             param_types.pb(func_def->getFuncFParams()->getFuncFParam()[i]->getType() == BaseType::B_INT ? i32Type : floatType);
         auto ret_ty = func_def->getReturnType() == BaseType::B_INT ? i32Type : func_def->getReturnType() == BaseType::B_FLOAT ? floatType : voidType;
+        // param_types.push_back(i32Type);
         func = builder.createFunction(func_def -> getIdentifier(), ret_ty, param_types);
+
         BBlock* func_entry = builder.createBBlock("entry", voidType, func);
         func -> setEntry(func_entry);
 
@@ -735,6 +737,7 @@ void parseFuncDefine(FuncDefPtr func_def) {
         // 无参数函数
         auto ret_ty = func_def->getReturnType() == BaseType::B_INT ? i32Type : func_def->getReturnType() == BaseType::B_FLOAT ? floatType : voidType;
         func = builder.createFunction(func_def -> getIdentifier(), ret_ty, Zero_Argu_Type_List);
+
         BBlock* func_entry = builder.createBBlock("entry", voidType, func);
         func -> setEntry(func_entry);
         sym_tb.add_func(func_def -> getIdentifier(), func_def -> getReturnType(), func_def -> getFuncFParams(), func);

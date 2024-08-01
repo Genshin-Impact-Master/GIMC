@@ -164,6 +164,12 @@ public:
   Instruction* createPhiInst(baseTypePtr type, std::vector<Value*> argus, BBlock *parent = nullptr);
 
   /**
+   * 创建 InitMem 指令
+   */
+  Instruction* createInitMemInst(const std::string &name, baseTypePtr type, Value *ptr, int length, BBlock *parent = nullptr);
+  Instruction* createInitMemInst(baseTypePtr type, Value *ptr, int length, BBlock *parent = nullptr);
+
+  /**
    * 检查是否存在 BBlock
   */
   BBlock* checkBlockParent(BBlock* parent);
