@@ -610,7 +610,6 @@ int main(int argc, char** args) {
 
   builder.emitIRModule(myModule);
   
-
   // 关闭 builder 的 irout 文件输出流
   builder.close();
 }

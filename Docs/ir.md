@@ -29,6 +29,7 @@ Value
         > Br
         > Gep
         > Phi
+        > InitMem
     > BBlock
 TypeBase
     > IntegerType
