@@ -256,3 +256,12 @@ Phi::Phi(const std::string &name,
         calculateDef_Uses();
         std::cout << "新建的 phi 指令是 " << ops_[0]->getFullName() << " 的 phi 结点" << std::endl; 
       }
+
+InitMem::InitMem(const std::string &name,
+                  baseTypePtr type,
+                  BBlock *parent,
+                  Value *ptr,
+                  int length) : Instruction(name, type, InstKind::InitMem, parent) {
+                    ops_.push_back(ptr);
+                    ops_.push_back(new ConstIntValue(length));
+                  }

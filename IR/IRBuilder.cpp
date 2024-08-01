@@ -246,6 +246,19 @@ Instruction* IRBuilder::createPhiInst(baseTypePtr type, std::vector<Value*> argu
   return createPhiInst(GET_CNT_NAME, type, argus, parent);
 }
 
+Instruction* IRBuilder::createInitMemInst(const std::string &name, baseTypePtr type, Value *ptr, int length, BBlock *parent) {
+  parent = checkBlockParent(parent);
+  InitMem *inst = new InitMem(name, type, parent, ptr, length);
+  parent->addInst(inst);
+  return inst;
+}
+
+Instruction* IRBuilder::createInitMemInst(baseTypePtr type, Value *ptr, int length, BBlock *parent) {
+  parent = checkBlockParent(parent);
+  return createInitMemInst(GET_CNT_NAME, type, ptr, length, parent);
+}
+
+
 /******************************************************************************/
 /*                                生成 LLVM IR                                */
 /*****************************************************************************/
@@ -431,5 +444,10 @@ void IRBuilder::emitIRInst(Instruction *inst) {
     for (int k = size - 2; k < size; k += 2) {
       irout << "[" << ops[k]->getFullName() << ", " << ops[k+1]->getFullName() << "]" << std::endl;
     }
+  }
+  else if (inst->kind_ == InstKind::InitMem) {
+    InitMem *i = dynamic_cast<InitMem*>(inst);
+    irout << '\t' << "call void @llvm.memset.po.i32(" << i->ops_[0]->getTypeName() << i->ops_[0]->getFullName() << ", i8 0, i32 "
+          << i->ops_[1]->getFullName() << ", i1 false)" << std::endl;
   }
 }

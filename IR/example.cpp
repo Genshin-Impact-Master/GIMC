@@ -592,6 +592,25 @@ int main(int argc, char** args) {
   
   builder.emitIRModule(myModule);
 
+  /**
+   * eg_13 数组初始化
+   * int main(){
+   *    int a[3][3][2] = {};
+   *    return 0;
+   * }
+   */
+  newModule(builder, myModule);
+  baseTypePtr eg_13_ty_1 = std::make_shared<PointerType>(i32Type, 2);
+  baseTypePtr eg_13_ty_2 = std::make_shared<PointerType>(eg_13_ty_1, 3);
+  baseTypePtr eg_13_ty_3 = std::make_shared<PointerType>(eg_13_ty_2, 3);
+  Instruction *eg_13_a_ptr = builder.createAllocaInst(eg_13_ty_3);
+  // type 可以任意，因为不会用到，仅仅在初始化函数中用
+  builder.createInitMemInst(voidType, eg_13_a_ptr, 18 * 4);
+  builder.createRetInst(new ConstIntValue(0));
+
+  builder.emitIRModule(myModule);
+  
+
   // 关闭 builder 的 irout 文件输出流
   builder.close();
 }

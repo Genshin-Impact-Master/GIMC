@@ -43,7 +43,8 @@ enum class InstKind {
   Fp2Int,
   Int2Fp,
   Zext,
-  Phi
+  Phi,
+  InitMem
 };
 
 /**
@@ -414,6 +415,19 @@ public:
 
   // 获取 ops
   std::vector<Value*>& getOps() {return ops_;}
+};
+
+class InitMem final : public Instruction {
+public:
+  /**
+   * 数组全初始化为 0
+   * @param length 将长度为 length 的字节数置为 0 （注意字节数为数组总长度 * 4）
+   */
+  InitMem(const std::string &name,
+          baseTypePtr type,
+          BBlock *parent,
+          Value *ptr,
+          int length);
 };
 GIMC_NAMESPACE_END
 
