@@ -24,7 +24,7 @@ class Function : public Value {
 friend class IRBuilder;
 private:
   int cnt = 0;                                            // function 中的递增命名计数器 
-  std::vector<baseTypePtr> &arguTypes_;                   // 参数类型链表，注意是引用不是新的一个
+  std::vector<baseTypePtr> arguTypes_;                   // 参数类型链表，注意是引用不是新的一个
   IList<Function, BBlock> blkList_;                       // 侵入式链表，结点全为 BBlock
   std::vector<Value> argus_;                              // 形参链表，用于表示 value
 
