@@ -326,8 +326,7 @@ void IRBuilder::emitIRInst(Instruction *inst) {
   else if (inst->kind_ == InstKind::Alloca) {
     Alloca *i = dynamic_cast<Alloca*>(inst);
     std::shared_ptr<PointerType> ptr = std::dynamic_pointer_cast<PointerType>(inst->getType()); 
-    irout << '\t' << i->getFullName() << " = " << INST_STRING << ptr->getName()
-          << ", i32 " << ptr->getArraySizeCnt() << std::endl; 
+    irout << '\t' << i->getFullName() << " = " << INST_STRING << ptr->getDetailName() << std::endl; 
   }
   // store 指令
   else if (inst->kind_ == InstKind::Store) {

@@ -90,6 +90,11 @@ public:
   // 重载 Value 中的 getFullName
   std::string& getFullName() override;
 
+  // 重载 Value 中的 getData
+  std::string getData() override {
+    return getName();
+  }
+
   // 返回 符号浮点数
   float getFloat() {return value_.f;}
 

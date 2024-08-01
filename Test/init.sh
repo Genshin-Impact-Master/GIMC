@@ -1,9 +1,12 @@
 #!/bin/bash
 
 # 将 SCC(standard CC) 替换为电脑上的交叉编译器 
-SCC="arm-suse-linux-gnueabi-gcc-14"
+SCC="arm-none-eabi-gcc-14"
+qemu-system-arm -name "dragon" -machine accel=kvm -M virt -m 4096 -cpu cortex-a72 -drive file=./hardware,if=virtio,index=0,media=disk,format=raw \
+>
 
 # 找到 arm 的 glibc 的 include 路径 和 lib 路径
+-march=armv7-a -mcpu=cortex-a72
 
 # 设定目录路径
 SY_DIR="./stdSY"

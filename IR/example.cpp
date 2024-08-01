@@ -248,8 +248,10 @@ int main(int argc, char** args) {
    *  int a = 5;
       int h;
       int main() {
+          float man = 10.9;
           int b = getint();
           putint(a + b);
+          man + 1;
           return 0;
       }
   */
@@ -266,6 +268,9 @@ int main(int argc, char** args) {
   std::vector<Value*> eg5_args;
   eg5_args.push_back(eg5_add);
   builder.createCallInst(putint, eg5_args);
+  Instruction *eg5_man = builder.createAllocaInst("man", floatPointerType);
+  builder.createStoreInst(new ConstFloatValue(10.9), eg5_man);
+  builder.createLoadInst(floatType, eg5_man);
   builder.createRetInst(new ConstIntValue(0));
 
   builder.emitIRModule(myModule);
