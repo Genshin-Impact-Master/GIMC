@@ -22,7 +22,7 @@ public:
            : Value(name, type), values_(values) { 
                                                   if(!TypeBase::isPointer(type)) 
                                                     fprintf(stderr, "全局变量类型必须为指针\n");
-                                                  this->setLocalPrefix(false); 
+                                                  this->setGlobalVarPrefix(); 
                                                 }
 
   std::string getData() override;     // @C++_Learn 注意 override 关键字不能出现在 class 外的函数定义中
