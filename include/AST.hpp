@@ -22,7 +22,7 @@ int last_column;
 
 
 enum BaseType {
-    B_VOID,B_INT,B_FLOAT,B_ARRAY_PTR
+    B_VOID,B_INT,B_FLOAT,B_ARRAY_PTR,B_BOOL,B_JMP
 };
 enum StmtType {
     ST_IF,ST_WHILE,ST_BREAK,ST_CONTINUE,
@@ -30,7 +30,7 @@ enum StmtType {
     ST_BLANK
 };
 enum ExpType {
-    ET_INT,ET_FLOAT,ET_LVAL,ET_FUNC,ET_BIN
+    ET_INT,ET_FLOAT,ET_LVAL,ET_FUNC,ET_BIN,ET_NOT
 };
 enum BinOpType {
     OP_ADD,OP_SUB,OP_MUL,OP_DIV,OP_MOD,
@@ -134,7 +134,7 @@ class Visitor;
 class BaseNode {
 public:
     BaseNode(){};
-    ~BaseNode(){};
+    virtual ~BaseNode() = default;
     NodeType _node_type;
 };
 
@@ -142,8 +142,8 @@ class CompUnit {
 private:
     vector<BaseNodePtr> _decls;
 public:
-    void addDecl (DeclPtr decl){_decls.pb(decl);};
-    void addFuncDef (FuncDefPtr fun_def){_decls.pb(fun_def);};
+    void addDecl (DeclPtr decl){_decls.pb(dynamic_pointer_cast<BaseNode>(decl));};
+    void addFuncDef (FuncDefPtr fun_def){_decls.pb(dynamic_pointer_cast<BaseNode>(fun_def));};
     vector<BaseNodePtr> getDecl(){return _decls;};
 };
 
@@ -339,7 +339,7 @@ class BlockItems {
 private:
     vector<BaseNodePtr> _stmts;
 public:
-    void addStmt(StmtPtr stmt) {_stmts.pb(stmt);}
+    void addStmt(StmtPtr stmt) {_stmts.pb(dynamic_pointer_cast<BaseNode>(stmt));}
     vector<BaseNodePtr> getStmt() {return _stmts;}  
     void addDecl(DeclPtr decl) {_stmts.pb(decl);}
 };
@@ -355,6 +355,7 @@ class Stmt: public BaseNode{
 private:
     StmtType _type;
 public:
+    virtual ~Stmt() = default;
     void addType(StmtType type){_type=type;}
     StmtType getType(){return _type;}
 };
@@ -421,10 +422,18 @@ class Exp {
 private:
     ExpType _type;
     BaseType _res_type;
+    int _not_cnt = 0;
+    int _neg_cnt = 0;
 public:
     virtual ~Exp() = default;
     void addType(ExpType type){_type=type;}
     void addResType(BaseType res_type){_res_type=res_type;}
+    void addNot(){++_not_cnt;}
+    int getNotCnt(){return _not_cnt;}
+    void clearNotCnt(){_not_cnt = 0;};
+    void addNeg(){++_neg_cnt;}
+    int getNegCnt(){return _neg_cnt;}
+    void clearNegCnt(){_neg_cnt = 0;}
     ExpType getType(){return _type;}
     BaseType getResType(){return _res_type;}
 };
@@ -476,6 +485,7 @@ private:
     bool _is_float;
 public:
     Number(int32_t int_val, float float_val, bool is_float){_int_val=int_val;_float_val=float_val;_is_float=is_float;}
+    Number() = default;
     void addIntVal(int32_t int_val){_int_val=int_val;}
     void addFloatVal(float float_val){_float_val=float_val;}
     void addIsFloat(bool is_float){_is_float=is_float;}

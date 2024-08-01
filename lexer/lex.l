@@ -40,11 +40,12 @@ DEC_INTEGER ({NONZERO_DIGIT}{DIGIT}*|0)
 OCT_INTEGER {OCT_PREFIX}{OCT_DIGIT}+
 HEX_INTEGER {HEX_PREFIX}{HEX_DIGIT}+
 
-DEC_FLOAT_VALUE ({DIGIT}*[.]{DIGIT}+|{DIGIT}+[.])([eE][+-]?{DIGIT}+)
-HEX_FLOAT_VALUE {HEX_PREFIX}({HEX_DIGIT}*[.]{HEX_DIGIT}+|{HEX_DIGIT}+[.])([pP][+-]?{DIGIT}+)|{HEX_DIGIT}({HEX_DIGIT}+)([pP][+-]?{DIGIT}+)
+DEC_FLOAT_VALUE [0-9]*\.[0-9]*
+HEX_FLOAT_VALUE ((0x)|(0X))[0-9a-zA-Z]*"."[0-9a-zA-Z]+(([+-]){DIGIT}+)?
+E_FLOAT_VALUE   ({DIGIT}\.|\.|\.|{DIGIT})+[eE](([+-])?{DIGIT}+)?
 
 TOKEN_INT_VALUE {DEC_INTEGER}|{OCT_INTEGER}|{HEX_INTEGER}
-TOKEN_FLOAT_VALUE  {DEC_FLOAT_VALUE}|{HEX_FLOAT_VALUE}    
+TOKEN_FLOAT_VALUE  {DEC_FLOAT_VALUE}|{HEX_FLOAT_VALUE}|{E_FLOAT_VALUE}
 
 LETTER [a-zA-Z]
 TOKEN_IDENTIFIER ({LETTER}|_)({DIGIT}|{LETTER}|_)*
@@ -80,20 +81,21 @@ TOKEN_IDENTIFIER ({LETTER}|_)({DIGIT}|{LETTER}|_)*
 "int"       return INT;
 "float"     return FLOAT;
 "void"      return VOID;
+{TOKEN_FLOAT_VALUE} {
+    yylval.floatVal = static_cast<float>(strtod(yytext, NULL));
+    return FLOATVAL;
+    }
 
 {TOKEN_IDENTIFIER} {
                         yylval.identifier= new std::string(yytext,yyleng);
                         // cout<<yylval.string<<endl;
                         return IDENTIFIER;
-                    }
+    }
 {TOKEN_INT_VALUE}  {
                         yylval.intVal = static_cast<int32_t>(strtol(yytext, NULL, 0));
                         return INTVAL;
-                   }
-{TOKEN_FLOAT_VALUE} {
-    yylval.floatVal = static_cast<float>(strtod(yytext, NULL));
-    return FLOATVAL;
     }
+
 
 "="                 return ASSIGN;
 "=="                return EQ;
@@ -119,16 +121,15 @@ TOKEN_IDENTIFIER ({LETTER}|_)({DIGIT}|{LETTER}|_)*
 ";"                 return SEMICOLON;
 
 <<EOF>>             return -1;
-.                   printf("%s\n", (std::string("Unknown token: ") + yytext).c_str()); yyterminate();
 
 %%
-
-/* int main(int argc, char *argv[]){
+/* 
+int main(int argc, char *argv[]){
     int c;
     ++argv;
     if (argc>0){yyin=fopen(argv[0], "r");}
     while ((c=yylex())!=-1){
-        printf("(%s %s)\n",getTokenName(c),yytext);
+        printf("(%d %s)\n",c,yytext);
     }
     return 0;
 } */

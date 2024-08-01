@@ -233,7 +233,7 @@ ConstInitVals: ConstExp {
         $$ -> addConstExp(ConstExpPtr($1));
         printf("ConstInitVals Find\n");
     }
-    | ConstArrayInitVal COMMA ConstArrayInitVal {
+    | ConstInitVals COMMA ConstExp {
         $$ = $1;
         $$ -> addConstExp(ConstExpPtr($3));
         printf("ConstInitVals Find\n");
@@ -478,7 +478,7 @@ Stmt: LVal ASSIGN Exp SEMICOLON {
         assign -> addExp(ExpPtr($3));
         $$ = (Stmt*)(assign);
         $$ -> addType(StmtType::ST_ASSIGN);
-        $$ -> node_type = NodeType::NT_STMT;
+        $$ -> _node_type = NodeType::NT_STMT;
         printf("Assign Stmt Find\n");
     }   
     | Exp SEMICOLON {
@@ -486,13 +486,13 @@ Stmt: LVal ASSIGN Exp SEMICOLON {
         exp -> addExp(ExpPtr($1));
         $$ = (Stmt*)(exp);
         $$ -> addType(StmtType::ST_EXP);
-        $$ -> node_type = NodeType::NT_STMT;
+        $$ -> _node_type = NodeType::NT_STMT;
         printf("Exp Stmt Find\n");
     }
     | SEMICOLON {
         $$ = new Stmt();
         $$ -> addType(StmtType::ST_BLANK);
-        $$ -> node_type = NodeType::NT_STMT;
+        $$ -> _node_type = NodeType::NT_STMT;
         printf("Blank Stmt Find\n");
     }
     | Block {
@@ -500,7 +500,7 @@ Stmt: LVal ASSIGN Exp SEMICOLON {
         block -> addBlock(BlockPtr($1));
         $$ = (Stmt*)(block);
         $$ -> addType(StmtType::ST_BLOCK);
-        $$ -> node_type = NodeType::NT_STMT;
+        $$ -> _node_type = NodeType::NT_STMT;
         printf("Block Stmt Find\n");
     }
     | IF LEFT_PARENTHESES LOrExp RIGHT_PARENTHESES Stmt {
@@ -510,7 +510,7 @@ Stmt: LVal ASSIGN Exp SEMICOLON {
         ifelsestmt -> addElseStmt(StmtPtr(nullptr));
         $$ = (Stmt*)(ifelsestmt);
         $$ -> addType(StmtType::ST_IF);
-        $$ -> node_type = NodeType::NT_STMT;
+        $$ -> _node_type = NodeType::NT_STMT;
         printf("If Stmt Find\n");
     }
     | IF LEFT_PARENTHESES LOrExp RIGHT_PARENTHESES Stmt ELSE Stmt {
@@ -520,7 +520,7 @@ Stmt: LVal ASSIGN Exp SEMICOLON {
         ifelsestmt -> addElseStmt(StmtPtr($7));
         $$ = (Stmt*)(ifelsestmt);
         $$ -> addType(StmtType::ST_IF);
-        $$ -> node_type = NodeType::NT_STMT;
+        $$ -> _node_type = NodeType::NT_STMT;
         printf("If Else Stmt Find\n");
     }
     | WHILE LEFT_PARENTHESES LOrExp RIGHT_PARENTHESES Stmt {
@@ -529,19 +529,19 @@ Stmt: LVal ASSIGN Exp SEMICOLON {
         whilestmt -> addStmt(StmtPtr($5));
         $$ = (Stmt*)(whilestmt);
         $$ -> addType(StmtType::ST_WHILE);
-        $$ -> node_type = NodeType::NT_STMT;
+        $$ -> _node_type = NodeType::NT_STMT;
         printf("While Stmt Find\n");
     }
     | BREAK SEMICOLON{
         $$ = new Stmt();
         $$ -> addType(StmtType::ST_BREAK);
-        $$ -> node_type = NodeType::NT_STMT;
+        $$ -> _node_type = NodeType::NT_STMT;
         printf("Break Stmt Find\n");
     }
     | CONTINUE SEMICOLON {
         $$ = new Stmt();
         $$ -> addType(StmtType::ST_CONTINUE);
-        $$ -> node_type = NodeType::NT_STMT;
+        $$ -> _node_type = NodeType::NT_STMT;
         printf("Continue Stmt Find\n");
     }
     | RETURN SEMICOLON {
@@ -549,7 +549,7 @@ Stmt: LVal ASSIGN Exp SEMICOLON {
         returnstmt -> addExp(nullptr);
         $$ = (Stmt*)(returnstmt);
         $$ -> addType(StmtType::ST_RETURN);
-        $$ -> node_type = NodeType::NT_STMT;
+        $$ -> _node_type = NodeType::NT_STMT;
         printf("Return Stmt Find\n");
     }
     | RETURN Exp SEMICOLON {
@@ -557,7 +557,7 @@ Stmt: LVal ASSIGN Exp SEMICOLON {
         returnstmt -> addExp(ExpPtr($2));
         $$ = (Stmt*)(returnstmt);
         $$ -> addType(StmtType::ST_RETURN);
-        $$ -> node_type = NodeType::NT_STMT;
+        $$ -> _node_type = NodeType::NT_STMT;
         printf("Return Stmt Find\n");
     };
 
@@ -574,12 +574,14 @@ LVal: IDENTIFIER {
         $$ = new LVal();
         $$ -> addIdentifier($1);
         $$ -> addIsArray(false);
+        $$ -> addType(ExpType::ET_LVAL);
         printf("LVal Find\n");
     }
     | LVal LEFT_BRACKETS Exp RIGHT_BRACKETS {
         $$ = $1;
         $$ -> addIsArray(true);
         $$ -> addDims(ExpPtr($3));
+        $$ -> addType(ExpType::ET_LVAL);
         printf("LVal Find\n");
     };
 
@@ -598,16 +600,19 @@ LVal: IDENTIFIER {
 Number: INTVAL  {
         $$ = new Number(0, 0, false);
         $$ -> addIntVal($1);
-        $$ -> addFloatVal(0);
+        $$ -> addFloatVal(float($1));
         $$ -> addIsFloat(false);
-        printf("Number Find\n");
+        $$ -> addType(ExpType::ET_INT);
+        printf("%d, %f, Number Find\n", $$ -> getIntVal(), $$ -> getFloatVal());
     }
     | FLOATVAL {
         $$ = new Number(0, 0, false);
         $$ -> addFloatVal($1);
-        $$ -> addIntVal(0);
+        $$ -> addIntVal(int($1));
         $$ -> addIsFloat(true);
-        printf("Number Find\n");
+        $$ -> addType(ExpType::ET_FLOAT);
+        printf("%d, %f, Number Find\n", $$ -> getIntVal(), $$ -> getFloatVal());
+        
     };
 
 /* UnaryExp → PrimaryExp | Ident '(' [FuncRParams] ')' 
@@ -617,62 +622,42 @@ UnaryExp: LEFT_PARENTHESES Exp RIGHT_PARENTHESES {
         printf("UnaryExp Find\n");
     }
     | LVal {
-        auto tmp = new UnaryExp();
-        tmp -> addExp(ExpPtr($1));
-        tmp -> addType(ExpType::ET_LVAL);
-        $$ = (Exp*)(tmp);
+        $$ = (Exp*)($1);
         printf("UnaryExp Find\n");
     }
     | Number {
-        auto tmp = new UnaryExp();
-        tmp -> addExp(ExpPtr($1));
-        if ($1 -> getIsFloat()) tmp -> addType(ExpType::ET_FLOAT);
-        else tmp -> addType(ExpType::ET_INT);
-        $$ = (Exp*)(tmp);
+        $$ = (Exp*)($1);
         printf("UnaryExp Find\n");
     }
     | IDENTIFIER LEFT_PARENTHESES RIGHT_PARENTHESES {
         auto tmp = new FuncCall();
         tmp -> addIdentifier($1);
-        auto tmp2 = new UnaryExp();
-        tmp2 -> addExp(ExpPtr(tmp));
-        tmp2 -> addType(ExpType::ET_FUNC); 
-        $$ = (Exp*)(tmp2);
+        $$ = (Exp*)(tmp);
+        $$ -> addType(ExpType::ET_FUNC); 
+        
         printf("UnaryExp Find\n");
     }
     | IDENTIFIER LEFT_PARENTHESES FuncRParams RIGHT_PARENTHESES{
         auto tmp = new FuncCall();
         tmp -> addIdentifier($1);
         tmp -> addArgs(FuncRParamsPtr($3));
-        auto tmp2 = new UnaryExp();
-        tmp2 -> addExp(ExpPtr(tmp));
-        tmp2 -> addType(ExpType::ET_FUNC); 
-        $$ = (Exp*)(tmp2);
+        $$ = (Exp*)(tmp); 
+        $$ -> addType(ExpType::ET_FUNC); 
         printf("UnaryExp Find\n");
     }
     | ADD UnaryExp{
-        auto tmp = $2;
-        auto tmp2 = new BinaryExp();
-        tmp2 -> addExp1(ExpPtr(tmp));
-        tmp2 -> addExp2(ExpPtr(new Number(0, 0, false)));
-        tmp2 -> addOp(BinOpType::OP_ADD);
-        $$ = (Exp*)(tmp2);
+        $$ = $2;
         printf("UnaryExp Find\n");
     }
     | SUB UnaryExp{
-        auto tmp = $2;
-        auto tmp2 = new BinaryExp();
-        tmp2 -> addExp2(ExpPtr(tmp));
-        tmp2 -> addExp1(ExpPtr(new Number(0, 0, false)));
-        tmp2 -> addOp(BinOpType::OP_SUB);
-        $$ = (Exp*)(tmp2);
+        $$ = $2;
+        $$ -> addNeg();
         printf("UnaryExp Find\n");
         
     }
     | NOT UnaryExp{
-        auto tmp = (UnaryExp*) $2;
-        tmp -> addOp(UnaryOpType::UO_NOT);
-        $$ = (Exp*)(tmp);
+        $$ = $2;
+        $$ -> addNot();
         printf("UnaryExp Find\n");
     };
 
@@ -863,7 +848,7 @@ ConstExp: AddExp {
 %%
 
 
-int main(int argc, char *argv[]){
+/* int main(int argc, char *argv[]){
     ++ argv;
     if (argc > 0) yyin = fopen(argv[0], "r");
     else {
@@ -872,7 +857,7 @@ int main(int argc, char *argv[]){
     }
     yyparse();
     std::cout << root << std::endl;
-}
+} */
 
 CompUnit* parse(char *filename) {
     yyin = fopen(filename, "r");

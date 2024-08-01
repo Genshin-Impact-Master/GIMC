@@ -255,6 +255,7 @@ void IRBuilder::emitIRModule(Module *module) {
   std::vector<GlobalVar*> &globalVars = module->globalVars_;
   std::vector<Function*> &defs = module->funcDefs_;
   std::vector<Function*> &declares = module->funcDeclares_;
+  std::cout<< globalVars.size() << " " << defs.size() << " " << declares.size() <<std::endl;
   for (auto &var : globalVars) {
     irout << var->getFullName() << " = global " << var->getType()->getDetailName() << " " << var->getData() << std::endl;
   }

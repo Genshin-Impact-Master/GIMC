@@ -3,7 +3,28 @@
 #include "genIR.hpp"
 #include "errors.hpp"
 
+
+void parseDecl(DeclPtr decl, bool is_global = false);
+void parseAssign(AssignStmtPtr stmt);
+void parseIfElse(IfElseStmtPtr stmt);
+void parseWhile(WhileStmtPtr stmt);
+void parseReturn(ReturnStmtPtr stmt);
+void parseBreak(StmtPtr stmt, BBlock* bBlock);
+void parseContinue(StmtPtr stmt, BBlock* bBlock);
+void parseBlock(BlockPtr block);
+pair<Value*,bool> parseExp(ExpPtr exp, bool is_cond, bool is_exp, bool is_func_param, BBlock* cond_true=nullptr, BBlock* cond_false=nullptr);
+
 // 每个 example 必须包含
+
+std::vector<baseTypePtr> putch_arguTypes;
+std::vector<baseTypePtr> putint_arguTypes;
+std::vector<baseTypePtr> memset_arguTypes;
+Function *putch;
+Function *putint;
+Function *getch;
+Function *getint;
+Function *memset_;
+
 Function *myFunc;                               // main 函数
 BBlock *entry;                                  // main 中首个基本块 entry
 std::vector<Function*> *defs;                          // 函数定义容器
@@ -20,191 +41,755 @@ void error_handle(){
     exit(0);
 }
 
-Instruction* parseExp(ExpPtr exp){
-    get_exp_ret_type(exp);
-    switch (exp -> getType()) {
-        case ExpType::ET_BIN: {
-            auto bin_exp = dynamic_pointer_cast<BinaryExp>(exp);
-            auto op = bin_exp -> getOp();
-            if (op == BinOpType::OP_ADD) return builder.createBinaryInst(InstKind::Add, parseExp(bin_exp -> getExp1()), parseExp(bin_exp -> getExp2()));
-            else if (op == BinOpType::OP_AND) return builder.createBinaryInst();
-            else if (op == BinOpType::OP_DIV) return builder.createBinaryInst(exp -> getResType() == BaseType::B_FLOAT? InstKind::Addf : InstKind::Add, parseExp(bin_exp -> getExp1()), parseExp(bin_exp -> getExp2()));
-            else if ()
+
+// 表达式解析数组
+Value* parseArrayLval(LValPtr lval, VarNode* var_node, bool is_number, bool ptr=false){
+    auto array_entry = var_node -> _inst;
+    for (auto &dim: lval -> getDims()) {
+        auto inst = parseExp(dim, false, true, false).first;
+        // 表达式解析出来的不是整数
+        if (dim -> getResType() != BaseType::B_INT) {
+            error_msg = "array index must be integer";
+            error_handle();
+        }
+        array_entry = builder.createGEPInst(array_entry, inst);
+    }
+    if (ptr) return array_entry;
+    if (!is_number) return builder.createLoadInst(var_node->_type == BaseType::B_INT? int32PointerType : floatPointerType, array_entry);
+    else return builder.createLoadInst(var_node->_type == BaseType::B_INT? i32Type : floatType, array_entry);
+}
+
+// 解析表达式时使用
+Value* parseVarLval(LValPtr lval, VarNode* var_node, bool ptr = false){
+    auto var_entry = var_node -> _inst;
+    if (ptr) return var_entry;
+    return builder.createLoadInst(var_node->_type == BaseType::B_INT? i32Type: floatType, var_entry);
+}
+
+// Assign 语句
+Value* parseVarLval(LValPtr lval){
+    auto id = lval -> getIdentifier();
+    // 检查变量是否存在
+    if (! sym_tb.check_var(id)){
+        error_msg = "variable " + id + " not defined";
+        error_handle();
+    }
+    auto var_node = sym_tb.find_var(id);
+    // 数组
+    if (var_node -> _is_array) {
+        if (lval -> getDims().size() != var_node->_dims.size()){
+            error_msg = "array " + lval -> getIdentifier() + " expects " + std::to_string(var_node -> _dims.size()) + " dimensions, but " + std::to_string(lval -> getDims().size()) + " given";
+            error_handle();
+        }
+
+        return parseArrayLval(lval, var_node, true, true);
+    }
+    return parseVarLval(lval, var_node, true);
+}
+
+// 解析函数调用
+Instruction* parseFuncCall(ExpPtr exp){
+
+    auto func_call_exp = dynamic_pointer_cast<FuncCall>(exp);
+    // 函数不存在
+    if (! sym_tb.check_func(func_call_exp -> getIdentifier())){
+        error_msg = "function " + func_call_exp -> getIdentifier() + " not defined";
+        error_handle();
+    }
+    auto func_node = sym_tb.find_func(func_call_exp -> getIdentifier());
+    auto R_param = func_call_exp -> getArgs();
+    auto F_param = func_node -> _func_params -> getFuncFParam();
+
+    if (F_param.size() == 0) return builder.createCallInst(func_node -> _entry, Zero_Argu_List);
+    
+    if (R_param.size() != F_param.size()){
+        error_msg = "function " + func_call_exp -> getIdentifier() + " expects " + std::to_string(F_param.size()) + " arguments, but " + std::to_string(R_param.size()) + " given";
+        error_handle();
+    }
+    // 函数参数为空
+
+
+    // 函数参数不为空
+    vector<Value*> args;
+    for (int i = 0; i < R_param.size(); i++){
+        auto R_param_i = R_param[i];
+        auto F_param_i = F_param[i];
+        auto arg_exp = parseExp(R_param_i, false, false, true);
+        // 判断函数参数类型是否正确，注意类型转换！以及数组的处理！
+        // TODO: 函数形参数组的处理，为expResType多添加一个array_ptr
+        // TODO: 类型不匹配时进行类型转换
+        // 类型转换
+        if (R_param_i -> getResType() == BaseType::B_FLOAT && F_param_i -> getType() == BaseType::B_INT) arg_exp.first = builder.createFp2IntInst(arg_exp.first);
+        if (R_param_i -> getResType() == BaseType::B_INT && F_param_i -> getType() == BaseType::B_FLOAT) arg_exp.first = builder.createInt2FpInst(arg_exp.first);
+
+        // 参数类型错误
+        if (R_param_i -> getResType() == BaseType::B_ARRAY_PTR && !F_param_i -> isArray()) {
+            error_msg = "function " + func_call_exp -> getIdentifier() + " expects array argument, but " + std::to_string(R_param_i -> getResType()) + " given";
+            error_handle();
+        }
+        else if (R_param_i -> getResType() != BaseType::B_ARRAY_PTR && F_param_i -> isArray()) {
+            error_msg = "function " + func_call_exp -> getIdentifier() + " does not expect array argument, but " + std::to_string(R_param_i -> getResType()) + " given";
+            error_handle();   
+        }
+        args.push_back(arg_exp.first);
+    }
+    return builder.createCallInst(func_node -> _entry, args);Function *myFunc;                               // main 函数
+// BBlock *entry;                                  // main 中首个基本块 entry
+// std::vector<Function*> *defs;                          // 函数定义容器
+// std::vector<Function*> *declares;                      // 函数声明容器
+// std::vector<GlobalVar*> *globals;                      // 全局变量容器
+}
+
+// 返回表达式IR、是否为常量表达式、是否合法
+// is_cond 用于判断是否为条件表达式
+// is_exp 用于判断是否为表达式 (返回类型只有int/float)
+// is_func_param 用于判断是否为函数参数 (返回类型有int/float/array_ptr)
+int and_cnt = 1;
+int or_cnt = 1;
+pair<Value*,bool> parseExp(ExpPtr exp, bool is_cond, bool is_exp, bool is_func_param, BBlock* cond_true, BBlock* cond_false){
+    if (exp -> getNotCnt() % 2 != 0) {
+        if (!is_cond) {
+            error_msg = "boolean type expression is not supported";
+            error_handle();
+        }
+        exp -> clearNotCnt();
+        auto ret = parseExp(exp, is_cond, is_exp, is_func_param);
+        if (exp -> getResType() == BaseType::B_FLOAT) ret.first = builder.createFcmpInst(FCondKind::Oeq, new ConstFloatValue(0.), ret.first);
+        else ret.first = builder.createIcmpInst(ICondKind::Eq, new ConstIntValue(0), ret.first);
+
+        ret.first = builder.createZextInst(i32Type, ret.first);
+        exp -> addResType(BaseType::B_INT);
+        return ret;
+    }
+
+    if (exp -> getNegCnt() % 2 != 0) {
+        exp -> clearNegCnt();
+        auto ret = parseExp(exp, is_cond, is_exp, is_func_param);
+        if (exp -> getResType() == BaseType::B_FLOAT) ret.first = builder.createBinaryInst(InstKind::Subf, new ConstFloatValue(0.), ret.first);
+        else ret.first = builder.createBinaryInst(InstKind::Sub, new ConstIntValue(0), ret.first);
+        return ret;
+    }
+    switch (exp -> getType()){
+        case ExpType::ET_INT :{
+            exp -> addResType (BaseType::B_INT);
+            auto tmp = dynamic_pointer_cast<Number>(exp);
+            return pair<Value*,bool>(new ConstIntValue(tmp -> getIntVal()), true);
+        }
+
+        case ExpType::ET_FLOAT :{
+            exp -> addResType (BaseType::B_FLOAT);
+            auto tmp = dynamic_pointer_cast<Number>(exp);
+            return pair<Value*,bool>(new ConstFloatValue(tmp -> getFloatVal()), true);
+        }
+
+        case ExpType::ET_FUNC :{
+
+            // 函数调用先检查是否存在该函数
+            auto tmp = dynamic_pointer_cast<FuncCall>(exp);
+            // 函数不存在
+            if (! sym_tb.check_func(tmp -> getIdentifier())){
+                error_msg = "function " + tmp -> getIdentifier() + " not defined";
+                error_handle();
+            }
+
+            // 函数存在但返回值是void
+            else if (sym_tb.find_func(tmp -> getIdentifier()) -> _ret_type == BaseType::B_VOID){
+                error_msg = "function " + tmp -> getIdentifier() + " returns void";
+                error_handle();
+            }
+            // 函数存在且返回值不是void
+            else{
+                exp -> addResType(sym_tb.find_func(tmp -> getIdentifier()) -> _ret_type);
+                return pair<Value*,bool>(parseFuncCall(exp), false);
+            }
+        }
+
+        case ExpType::ET_LVAL: {
+            auto tmp = dynamic_pointer_cast<LVal>(exp);
+            // 变量不存在
+            if (!sym_tb.check_var(tmp -> getIdentifier())){
+                error_msg = "variable " + tmp -> getIdentifier() + " not defined";
+                error_handle();
+            }
+            auto var_node = sym_tb.find_var(tmp -> getIdentifier());
+            exp -> addResType(var_node -> _type);
+            // 变量不是数组
+            if (!var_node->_is_array) return pair<Value*, bool>(parseVarLval(tmp, var_node), var_node->_is_const);
+            // 变量是数组
+            if (!is_func_param){
+                // 检查数组维数是否正确
+                // 是否取到了数
+                if (tmp -> getDims().size() != var_node->_dims.size()){
+                    error_msg = "array " + tmp -> getIdentifier() + " expects " + std::to_string(var_node->_dims.size()) + " dimensions, but " + std::to_string(tmp -> getDims().size()) + " given";
+                    error_handle();
+                }
+                return pair<Value*,bool>(parseArrayLval(tmp, var_node, true), var_node->_is_const);
+            }
+            else {
+                // 作为函数实参时可以是数组指针
+                if (tmp -> getDims().size() == var_node -> _dims.size()) return pair<Value*,bool>(parseArrayLval(tmp, var_node, true), false); 
+                else if (tmp -> getDims().size() > var_node -> _dims.size()){
+                    error_msg = "array " + tmp -> getIdentifier() + " expects " + std::to_string(var_node->_dims.size()) + " dimensions, but " + std::to_string(tmp -> getDims().size()) + " given";
+                    error_handle();
+                }
+                else {
+                    exp -> addResType(BaseType::B_ARRAY_PTR);
+                    return pair<Value*,bool>(parseArrayLval(tmp, var_node, false), false);
+                }
+            }
+        }
+        case ExpType::ET_BIN :{
+            auto tmp = dynamic_pointer_cast<BinaryExp>(exp);
+            if (tmp -> getOp() == BinOpType::OP_AND) {
+                if (!is_cond) {
+                    error_msg = "boolean type expression is not supported";
+                    error_handle();
+                }
+                exp -> addResType(BaseType::B_JMP);
+                BBlock* par_block = builder.getChosedBBlk();
+                BBlock* and_ls_true = builder.createBBlock("and_ls_true" + to_string(and_cnt), voidType);
+                and_cnt++;
+
+                builder.setChosedBBlock(par_block);
+                // 解析左值
+                auto left = parseExp(tmp -> getExp1(), true, false, false, and_ls_true, cond_false);
+                if (tmp -> getExp1() -> getResType() != BaseType::B_JMP) {
+                    // 转换成cmpInst
+                    if (tmp -> getExp1() -> getResType() != BaseType::B_BOOL) {
+                        if (tmp -> getExp1() -> getResType() == BaseType::B_INT) left.first = builder.createIcmpInst(ICondKind::Ne, new ConstIntValue(0), left.first);
+                        if (tmp -> getExp1() -> getResType() == BaseType::B_FLOAT) left.first = builder.createFcmpInst(FCondKind::One, new ConstFloatValue(0), left.first);
+                    }
+                    builder.createBrInst(left.first, and_ls_true, cond_false);
+                }
+                builder.setChosedBBlock(and_ls_true);
+                // 解析右值        cout<< "函数体解析完毕" << endl;
+
+                auto right = parseExp(tmp -> getExp2(), true, false, false, cond_true, cond_false);
+                if (tmp -> getExp2() -> getResType() != BaseType::B_JMP) {
+                    // 转换成cmpInst
+                    if (tmp -> getExp2() -> getResType() != BaseType::B_BOOL) {
+                        if (tmp -> getExp2() -> getResType() == BaseType::B_INT) right.first = builder.createIcmpInst(ICondKind::Ne, new ConstIntValue(0), right.first);
+                        if (tmp -> getExp2() -> getResType() == BaseType::B_FLOAT) right.first = builder.createFcmpInst(FCondKind::One, new ConstFloatValue(0), right.first);
+                    }
+                    builder.createBrInst(right.first, cond_true, cond_false);
+                }
+                return pair<Value*,bool>(nullptr, false);
+            }
+
+
+
+            if (tmp -> getOp() == BinOpType::OP_OR) {
+                if (!is_cond) {
+                    error_msg = "boolean type expression is not supported";
+                    error_handle();
+                }
+                exp -> addResType(BaseType::B_JMP);
+                BBlock* par_block = builder.getChosedBBlk();
+                BBlock* or_ls_false = builder.createBBlock("or_ls_false" + to_string(or_cnt), voidType);
+                or_cnt++;
+
+                builder.setChosedBBlock(par_block);
+                // 解析左值
+                auto left = parseExp(tmp -> getExp1(), true, false, false, cond_true, or_ls_false);
+                if (tmp -> getExp1() -> getResType() != BaseType::B_JMP) {
+                    // 转换成cmpInst
+                    if (tmp -> getExp1() -> getResType() != BaseType::B_BOOL) {
+                        if (tmp -> getExp1() -> getResType() == BaseType::B_INT) left.first = builder.createIcmpInst(ICondKind::Ne, new ConstIntValue(0), left.first);
+                        if (tmp -> getExp1() -> getResType() == BaseType::B_FLOAT) left.first = builder.createFcmpInst(FCondKind::One, new ConstFloatValue(0), left.first);
+                    }
+                    builder.createBrInst(left.first, cond_true, or_ls_false);
+                }
+                builder.setChosedBBlock(or_ls_false);
+                // 解析右值
+                auto right = parseExp(tmp -> getExp2(), true, false, false, cond_true, cond_false);
+                if (tmp -> getExp2() -> getResType() != BaseType::B_JMP) {
+                    // 转换成cmpInst
+                    if (tmp -> getExp2() -> getResType() != BaseType::B_BOOL) {
+                        if (tmp -> getExp2() -> getResType() == BaseType::B_INT) right.first = builder.createIcmpInst(ICondKind::Ne, new ConstIntValue(0), right.first);
+                        if (tmp -> getExp2() -> getResType() == BaseType::B_FLOAT) right.first = builder.createFcmpInst(FCondKind::One, new ConstFloatValue(0), right.first);
+                    }
+                    builder.createBrInst(right.first, cond_true, cond_false);
+                }
+                return pair<Value*,bool>(nullptr, false);
+            }
+
+            // 二元表达式不可能返回一个array_ptr
+            auto left = parseExp(tmp -> getExp1(), is_cond, is_exp, false);
+            auto right = parseExp(tmp -> getExp2(), is_cond, is_exp, false);
+
+
+
+            // 如果左右值也是一个比较表达式，是否需要类型提升? 不需要
+            
+
+            // 是否含有浮点数
+            bool is_float = tmp -> getExp1() -> getResType() == BaseType::B_FLOAT || tmp -> getExp2() -> getResType() == BaseType::B_FLOAT;
+            exp -> addResType(is_float ? BaseType::B_FLOAT : BaseType::B_INT);
+            // 类型提升
+            if (is_float) {
+                if (tmp -> getExp1() -> getResType() == BaseType::B_INT) left.first = builder.createInt2FpInst(left.first);
+                if (tmp -> getExp2() -> getResType() == BaseType::B_INT) right.first = builder.createInt2FpInst(right.first);
+            }
+
+            // 检查是否是浮点数取模操作 
+            if (tmp -> getOp() == BinOpType::OP_MOD && is_float){
+                error_msg = "float modulo is not supported";
+                error_handle();
+            }
+            switch (tmp -> getOp()){
+                case BinOpType::OP_ADD :{
+                    if (is_float) return pair<Value*, bool>(builder.createBinaryInst(InstKind::Addf, left.first, right.first), left.second && right.second);
+                    else return pair<Value*, bool>(builder.createBinaryInst(InstKind::Add, left.first, right.first), left.second && right.second);
+                }
+                case BinOpType::OP_SUB :{
+                    if (is_float) return pair<Value*, bool>(builder.createBinaryInst(InstKind::Subf, left.first, right.first), left.second && right.second);
+                    else return pair<Value*, bool>(builder.createBinaryInst(InstKind::Sub, left.first, right.first), left.second && right.second);
+                }
+                case BinOpType::OP_MUL :{
+                    if (is_float) return pair<Value*, bool>(builder.createBinaryInst(InstKind::Mulf, left.first, right.first), left.second && right.second);
+                    else return pair<Value*, bool>(builder.createBinaryInst(InstKind::Mul, left.first, right.first), left.second && right.second);
+                }
+                case BinOpType::OP_DIV :{
+                    if (is_float) return pair<Value*, bool>(builder.createBinaryInst(InstKind::Divf, left.first, right.first), left.second && right.second);
+                    else return pair<Value*, bool>(builder.createBinaryInst(InstKind::Div, left.first, right.first), left.second && right.second);
+                }
+                case BinOpType::OP_MOD :{
+                    return pair<Value*, bool>(builder.createBinaryInst(InstKind::SRem, left.first, right.first), left.second && right.second);
+                }
+
+                // 条件比较
+                case BinOpType::OP_GTE :{
+                    if (!is_cond) {
+                        error_msg = "boolean type expression is not supported";
+                        error_handle();
+                    }
+                    exp -> addResType(BaseType::B_BOOL);
+                    if (is_float) return pair<Value*, bool>(builder.createFcmpInst(FCondKind::Oge, left.first, right.first), left.second && right.second);
+                    else return pair<Value*, bool>(builder.createIcmpInst(ICondKind::Sge, left.first, right.first), left.second && right.second);
+                }
+                case BinOpType::OP_EQ :{
+                    if (!is_cond) {
+                        error_msg = "boolean type expression is not supported";
+                        error_handle();
+                    }
+                    exp -> addResType(BaseType::B_BOOL);
+                    if (is_float) return pair<Value*, bool>(builder.createFcmpInst(FCondKind::Oeq, left.first, right.first), left.second && right.second);
+                    else return pair<Value*, bool>(builder.createIcmpInst(ICondKind::Eq, left.first, right.first), left.second && right.second);
+                }
+                case BinOpType::OP_NEQ :{
+                    if (!is_cond) {
+                        error_msg = "boolean type expression is not supported";
+                        error_handle();
+                    }
+                    exp -> addResType(BaseType::B_BOOL);
+                    if (is_float) return pair<Value*, bool>(builder.createFcmpInst(FCondKind::One, left.first, right.first), left.second && right.second);
+                    else return pair<Value*, bool>(builder.createIcmpInst(ICondKind::Ne, left.first, right.first), left.second && right.second);
+                }
+                case BinOpType::OP_GT: {
+                    if (!is_cond) {
+                        error_msg = "boolean type expression is not supported";
+                        error_handle();
+                    }
+                    exp -> addResType(BaseType::B_BOOL);
+                    if (is_float) return pair<Value*, bool>(builder.createFcmpInst(FCondKind::Ogt, left.first, right.first), left.second && right.second);
+                    else return pair<Value*, bool>(builder.createIcmpInst(ICondKind::Sgt, left.first, right.first), left.second && right.second);
+                }
+                case BinOpType::OP_LT: {
+                    if (!is_cond) {
+                        error_msg = "boolean type expression is not supported";
+                        error_handle();
+                    }
+                    exp -> addResType(BaseType::B_BOOL);
+                    if (is_float) return pair<Value*, bool>(builder.createFcmpInst(FCondKind::Olt, left.first, right.first), left.second && right.second);
+                    else return pair<Value*, bool>(builder.createIcmpInst(ICondKind::Slt, left.first, right.first), left.second && right.second);
+                }
+                case BinOpType::OP_LTE: {
+                    if (!is_cond) {
+                        error_msg = "boolean type expression is not supported";
+                        error_handle();
+                    }
+                    exp -> addResType(BaseType::B_BOOL);
+                    if (is_float) return pair<Value*, bool>(builder.createFcmpInst(FCondKind::Ole, left.first, right.first), left.second && right.second);
+                    else return pair<Value*, bool>(builder.createIcmpInst(ICondKind::Sle, left.first, right.first), left.second && right.second);
+                }
+
+                default: {
+                    error_msg = "unsupported binary operator";
+                    error_handle();
+                }   
+            }
         }
     }
 }
 
+// TODO: add compare expression and parse it 
+void parseStmt(StmtPtr _stmt, BBlock* loop_st = nullptr, BBlock* loop_ed = nullptr) {
+    if (_stmt -> getType() == StmtType::ST_ASSIGN) {
+        parseAssign(dynamic_pointer_cast<AssignStmt>(_stmt));
+    }
+    else if (_stmt -> getType() == StmtType::ST_IF) {
+        parseIfElse(dynamic_pointer_cast<IfElseStmt>(_stmt));
+    }
+    else if (_stmt -> getType() == StmtType::ST_WHILE) {
+        parseWhile(dynamic_pointer_cast<WhileStmt>(_stmt));
+    }
+    else if (_stmt -> getType() == StmtType::ST_RETURN) {
+        parseReturn(dynamic_pointer_cast<ReturnStmt>(_stmt));
+    }   
+    else if (_stmt -> getType() == StmtType::ST_BREAK) {
+        parseBreak(_stmt, loop_ed);
+    }
+    else if (_stmt -> getType() == StmtType::ST_CONTINUE) {
+        parseContinue(_stmt, loop_st);
+    }
+    else if (_stmt -> getType() == StmtType::ST_BLOCK) {
+        parseBlock(dynamic_pointer_cast<BlockStmt>(_stmt)->getBlock());
+    }
+}
 
-// 获取函数
-void get_exp_ret_type(ExpPtr exp) {
+NumberPtr getConstExpValue(ExpPtr exp, bool array_dim = false) {
+    auto ret = NumberPtr(new Number());
     switch (exp -> getType()) {
-        case ExpType::ET_BIN:{
-            auto bin_exp = dynamic_pointer_cast<BinaryExp>(exp);
-            get_exp_ret_type(bin_exp -> getExp1());
-            get_exp_ret_type(bin_exp -> getExp1());
-            bool float_exist = ((bin_exp -> getExp1() -> getResType() != BaseType::B_INT) || (bin_exp -> getExp1() -> getResType() != BaseType::B_INT));
-            if (bin_exp -> getOp() == BinOpType::OP_MOD && float_exist) {
-                error_msg = "mod error";
-                error_handle();
-            }
-            else if (bin_exp -> getOp() ==)
-            return;
+        case ExpType::ET_INT: {
+            ret = dynamic_pointer_cast<Number>(exp);
+            return ret;
         }
         case ExpType::ET_FLOAT: {
-            exp -> addResType(BaseType::B_FLOAT);
-            return;
-        }
-        case ExpType::ET_INT: {
-            exp -> addResType(BaseType::B_INT);
-            return;
-        }
-        case ExpType::ET_FUNC: {
-            auto func_exp = dynamic_pointer_cast<FuncCall>(exp);
-            FuncNode* func = sym_tb.find_func(func_exp -> getIdentifier());
-            exp -> addResType(func -> _ret_type);
-            return;
+            if (array_dim) {
+                error_msg = "array dimension is not a float expression";
+                error_handle();
+            }
+            auto num = dynamic_pointer_cast<Number>(exp);
+            if (num -> getIsFloat()) {
+                ret -> addFloatVal(num -> getFloatVal());
+                ret -> addIntVal(int(num -> getFloatVal()));
+            }
+            else {
+                ret -> addIntVal(num -> getIntVal());
+                ret -> addFloatVal(float(num -> getIntVal()));
+            }
+            return ret;
         }
         case ExpType::ET_LVAL: {
-            auto lval_exp = dynamic_pointer_cast<LVal>(exp);
-            VarNode* var = sym_tb.find_var(lval_exp -> getIdentifier());
-            exp -> addResType(var -> _is_float ? BaseType::B_FLOAT : BaseType::B_INT);
-            return;
+            auto var_node = sym_tb.find_var(dynamic_pointer_cast<LVal>(exp) -> getIdentifier());
+            if (! var_node -> _is_const) {
+                error_msg = "not a constant expression";
+                error_handle();
+            }
+            if (var_node -> _is_float && array_dim) {
+                error_msg = "array dimension is not a float expression";
+                error_handle();
+            }
+            if (var_node -> _is_float) {
+                ret -> addFloatVal(var_node -> _const_float);
+                ret -> addIntVal(int(var_node -> _const_float));
+            }
+            else {
+                ret -> addIntVal(var_node -> _const_int);
+                ret -> addFloatVal(float(var_node -> _const_int));
+            }
+            return ret;
         }
-    }
-}
-
-// 检查表达式是否使用不存在的变量，函数，以及是否是常量表达式
-bool exp_check(ExpPtr exp){
-    switch (exp -> getType()){
         case ExpType::ET_BIN: {
             auto bin_exp = dynamic_pointer_cast<BinaryExp>(exp);
-            return exp_check(bin_exp -> getExp1()) && exp_check(bin_exp -> getExp2());
-        }
-        case ExpType::ET_FLOAT : return true;
-        case ExpType::ET_INT : return true;
-        case ExpType::ET_FUNC: {
-            auto func_exp = dynamic_pointer_cast<FuncCall>(exp);
-            if (sym_tb.check_func(func_exp -> getIdentifier()) == false) {
-                error_msg = func_exp -> getIdentifier() + func_undefine;
-                error_handle();
+            auto left = getConstExpValue(bin_exp -> getExp1());
+            auto right = getConstExpValue(bin_exp -> getExp2());
+            switch (bin_exp -> getOp()){
+                case BinOpType::OP_ADD: {
+                    ret -> addIntVal(left -> getIntVal() + right -> getIntVal());
+                    ret -> addFloatVal(left -> getFloatVal() + right -> getFloatVal());
+                    return ret;
+                }
+                case BinOpType::OP_SUB: {
+                    ret -> addIntVal(left -> getIntVal() - right -> getIntVal());
+                    ret -> addFloatVal(left -> getFloatVal() - right -> getFloatVal());
+                    return ret;
+                }
+                case BinOpType::OP_MUL: {
+                    ret -> addIntVal(left -> getIntVal() * right -> getIntVal());
+                    ret -> addFloatVal(left -> getFloatVal() * right -> getFloatVal());
+                    return ret;
+                }
+                case BinOpType::OP_DIV: {
+                    ret -> addIntVal(left -> getIntVal() / right -> getIntVal());
+                    ret -> addFloatVal(left -> getFloatVal() / right -> getFloatVal());
+                    return ret;
+                }
+                case BinOpType::OP_MOD: {
+                    ret -> addIntVal(left -> getIntVal() % right -> getIntVal());
+                    return ret;
+                }
+                default:
+                    break;
             }
-            return false;
         }
-        case ExpType::ET_LVAL : {
-            auto lval_exp = dynamic_pointer_cast<LVal>(exp);
-            if (sym_tb.check_var(lval_exp -> getIdentifier()) == false) {
-                error_msg = lval_exp -> getIdentifier() + var_undefine;
-                error_handle();
-            } else {
-                VarNode* var = sym_tb.find_var(lval_exp -> getIdentifier());
-                // TODO: 数组和变量重名
-                return var -> _is_const;
-            }
+        default: {
+            error_msg = "unsupported constant expression";
+            error_handle();
         }
-    }  
-    return false;
+    }
+    return ret;
 }
 
-void parseGlobalDecl(DeclPtr decl) {
+
+void parseDecl(DeclPtr decl, bool is_global) {
     if (decl -> isConst()) {
-        auto tmp = decl -> getConstDecl();
-        auto type = tmp -> getType() == BaseType::B_INT ? int32PointerType : floatPointerType;
-        for (auto def: tmp -> getConstDef() -> getConstDef()){
-            if (sym_tb.check_var_current_bk(def -> getIdentifier()) == true) {
-                error_msg = def -> getIdentifier() + var_multidefine;
+        auto const_decl = decl -> getConstDecl();
+        auto const_type = const_decl -> getType() == BaseType::B_INT ? int32PointerType : floatPointerType;
+        auto const_defs = const_decl -> getConstDef() -> getConstDef();
+        for (auto def: const_defs) {
+            if (sym_tb.check_var_current_bk(def -> getIdentifier())) {
+                error_msg = "redeclared identifier: " + def -> getIdentifier();
                 error_handle();
             }
-            if (def -> isArray()){
+            else {
+                if (def -> isArray()) {
 
-            } else {
-                if (exp_check(def -> getInitVal() -> getExp()) == false) {
-                    error_msg = def -> getIdentifier() + initialize_error;
-                    error_handle();
-                } else {
-                    auto exp_inst = parseExp(def -> getInitVal() -> getExp());
-                    GlobalVar* var = builder.createGlobalVar<Value*>(def -> getIdentifier(), type, exp_inst);
-                    globals->push_back(var);
-                    sym_tb.add_var(def -> getIdentifier(), tmp -> getType(), def -> isArray(), true, tmp -> getType() == BaseType::B_FLOAT, var);
+                }
+                // 非数组
+                else {
+                    // 解析初始值
+                    auto init_exp = getConstExpValue(def -> getInitVal() -> getExp());
+                    if (!is_global) {
+                        
+                        auto alloc = builder.createAllocaInst(def -> getIdentifier(), const_type);
+                        // 添加到符号表
+                        sym_tb.add_var(def -> getIdentifier(), const_decl -> getType(), def -> isArray(), true, const_decl -> getType() == B_FLOAT, alloc, init_exp -> getIntVal(), init_exp -> getFloatVal());
+                        if (const_type == int32PointerType) builder.createStoreInst(new ConstIntValue(init_exp -> getIntVal()), alloc);
+                        else builder.createStoreInst(new ConstFloatValue(init_exp -> getFloatVal()), alloc);
+                    }
+                    else {
+                        if (const_type == int32PointerType){
+                            auto alloc = builder.createGlobalVar<Value*>(def -> getIdentifier(), const_type, new ConstIntValue(init_exp -> getIntVal()));
+                            sym_tb.add_var(def -> getIdentifier(), const_decl -> getType(), def -> isArray(), true, const_decl -> getType() == B_FLOAT, alloc, init_exp -> getIntVal(), init_exp -> getFloatVal());
+                            globals -> push_back(alloc);
+                        }
+                        else {
+                            
+                            auto alloc = builder.createGlobalVar<Value*>(def -> getIdentifier(), const_type, new ConstFloatValue(init_exp -> getFloatVal()));
+                            sym_tb.add_var(def -> getIdentifier(), const_decl -> getType(), def -> isArray(), true, const_decl -> getType() == B_FLOAT, alloc, init_exp -> getIntVal(), init_exp -> getFloatVal());
+                            globals -> push_back(alloc);
+                        }
+                    }
                 }
             }
         }
-    } else {
-        auto tmp = decl -> getVarDecl();
-        auto type = tmp -> getType() == BaseType::B_INT ? int32PointerType : floatPointerType;
-        for (auto def: tmp -> getVarDefs() -> getVarDef()){
-            if (sym_tb.check_var_current_bk(def -> getIdentifier()) == true) {
-                error_msg = def -> getIdentifier() + var_multidefine;
+    }
+    else {
+        auto var_decl = decl -> getVarDecl();
+        auto var_type = var_decl -> getType() == B_INT ? int32PointerType : floatPointerType;
+        auto var_defs = var_decl -> getVarDefs() -> getVarDef();
+        for (auto def: var_defs) {
+            if (sym_tb.check_var_current_bk(def -> getIdentifier())) {
+                error_msg = "redeclared identifier: " + def -> getIdentifier();
                 error_handle();
             }
-            if (def -> isArray()) {
-
-            } else {
-                if (def -> isInit()) {
-                    exp_check(def ->getInitVal());
-                    GlobalVar* var = builder.createGlobalVar<Value*>(def -> getIdentifier(), type, parseExp(def -> getInitVal()));
-                    globals -> push_back(var);
-                    sym_tb.add_var(def -> getIdentifier(), tmp -> getType(), def -> isArray(), false, tmp -> getType() == BaseType::B_FLOAT, var);
-                }
+            else {
+                // TODO: 处理数组
+                if (def -> isArray()) {}
                 else {
-                    GlobalVar* var;
-                    if (type == int32PointerType) var = builder.createGlobalVar<Value*>(def -> getIdentifier(), type, new ConstIntValue(0));
-                    else var = builder.createGlobalVar<Value*>(def -> getIdentifier(), type, new ConstFloatValue(0));
-                    globals->push_back(var);
-                    sym_tb.add_var(def -> getIdentifier(), tmp -> getType(), def -> isArray(), false, tmp -> getType() == BaseType::B_FLOAT, var);
-
+                    auto alloc = builder.createAllocaInst(def -> getIdentifier(), var_type);
                 }
             }
         }
     }
 }
 
-void genIR(char* filename, string dump) {
-    CompUnit* root = parse(filename);
-    builder = IRBuilder(dump, nullptr, nullptr);
-    module = new Module("start", voidType);
-    vector<DeclPtr> global_decls = root->getDecl();
-    for (DeclPtr decl : global_decls) {
-        if (decl -> isConst()) {
-            auto tmp = decl -> getConstDecl();
-            auto type = tmp -> getType() == BaseType::B_INT ? int32PointerType : floatPointerType;
-            for (auto def: tmp -> getConstDef()->getConstDef()){
-                // Instruction* inst = builder.createAllocaInst(def -> getIdentifier(), type);
-                // builder.createStoreInst(new ConstIntValue(parseExp(def-> getInitVal() ->getExp())->getIntVal()), inst);
-                GlobalVar* var = builder.createGlobalVar<Value*>(def -> getIdentifier(), 
-                                                                 type, 
-                                                                 new ConstIntValue(parseExp(def-> getInitVal() ->getExp())->getIntVal()));
-                globals -> push_back(var);
+void parseAssign(AssignStmtPtr stmt){
+    auto lval_inst = parseVarLval(stmt -> getLVal());
+    auto exp_inst = parseExp(stmt -> getExp(), false, true, false);
+    builder.createStoreInst(exp_inst.first, lval_inst);
+}
+
+int if_cnt = 1;
+void parseIfElse(IfElseStmtPtr stmt){
+    // auto cond_inst = parseExp(stmt -> getCond(), true, false, false).first;
+    // BBlock* if_else_end = builder.createBBlock("if_end" + to_string(if_cnt), voidType);
+    // BBlock* if_true = builder.createBBlock("if_true" + to_string(if_cnt), voidType);
+    // parseStmt(stmt -> getThenStmt());
+    // builder.createBrInst(nullptr, if_else_end, nullptr);
+    // if (stmt -> getElseStmt() != nullptr){
+    //     BBlock* if_false = builder.createBBlock("if_true" + to_string(if_cnt), voidType);
+    //     parseStmt(stmt -> getElseStmt());
+    //     builder.createBrInst(nullptr, if_else_end, nullptr);
+    //     builder.createBrInst(cond_inst, if_true, if_false);
+    // }
+    // else builder.createBrInst(cond_inst, if_true, if_else_end);
+    // if_cnt++;
+    // builder.setChosedBBlock(if_else_end);
+    BBlock* par_block = builder.getChosedBBlk();
+    BBlock* if_true = builder.createBBlock("if_true" + to_string(if_cnt), voidType);
+    BBlock* if_end = builder.createBBlock("if_end" + to_string(if_cnt), voidType);
+    if_cnt+=1;
+
+    // 处理基本块的跳转
+    if (stmt -> getElseStmt() != nullptr) {
+        BBlock* if_false = builder.createBBlock("if_false" + to_string(if_cnt), voidType);
+        builder.setChosedBBlock(par_block);
+        auto cond_exp = parseExp(stmt -> getCond(), true, false, false, if_true, if_false);
+        // 如果不是and和or
+        if (stmt -> getCond() -> getResType() != B_JMP ) {
+            if (stmt -> getCond() -> getResType() != B_BOOL) {
+                if (stmt -> getCond() -> getResType() == BaseType::B_INT) cond_exp.first = builder.createIcmpInst(ICondKind::Ne, new ConstIntValue(0), cond_exp.first);
+                if (stmt -> getCond() -> getResType() == BaseType::B_FLOAT) cond_exp.first = builder.createFcmpInst(FCondKind::One, new ConstFloatValue(0), cond_exp.first);    
             }
+            builder.createBrInst(cond_exp.first, if_true, if_false);
         }
+
+        // 处理基本块
+        builder.setChosedBBlock(if_false);
+        parseStmt(stmt -> getElseStmt());
+        builder.createBrInst(nullptr, if_end, nullptr);
+    }
+    else {
+        builder.setChosedBBlock(par_block);
+        auto cond_exp = parseExp(stmt -> getCond(), true, false, false, if_true, if_end);
+        if (stmt -> getCond() -> getResType() != B_JMP ) {
+            if (stmt -> getCond() -> getResType() != B_BOOL) {
+                if (stmt -> getCond() -> getResType() == BaseType::B_INT) cond_exp.first = builder.createIcmpInst(ICondKind::Ne, new ConstIntValue(0), cond_exp.first);
+                if (stmt -> getCond() -> getResType() == BaseType::B_FLOAT) cond_exp.first = builder.createFcmpInst(FCondKind::One, new ConstFloatValue(0), cond_exp.first);    
+            }
+            builder.createBrInst(cond_exp.first, if_true, if_end);
+        }
+    }
+    builder.setChosedBBlock(if_true);
+    parseStmt(stmt -> getThenStmt());
+    builder.createBrInst(nullptr, if_end, nullptr);
+
+    builder.setChosedBBlock(if_end);
+
+
+}
+void parseWhile(WhileStmtPtr stmt){
+    
+}
+// TODO: return void
+void parseReturn(ReturnStmtPtr stmt){
+    auto func = builder.getChosedFunc();
+    auto type = func -> getType();
+    if (stmt -> getExp() == nullptr && type != voidType) {
+        error_msg = "return without value";
+        error_handle();
+    }
+    if (stmt -> getExp() != nullptr && type == voidType) {
+        error_msg = "return with value";
+        error_handle();
+    }
+    if (stmt -> getExp() == nullptr) builder.createRetInst(&voidValue);
+    else {
+        auto ret_exp = parseExp(stmt -> getExp(), false, true, false).first;
+        if (stmt -> getExp() -> getResType() == B_FLOAT && type == i32Type) ret_exp = builder.createFp2IntInst(ret_exp);
+        else if (stmt -> getExp() -> getResType() == B_INT && type == floatType) ret_exp = builder.createInt2FpInst(ret_exp);
+        builder.createRetInst(ret_exp);
+    }
+}
+
+void parseBreak(StmtPtr stmt, BBlock* bBlock) {
+    builder.createBrInst(nullptr, bBlock, nullptr);
+}
+
+void parseContinue(StmtPtr stmt, BBlock* bBlock){
+    builder.createBrInst(nullptr, bBlock, nullptr);
+}
+
+void parseBlock(BlockPtr block) {
+    sym_tb.enter_block();
+    auto bk = block -> getBlockItem();
+    for (int i = 0; i < bk -> getStmt().size(); i++) {
+
+        auto stmt = bk -> getStmt()[i];
+        if (stmt -> _node_type == NodeType::NT_DECL) parseDecl(dynamic_pointer_cast<Decl>(stmt));
         else {
-            auto tmp = decl -> getVarDecl();
-            auto type = tmp -> getType() == BaseType::B_INT ? int32PointerType : floatPointerType;
-            for (auto def: tmp -> getVarDefs()->getVarDef()){
-                GlobalVar* var = nullptr;
-                if (def -> isInit()) {
-                    var = builder.createGlobalVar<Value*>(def -> getIdentifier(), 
-                                                                 type, 
-                                                                 new ConstIntValue(parseExp(def-> getInitVal())->getIntVal()));
-                }
-                else {
-                    var = builder.createGlobalVar<Value*>(def -> getIdentifier(), 
-                                                                 type, 
-                                                                 new ConstIntValue(0));
-                }
-                globals -> push_back(var);
-            }
+            // std::cout << stmt -> _node_type << std::endl;
+            auto _stmt = dynamic_pointer_cast<Stmt>(stmt);
+            parseStmt(_stmt);
+
         }
     }
+    sym_tb.exit_block();
 
-    builder.emitIRModule(module);
 }
 
-int main(int argc, char *argv[]){
+void parseFuncDefine(FuncDefPtr func_def) {
+    // 获取形参类型
+    Function* func;
+    if (func_def -> hasParam()){
+        // 有参数函数
+        vector<baseTypePtr> param_types;
+        for (int i = 0; i < func_def->getFuncFParams()->getFuncFParam().size(); i++) 
+            param_types.pb(func_def->getFuncFParams()->getFuncFParam()[i]->getType() == BaseType::B_INT ? i32Type : floatType);
+        auto ret_ty = func_def->getReturnType() == BaseType::B_INT ? i32Type : func_def->getReturnType() == BaseType::B_FLOAT ? floatType : voidType;
+        func = builder.createFunction(func_def -> getIdentifier(), ret_ty, param_types);
+        BBlock* func_entry = builder.createBBlock("entry", voidType, func);
+        func -> setEntry(func_entry);
+
+        vector<Value> &params = func -> getArgus();
+        for (int i = 0; i< params.size(); i++) {
+            auto F_param = func_def->getFuncFParams()->getFuncFParam()[i];
+            Instruction* param_ptr = builder.createAllocaInst(F_param -> getIdentifier(), F_param -> getType() == BaseType::B_INT ? int32PointerType : floatPointerType);
+            builder.createStoreInst(&params[i], param_ptr);
+        }
+        sym_tb.add_func(func_def -> getIdentifier(), func_def -> getReturnType(), func_def -> getFuncFParams(), func);
+    }
+    else {
+        // 无参数函数
+        auto ret_ty = func_def->getReturnType() == BaseType::B_INT ? i32Type : func_def->getReturnType() == BaseType::B_FLOAT ? floatType : voidType;
+        func = builder.createFunction(func_def -> getIdentifier(), ret_ty, Zero_Argu_Type_List);
+        BBlock* func_entry = builder.createBBlock("entry", voidType, func);
+        func -> setEntry(func_entry);
+        sym_tb.add_func(func_def -> getIdentifier(), func_def -> getReturnType(), func_def -> getFuncFParams(), func);
+    }
+    
+    // 解析函数体
+
+    parseBlock(func_def -> getFuncBlock());
+    defs -> push_back(func);
+    
+} 
+
+void parseCompUnit(CompUnitPtr rt){
+    auto items = rt -> getDecl();
+
+    sym_tb.enter_block();
+    for (auto item: items) {
+        if (item -> _node_type == NodeType::NT_FUNC) parseFuncDefine(dynamic_pointer_cast<FuncDef>(item));
+        else parseDecl(dynamic_pointer_cast<Decl>(item), true);
+    }
+    sym_tb.exit_block();
+}
+
+
+Module* initialize(IRBuilder &builder) {
+//   putch = builder.createFunction("putch", voidType, putch_arguTypes);
+//   putint = builder.createFunction("putint", voidType, putint_arguTypes);
+//   getch = builder.createFunction("getch", i32Type, Zero_Argu_Type_List);
+//   getint = builder.createFunction("getint", i32Type, Zero_Argu_Type_List);              // getint 为零参函数，使用全局零参空向量，见 Config.cpp
+//   memset_ = builder.createFunction("myMemset", voidType, memset_arguTypes);
+//   putch_arguTypes.push_back(i32Type);
+//   putint_arguTypes.push_back(i32Type);
+//   memset_arguTypes.push_back(std::make_shared<PointerType>(i32Type));  
+//   memset_arguTypes.push_back(i32Type);  
+//   memset_arguTypes.push_back(i32Type);  
+
+  // 初始化一个 Module
+  auto ret = new Module("start", voidType);
+  globals = ret->getGlobalVars();
+  defs = ret->getFuncDefs();
+  declares = ret->getFuncDeclares();
+  return ret;
+}
+
+int main(int argc, char* argv[]){
     ++ argv;
-    if (argc > 0) genIR(argv[0], "testout.ll");
+    if (argc > 0) {
+        module = initialize(builder);
+        parseCompUnit(CompUnitPtr(parse(argv[0])));
+        builder.emitIRModule(module);
+        builder.close();
+        return 0;
+    }
     else {
         printf("No input file\n");
         return 0;
     }
-    return 0;
 }
