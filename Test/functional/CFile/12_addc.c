@@ -1,0 +1,6 @@
+#include "../../lib/newlib.h"
+//test addc
+#define a 10
+int main(){
+    return a + 5;
+}

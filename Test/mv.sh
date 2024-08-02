@@ -1,4 +1,5 @@
 #!/bin/bash
+set -x
 # 检查是否传入了正确的参数个数
 if [ "$#" -ne 1 ]; then
   echo "Usage: $0 filename"
@@ -6,7 +7,7 @@ if [ "$#" -ne 1 ]; then
 fi
 
 FILE_PATH="$1"
-cd "FILE_PATH" || { echo "Error: cannot enter directory '$FILE_PATH'"; exit 1}
+cd "$FILE_PATH" || { echo "Error: cannot enter directory '$FILE_PATH'"; exit 1; }
 
 mkdir -p syFile
 for sy_file in ./*.sy; do
@@ -22,7 +23,4 @@ mkdir -p input
 for in_file in ./*.in; do
   [ -e "$in_file" ] && mv "$in_file" ./input/
 done
-
-ls ./input
-
 echo "所有程序处理完毕"
