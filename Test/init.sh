@@ -11,7 +11,7 @@ fuyunxiansen/compile_rust2.3
 QEMU="/home/zerosister/arm_v3/qemu/cwq_build/qemu-arm"
 ARM_FLAGS="-cpu cortex-a7"
 # 找到 arm 的 glibc 的 include 路径 和 lib 路径
--march=armv7-a -mcpu=cortex-a72
+COMPILE_FLAGS="-march=armv7-a"
 
 # 设定目录路径
 SY_DIR="./stdSY"
