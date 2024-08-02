@@ -1,0 +1,6 @@
+#include "../../lib/newlib.h"
+//test mulc
+#define a 5
+int main(){
+    return a * 5;
+}

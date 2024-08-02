@@ -71,6 +71,9 @@ public:
   // 向涉及到的两个 BBlock 分别添加到彼此的前驱或后继链表
   static void addEdge(BBlock *head, BBlock *rear) {head->addSuccBBlock(rear); rear->addPreBBlock(head);}
 
+  // 获得 BBLock 中的指令条数
+  int getInstCnt() {return instList_.getSize();}
+
   // 输出 BBLock 到 中端
   void coutBBlock();
 };
