@@ -444,6 +444,9 @@ void parseStmt(StmtPtr _stmt, BBlock* loop_st = nullptr, BBlock* loop_ed = nullp
     else if (_stmt -> getType() == StmtType::ST_BLOCK) {
         parseBlock(dynamic_pointer_cast<BlockStmt>(_stmt)->getBlock());
     }
+    else if (_stmt -> getType() == StmtType::ST_EXP) {
+        parseExp(dynamic_pointer_cast<ExpStmt>(_stmt)->getExp(), false, true, false);
+    }
 }
 
 NumberPtr getConstExpValue(ExpPtr exp, bool array_dim = false) {
@@ -692,7 +695,7 @@ void parseIfElse(IfElseStmtPtr stmt){
 
 }
 void parseWhile(WhileStmtPtr stmt){
-    
+
 
 }
 // TODO: return void
@@ -816,20 +819,24 @@ Module* initialize(IRBuilder &builder) {
 //   memset_arguTypes.push_back(i32Type);  
 
   // 初始化一个 Module
-  auto ret = new Module("start", voidType);
+  auto ret = builder.createModule("start", voidType, vector<GlobalVar*>(), vector<Function*>(), vector<Function*>());
   globals = ret->getGlobalVars();
   defs = ret->getFuncDefs();
   declares = ret->getFuncDeclares();
+
+  // 添加库函数到符号表
+  cout << defs->size() <<endl;
+  cout<< declares -> size() <<endl;
   return ret;
 }
 
 int main(int argc, char* argv[]){
     ++ argv;
+
     if (argc > 0) {
+        
         module = initialize(builder);
         auto rt = parse(argv[0]);
-        
-
         parseCompUnit(CompUnitPtr(rt));
 
         builder.emitIRModule(module);
