@@ -62,10 +62,15 @@ public:
     fullName = prefix + newName;
   }
 
-  // 修改前缀
-  void setLocalPrefix(bool setLocal) {
-    if (setLocal) prefix = LOCAL_PREFIX;
-    else prefix = FUNC_OR_GLOBAL_PREFIX;
+  // 修改为 GlobalVar 前缀
+  void setGlobalVarPrefix() {
+    prefix = FUNC_OR_GLOBAL_PREFIX + "_gimc_";
+    fullName = prefix + valueName;
+  }
+
+  // 修改为 Function 前缀
+  void setFunctionPrefix() {
+    prefix = FUNC_OR_GLOBAL_PREFIX;
     fullName = prefix + valueName;
   }
 

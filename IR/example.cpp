@@ -30,13 +30,13 @@ std::vector<Function*> *declares;                      // 函数声明容器
 std::vector<GlobalVar*> *globals;                      // 全局变量容器
 
 Module* initialize(IRBuilder &builder) {
-  putch = builder.createFunction("putch", voidType, putch_arguTypes);
-  putint = builder.createFunction("putint", voidType, putint_arguTypes);
-  getch = builder.createFunction("getch", i32Type, Zero_Argu_Type_List);
-  getint = builder.createFunction("getint", i32Type, Zero_Argu_Type_List);              // getint 为零参函数，使用全局零参空向量，见 Config.cpp
+  // putch = builder.createFunction("putch", voidType, putch_arguTypes);
+  // putint = builder.createFunction("putint", voidType, putint_arguTypes);
+  // getch = builder.createFunction("getch", i32Type, Zero_Argu_Type_List);
+  // getint = builder.createFunction("getint", i32Type, Zero_Argu_Type_List);              // getint 为零参函数，使用全局零参空向量，见 Config.cpp
   memset_ = builder.createFunction("myMemset", voidType, memset_arguTypes);
-  putch_arguTypes.push_back(i32Type);
-  putint_arguTypes.push_back(i32Type);
+  // putch_arguTypes.push_back(i32Type);
+  // putint_arguTypes.push_back(i32Type);
   memset_arguTypes.push_back(std::make_shared<PointerType>(i32Type));  
   memset_arguTypes.push_back(i32Type);  
   memset_arguTypes.push_back(i32Type);  
@@ -47,10 +47,10 @@ Module* initialize(IRBuilder &builder) {
 
 void addLib() {
   // 加入库函数
-  declares->push_back(getch);
-  declares->push_back(getint);
-  declares->push_back(putch);
-  declares->push_back(putint);
+  // declares->push_back(getch);
+  // declares->push_back(getint);
+  // declares->push_back(putch);
+  // declares->push_back(putint);
   declares->push_back(memset_);
 
   // Module 中加入 main
@@ -67,6 +67,7 @@ void newModule(IRBuilder &builder, Module *module) {
   module->setValueName("example" + std::to_string(cnt));
   cnt++;
   module->clearModule();
+  module->addLibs();
   // 创建零参函数 "main"，返回类型为 i32
   myFunc = builder.createFunction("main", i32Type, Zero_Argu_Type_List);
   globals = module->getGlobalVars();
@@ -80,6 +81,11 @@ void newModule(IRBuilder &builder, Module *module) {
 
   // 加入库函数
   addLib();
+
+  putint = module->getPutInt();
+  putch = module->getPutch();
+  getch = module->getGetCh();
+  getint = module->getGetInt();
 }
 
 GIMC_NAMESPACE_END
