@@ -384,6 +384,7 @@ FuncDef: BaseType IDENTIFIER LEFT_PARENTHESES FuncFParams RIGHT_PARENTHESES Bloc
         $$ -> addIdentifier($2);
         $$ -> addParam(false);
         $$ -> addBlock(BlockPtr($5));
+        $$ -> addFuncFParams(nullptr);
         printf("FuncDef Find\n");
     };
 
@@ -634,6 +635,7 @@ UnaryExp: LEFT_PARENTHESES Exp RIGHT_PARENTHESES {
         tmp -> addIdentifier($1);
         $$ = (Exp*)(tmp);
         $$ -> addType(ExpType::ET_FUNC); 
+
         
         printf("UnaryExp Find\n");
     }

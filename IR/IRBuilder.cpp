@@ -268,7 +268,6 @@ void IRBuilder::emitIRModule(Module *module) {
   std::vector<GlobalVar*> &globalVars = module->globalVars_;
   std::vector<Function*> &defs = module->funcDefs_;
   std::vector<Function*> &declares = module->funcDeclares_;
-  std::cout<< globalVars.size() << " " << defs.size() << " " << declares.size() <<std::endl;
   for (auto &var : globalVars) {
     irout << var->getFullName() << " = global " << var->getType()->getDetailName() << " " << var->getData() << std::endl;
   }
@@ -285,9 +284,7 @@ void IRBuilder::emitIRFuncDef(Function *func) {
     fprintf(stdout, "请先设置函数入口基本块\n");
   }
   std::vector<baseTypePtr> &arguTypes = func->arguTypes_;
-  std::cout<< func->getFullName() << " " << func->getTypeName() << " " << func->arguTypes_.size() << std::endl;
   std::vector<Value> &argus = func->getArgus();
-  std::cout<< func->getFullName() << " " << func->getTypeName() << " " << argus.size() << std::endl;
 
   irout <<"define " << func->getTypeName() << " " << func->getFullName()
         << "(";

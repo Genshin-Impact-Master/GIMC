@@ -11,7 +11,7 @@ void parseWhile(WhileStmtPtr stmt);
 void parseReturn(ReturnStmtPtr stmt);
 void parseBreak(StmtPtr stmt, BBlock* bBlock);
 void parseContinue(StmtPtr stmt, BBlock* bBlock);
-void parseBlock(BlockPtr block);
+void parseBlock(BlockPtr block, vector<VarNode *> *va_list = nullptr);
 pair<Value*,bool> parseExp(ExpPtr exp, bool is_cond, bool is_exp, bool is_func_param, BBlock* cond_true=nullptr, BBlock* cond_false=nullptr);
 
 // 每个 example 必须包含
@@ -89,25 +89,27 @@ Value* parseVarLval(LValPtr lval){
 
 // 解析函数调用
 Instruction* parseFuncCall(ExpPtr exp){
-
     auto func_call_exp = dynamic_pointer_cast<FuncCall>(exp);
     // 函数不存在
     if (! sym_tb.check_func(func_call_exp -> getIdentifier())){
         error_msg = "function " + func_call_exp -> getIdentifier() + " not defined";
         error_handle();
     }
+
+    // 函数参数个数不匹配
     auto func_node = sym_tb.find_func(func_call_exp -> getIdentifier());
     auto R_param = func_call_exp -> getArgs();
-    auto F_param = func_node -> _func_params -> getFuncFParam();
+    if (func_node -> _func_params == nullptr && R_param.size() != 0){
+        error_msg = "function " + func_call_exp -> getIdentifier() + " expects zero arguments, but " + std::to_string(R_param.size()) + " given";
+        error_handle();
+    }
 
-    if (F_param.size() == 0) return builder.createCallInst(func_node -> _entry, Zero_Argu_List);
-    
+    if (func_node -> _func_params == nullptr) return builder.createCallInst(func_node -> _entry, Zero_Argu_List);
+    auto F_param = func_node -> _func_params -> getFuncFParam();
     if (R_param.size() != F_param.size()){
         error_msg = "function " + func_call_exp -> getIdentifier() + " expects " + std::to_string(F_param.size()) + " arguments, but " + std::to_string(R_param.size()) + " given";
         error_handle();
     }
-    // 函数参数为空
-
 
     // 函数参数不为空
     vector<Value*> args;
@@ -133,12 +135,9 @@ Instruction* parseFuncCall(ExpPtr exp){
         }
         args.push_back(arg_exp.first);
     }
-    return builder.createCallInst(func_node -> _entry, args);Function *myFunc;                               // main 函数
-// BBlock *entry;                                  // main 中首个基本块 entry
-// std::vector<Function*> *defs;                          // 函数定义容器
-// std::vector<Function*> *declares;                      // 函数声明容器
-// std::vector<GlobalVar*> *globals;                      // 全局变量容器
+    return builder.createCallInst(func_node -> _entry, args);
 }
+
 
 // 返回表达式IR、是否为常量表达式、是否合法
 // is_cond 用于判断是否为条件表达式
@@ -542,34 +541,36 @@ void parseDecl(DeclPtr decl, bool is_global) {
                 error_msg = "redeclared identifier: " + def -> getIdentifier();
                 error_handle();
             }
-            else {
-                if (def -> isArray()) {
 
+
+            if (def -> isArray()) {
+
+            }
+            // 非数组
+            else {
+                // 解析初始值
+                auto init_exp = getConstExpValue(def -> getInitVal() -> getExp());
+                if (!is_global) {
+                    
+                    auto alloc = builder.createAllocaInst(def -> getIdentifier(), const_type);
+                    // 添加到符号表
+                    sym_tb.add_var(def -> getIdentifier(), const_decl -> getType(), def -> isArray(), true, const_decl -> getType() == B_FLOAT, alloc, init_exp -> getIntVal(), init_exp -> getFloatVal());
+                    if (const_type == int32PointerType) builder.createStoreInst(new ConstIntValue(init_exp -> getIntVal()), alloc);
+                    else builder.createStoreInst(new ConstFloatValue(init_exp -> getFloatVal()), alloc);
                 }
-                // 非数组
+
+
                 else {
-                    // 解析初始值
-                    auto init_exp = getConstExpValue(def -> getInitVal() -> getExp());
-                    if (!is_global) {
-                        
-                        auto alloc = builder.createAllocaInst(def -> getIdentifier(), const_type);
-                        // 添加到符号表
+                    if (const_type == int32PointerType){
+                        auto alloc = builder.createGlobalVar<Value*>("__" + def -> getIdentifier(), const_type, new ConstIntValue(init_exp -> getIntVal()));
                         sym_tb.add_var(def -> getIdentifier(), const_decl -> getType(), def -> isArray(), true, const_decl -> getType() == B_FLOAT, alloc, init_exp -> getIntVal(), init_exp -> getFloatVal());
-                        if (const_type == int32PointerType) builder.createStoreInst(new ConstIntValue(init_exp -> getIntVal()), alloc);
-                        else builder.createStoreInst(new ConstFloatValue(init_exp -> getFloatVal()), alloc);
+                        globals -> push_back(alloc);
                     }
                     else {
-                        if (const_type == int32PointerType){
-                            auto alloc = builder.createGlobalVar<Value*>(def -> getIdentifier(), const_type, new ConstIntValue(init_exp -> getIntVal()));
-                            sym_tb.add_var(def -> getIdentifier(), const_decl -> getType(), def -> isArray(), true, const_decl -> getType() == B_FLOAT, alloc, init_exp -> getIntVal(), init_exp -> getFloatVal());
-                            globals -> push_back(alloc);
-                        }
-                        else {
-                            
-                            auto alloc = builder.createGlobalVar<Value*>(def -> getIdentifier(), const_type, new ConstFloatValue(init_exp -> getFloatVal()));
-                            sym_tb.add_var(def -> getIdentifier(), const_decl -> getType(), def -> isArray(), true, const_decl -> getType() == B_FLOAT, alloc, init_exp -> getIntVal(), init_exp -> getFloatVal());
-                            globals -> push_back(alloc);
-                        }
+                        
+                        auto alloc = builder.createGlobalVar<Value*>("__" + def -> getIdentifier(), const_type, new ConstFloatValue(init_exp -> getFloatVal()));
+                        sym_tb.add_var(def -> getIdentifier(), const_decl -> getType(), def -> isArray(), true, const_decl -> getType() == B_FLOAT, alloc, init_exp -> getIntVal(), init_exp -> getFloatVal());
+                        globals -> push_back(alloc);
                     }
                 }
             }
@@ -584,12 +585,42 @@ void parseDecl(DeclPtr decl, bool is_global) {
                 error_msg = "redeclared identifier: " + def -> getIdentifier();
                 error_handle();
             }
-            else {
                 // TODO: 处理数组
-                if (def -> isArray()) {}
-                else {
-                    auto alloc = builder.createAllocaInst(def -> getIdentifier(), var_type);
+            if (def -> isArray()) {
+
+            }
+            else {
+
+
+                if (is_global) {
+                    NumberPtr init_exp = nullptr;
+                    
+                    // 全局变量无初始值时默认为0
+                    if (! def -> isInit()) {
+                        if (var_decl -> getType() == B_INT) init_exp = NumberPtr(new Number(0, 0, false));
+                        else init_exp = NumberPtr(new Number(0.0, 0, true));
+                    }
+                    else init_exp = getConstExpValue(def -> getInitVal());
+
+                    GlobalVar* alloc = nullptr;
+                    if (var_type == int32PointerType) alloc = builder.createGlobalVar<Value*>("__" + def -> getIdentifier(), var_type,  new ConstIntValue(init_exp -> getIntVal()));
+                    else alloc = builder.createGlobalVar<Value*>("__" + def -> getIdentifier(), var_type,  new ConstFloatValue(init_exp -> getFloatVal()));
+                    globals -> push_back(alloc);
+                    sym_tb.add_var(def -> getIdentifier(), var_decl -> getType(), false, false, var_decl -> getType() == B_FLOAT, alloc);
                 }
+                else {
+                    Value* init_exp = nullptr;
+                    if (def -> isInit()) {
+                        init_exp = parseExp(def -> getInitVal() , false, true, false).first;
+                        if (def -> getInitVal() -> getResType() == BaseType::B_INT && var_decl -> getType() == B_FLOAT) init_exp = builder.createInt2FpInst(init_exp);
+                        if (def -> getInitVal() -> getResType() == BaseType::B_FLOAT && var_decl -> getType() == B_INT) init_exp = builder.createFp2IntInst(init_exp);
+                    }
+
+                    auto alloc = builder.createAllocaInst(def -> getIdentifier(), var_type);
+                    sym_tb.add_var(def -> getIdentifier(), var_decl -> getType(), false, false, var_decl -> getType() == B_FLOAT, alloc);
+                    if (init_exp != nullptr) builder.createStoreInst(init_exp, alloc);
+                }
+
             }
         }
     }
@@ -662,6 +693,7 @@ void parseIfElse(IfElseStmtPtr stmt){
 }
 void parseWhile(WhileStmtPtr stmt){
     
+
 }
 // TODO: return void
 void parseReturn(ReturnStmtPtr stmt){
@@ -682,6 +714,7 @@ void parseReturn(ReturnStmtPtr stmt){
         else if (stmt -> getExp() -> getResType() == B_INT && type == floatType) ret_exp = builder.createInt2FpInst(ret_exp);
         builder.createRetInst(ret_exp);
     }
+
 }
 
 void parseBreak(StmtPtr stmt, BBlock* bBlock) {
@@ -692,8 +725,13 @@ void parseContinue(StmtPtr stmt, BBlock* bBlock){
     builder.createBrInst(nullptr, bBlock, nullptr);
 }
 
-void parseBlock(BlockPtr block) {
+void parseBlock(BlockPtr block, vector<VarNode*> *va_list) {
     sym_tb.enter_block();
+    
+    // 添加形参
+    if (va_list != nullptr) 
+        for (auto var : *va_list) sym_tb.add_var(var);
+    
     auto bk = block -> getBlockItem();
     for (int i = 0; i < bk -> getStmt().size(); i++) {
 
@@ -710,16 +748,17 @@ void parseBlock(BlockPtr block) {
 
 }
 
+
+// TODO:形参加入符号表
 void parseFuncDefine(FuncDefPtr func_def) {
     // 获取形参类型
     Function* func;
+    vector<VarNode*> va_list;
     if (func_def -> hasParam()){
         // 有参数函数
         vector<baseTypePtr> param_types;
-        for (int i = 0; i < func_def->getFuncFParams()->getFuncFParam().size(); i++) 
-            param_types.pb(func_def->getFuncFParams()->getFuncFParam()[i]->getType() == BaseType::B_INT ? i32Type : floatType);
+        for (int i = 0; i < func_def->getFuncFParams()->getFuncFParam().size(); i++) param_types.pb(func_def->getFuncFParams()->getFuncFParam()[i]->getType() == BaseType::B_INT ? i32Type : floatType);
         auto ret_ty = func_def->getReturnType() == BaseType::B_INT ? i32Type : func_def->getReturnType() == BaseType::B_FLOAT ? floatType : voidType;
-        // param_types.push_back(i32Type);
         func = builder.createFunction(func_def -> getIdentifier(), ret_ty, param_types);
 
         BBlock* func_entry = builder.createBBlock("entry", voidType, func);
@@ -729,6 +768,7 @@ void parseFuncDefine(FuncDefPtr func_def) {
         for (int i = 0; i< params.size(); i++) {
             auto F_param = func_def->getFuncFParams()->getFuncFParam()[i];
             Instruction* param_ptr = builder.createAllocaInst(F_param -> getIdentifier(), F_param -> getType() == BaseType::B_INT ? int32PointerType : floatPointerType);
+            va_list.push_back(new VarNode(F_param -> getType(), F_param -> getIdentifier(), F_param -> isArray(), false, F_param -> getType() == BaseType::B_FLOAT, param_ptr));
             builder.createStoreInst(&params[i], param_ptr);
         }
         sym_tb.add_func(func_def -> getIdentifier(), func_def -> getReturnType(), func_def -> getFuncFParams(), func);
@@ -744,8 +784,8 @@ void parseFuncDefine(FuncDefPtr func_def) {
     }
     
     // 解析函数体
-
-    parseBlock(func_def -> getFuncBlock());
+    if (va_list.size() == 0) parseBlock(func_def -> getFuncBlock());
+    else parseBlock(func_def -> getFuncBlock(), &va_list);
     defs -> push_back(func);
     
 } 
@@ -755,6 +795,7 @@ void parseCompUnit(CompUnitPtr rt){
 
     sym_tb.enter_block();
     for (auto item: items) {
+
         if (item -> _node_type == NodeType::NT_FUNC) parseFuncDefine(dynamic_pointer_cast<FuncDef>(item));
         else parseDecl(dynamic_pointer_cast<Decl>(item), true);
     }
@@ -786,7 +827,11 @@ int main(int argc, char* argv[]){
     ++ argv;
     if (argc > 0) {
         module = initialize(builder);
-        parseCompUnit(CompUnitPtr(parse(argv[0])));
+        auto rt = parse(argv[0]);
+        
+
+        parseCompUnit(CompUnitPtr(rt));
+
         builder.emitIRModule(module);
         builder.close();
         return 0;

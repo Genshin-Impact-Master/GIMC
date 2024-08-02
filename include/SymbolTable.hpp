@@ -18,8 +18,8 @@ struct VarNode {
     float _const_float;
     // 数组
     vector<int> _dims;
-    vector<float> _const_float_vals;
-    vector<int> _const_int_vals;
+    // vector<float> _const_float_vals;
+    // vector<int> _const_int_vals;
     Value* _inst;
     VarNode(BaseType type, string identifier, bool is_array,  bool is_const, bool is_float, Value* inst):
         _type(type), _identifier(identifier), _is_array(is_array), _is_const(is_const), _is_float(is_float), _inst(inst) {}
@@ -58,6 +58,9 @@ struct SymbolTable {
     }
     void add_var(string identifier, BaseType type, bool is_array, bool is_const, bool is_float, Value* _inst, int const_int, float const_float) {
         _var_list.front().insert(pair<string, VarNode*>(identifier, new VarNode(type, identifier, is_array, is_const, is_float, _inst, const_int, const_float)));
+    }
+    void add_var(VarNode* var) {
+        _var_list.front().insert(pair<string, VarNode*>(var->_identifier, var));
     }
     VarNode* find_var(string identifier){
         for (auto mp: _var_list) 
