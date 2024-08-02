@@ -47,6 +47,10 @@ public:
                         std::vector<Function*> funcDefs,
                         std::vector<Function*> funcDeclares);
 
+  // 不带参数版本 Module
+  Module *createModule(const std::string &name,
+                        baseTypePtr type) {return new Module(name, type);}
+
   // 创建 Function，并将创建的 Function 作为 chosedFunc 
   Function* createFunction(const std::string &fName, baseTypePtr fType, std::vector<baseTypePtr> &arguTypes);
 
