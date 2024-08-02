@@ -22,7 +22,7 @@ int last_column;
 
 
 enum BaseType {
-    B_VOID,B_INT,B_FLOAT,B_ARRAY_PTR,B_BOOL,B_JMP
+    B_VOID,B_INT,B_FLOAT,B_ARRAY_PTR,B_BOOL,B_JMP, B_FARRAY_PTR
 };
 enum StmtType {
     ST_IF,ST_WHILE,ST_BREAK,ST_CONTINUE,
@@ -30,7 +30,7 @@ enum StmtType {
     ST_BLANK
 };
 enum ExpType {
-    ET_INT,ET_FLOAT,ET_LVAL,ET_FUNC,ET_BIN,ET_NOT
+    ET_INT,ET_FLOAT,ET_LVAL,ET_FUNC,ET_BIN,ET_NOT,ET_DIM
 };
 enum BinOpType {
     OP_ADD,OP_SUB,OP_MUL,OP_DIV,OP_MOD,
@@ -42,6 +42,7 @@ enum UnaryOpType {
 enum NodeType {
     NT_STMT, NT_DECL, NT_FUNC
 };
+
 using namespace std;
 class BaseNode;
 class CompUnit;
@@ -130,6 +131,8 @@ class Visitor;
 #define IfElseStmtPtr shared_ptr<IfElseStmt>
 #define WhileStmtPtr shared_ptr<WhileStmt>
 #define ReturnStmtPtr shared_ptr<ReturnStmt>
+#define ArrayRelateNodePtr shared_ptr<ArrayRelateNode>
+
 
 class BaseNode {
 public:
@@ -259,7 +262,9 @@ public:
     
 };
 
-class InitVals {
+
+
+class InitVals{
 private:
     vector<ExpPtr> _exps;
 public:
@@ -267,7 +272,7 @@ public:
     vector<ExpPtr> getInitVal() {return _exps;}
 };
 
-class ArrayInitVal{
+class ArrayInitVal: public Exp{
 private:
     vector<InitValsPtr> _dim_vals;
 public:
@@ -317,6 +322,8 @@ private:
     bool _is_array;
     ParamArrayDimPtr _dims;
 public:
+    FuncFParam() = default;
+    FuncFParam(BaseType type, string id, bool is_array, ParamArrayDimPtr dims) : _type(type), _identifier(id), _is_array(is_array), _dims(dims) {}
     void addType(BaseType type){_type=type;}
     void addArray(bool is_array){_is_array=is_array;}
     void addArrayDim(ParamArrayDimPtr dims) {_dims=dims;}
@@ -422,18 +429,39 @@ class Exp {
 private:
     ExpType _type;
     BaseType _res_type;
-    int _not_cnt = 0;
-    int _neg_cnt = 0;
+    vector<UnaryOpType> _un_op;
+    int _vec_idx = -1;
 public:
+    Exp() {_vec_idx = -1;}
     virtual ~Exp() = default;
     void addType(ExpType type){_type=type;}
     void addResType(BaseType res_type){_res_type=res_type;}
-    void addNot(){++_not_cnt;}
-    int getNotCnt(){return _not_cnt;}
-    void clearNotCnt(){_not_cnt = 0;};
-    void addNeg(){++_neg_cnt;}
-    int getNegCnt(){return _neg_cnt;}
-    void clearNegCnt(){_neg_cnt = 0;}
+    void addNot(){_un_op.push_back(UnaryOpType::UO_NOT);_vec_idx = _un_op.size()-1;}
+    void addNeg(){_un_op.push_back(UnaryOpType::UO_NEG);_vec_idx = _un_op.size()-1;}
+    int getNegCnt() {
+        if (_vec_idx == -1) return 0;
+        int cnt = 1;
+        auto last_op = _un_op[_vec_idx];
+        if (last_op != UnaryOpType::UO_NEG) return 0;
+        _vec_idx -- ;
+        for (;_vec_idx>=0;--_vec_idx) {
+            if (last_op != _un_op[_vec_idx]) break;
+            cnt ++;
+        }
+        return cnt;
+    }
+    int getNotCnt() {
+        if (_vec_idx == -1) return 0;
+        int cnt = 1;
+        auto last_op = _un_op[_vec_idx];
+        if (last_op != UnaryOpType::UO_NOT) return 0;
+        _vec_idx -- ;
+        for (;_vec_idx>=0;--_vec_idx) {
+            if (last_op != _un_op[_vec_idx]) break;
+            cnt ++;
+        }
+        return cnt;
+    }
     ExpType getType(){return _type;}
     BaseType getResType(){return _res_type;}
 };

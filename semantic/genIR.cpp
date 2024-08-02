@@ -6,27 +6,27 @@
 
 void parseDecl(DeclPtr decl, bool is_global = false);
 void parseAssign(AssignStmtPtr stmt);
-void parseIfElse(IfElseStmtPtr stmt);
+void parseIfElse(IfElseStmtPtr stmt, BBlock* loop_st = nullptr, BBlock* loop_ed = nullptr);
 void parseWhile(WhileStmtPtr stmt);
 void parseReturn(ReturnStmtPtr stmt);
 void parseBreak(StmtPtr stmt, BBlock* bBlock);
 void parseContinue(StmtPtr stmt, BBlock* bBlock);
-void parseBlock(BlockPtr block, vector<VarNode *> *va_list = nullptr);
+void parseBlock(BlockPtr block, vector<VarNode *> *va_list = nullptr, BBlock* loop_st = nullptr, BBlock* loop_ed = nullptr);
 pair<Value*,bool> parseExp(ExpPtr exp, bool is_cond, bool is_exp, bool is_func_param, BBlock* cond_true=nullptr, BBlock* cond_false=nullptr);
 
 // 每个 example 必须包含
 
-std::vector<baseTypePtr> putch_arguTypes;
-std::vector<baseTypePtr> putint_arguTypes;
-std::vector<baseTypePtr> memset_arguTypes;
-Function *putch;
-Function *putint;
-Function *getch;
-Function *getint;
-Function *memset_;
+// std::vector<baseTypePtr> putch_arguTypes;
+// std::vector<baseTypePtr> putint_arguTypes;
+// std::vector<baseTypePtr> memset_arguTypes;
+// Function *putch;
+// Function *putint;
+// Function *getch;
+// Function *getint;
+// Function *memset_;
 
-Function *myFunc;                               // main 函数
-BBlock *entry;                                  // main 中首个基本块 entry
+// Function *myFunc;                               // main 函数
+// BBlock *entry;                                  // main 中首个基本块 entry
 std::vector<Function*> *defs;                          // 函数定义容器
 std::vector<Function*> *declares;                      // 函数声明容器
 std::vector<GlobalVar*> *globals;                      // 全局变量容器
@@ -125,13 +125,21 @@ Instruction* parseFuncCall(ExpPtr exp){
         if (R_param_i -> getResType() == BaseType::B_INT && F_param_i -> getType() == BaseType::B_FLOAT) arg_exp.first = builder.createInt2FpInst(arg_exp.first);
 
         // 参数类型错误
-        if (R_param_i -> getResType() == BaseType::B_ARRAY_PTR && !F_param_i -> isArray()) {
+        if ( (R_param_i -> getResType() == BaseType::B_FARRAY_PTR || R_param_i -> getResType() == BaseType::B_ARRAY_PTR) && !F_param_i -> isArray()) {
             error_msg = "function " + func_call_exp -> getIdentifier() + " expects array argument, but " + std::to_string(R_param_i -> getResType()) + " given";
             error_handle();
         }
-        else if (R_param_i -> getResType() != BaseType::B_ARRAY_PTR && F_param_i -> isArray()) {
+        else if ( (R_param_i -> getResType() != BaseType::B_ARRAY_PTR && R_param_i -> getResType() != BaseType::B_FARRAY_PTR) && F_param_i -> isArray()) {
             error_msg = "function " + func_call_exp -> getIdentifier() + " does not expect array argument, but " + std::to_string(R_param_i -> getResType()) + " given";
             error_handle();   
+        }
+        else if (R_param_i -> getResType() == BaseType::B_FARRAY_PTR && F_param_i -> getType() == BaseType::B_INT && F_param_i -> isArray()) {
+            error_msg = "function " + func_call_exp -> getIdentifier() + " expects float array argument, but " + std::to_string(R_param_i -> getResType()) + " given";
+            error_handle();
+        }
+        else if (R_param_i -> getResType() == BaseType::B_ARRAY_PTR && F_param_i -> getType() == BaseType::B_FLOAT && F_param_i -> isArray()) {
+            error_msg = "function " + func_call_exp -> getIdentifier() + " expects int array argument, but " + std::to_string(R_param_i -> getResType()) + " given";
+            error_handle();
         }
         args.push_back(arg_exp.first);
     }
@@ -151,7 +159,6 @@ pair<Value*,bool> parseExp(ExpPtr exp, bool is_cond, bool is_exp, bool is_func_p
             error_msg = "boolean type expression is not supported";
             error_handle();
         }
-        exp -> clearNotCnt();
         auto ret = parseExp(exp, is_cond, is_exp, is_func_param);
         if (exp -> getResType() == BaseType::B_FLOAT) ret.first = builder.createFcmpInst(FCondKind::Oeq, new ConstFloatValue(0.), ret.first);
         else ret.first = builder.createIcmpInst(ICondKind::Eq, new ConstIntValue(0), ret.first);
@@ -162,7 +169,6 @@ pair<Value*,bool> parseExp(ExpPtr exp, bool is_cond, bool is_exp, bool is_func_p
     }
 
     if (exp -> getNegCnt() % 2 != 0) {
-        exp -> clearNegCnt();
         auto ret = parseExp(exp, is_cond, is_exp, is_func_param);
         if (exp -> getResType() == BaseType::B_FLOAT) ret.first = builder.createBinaryInst(InstKind::Subf, new ConstFloatValue(0.), ret.first);
         else ret.first = builder.createBinaryInst(InstKind::Sub, new ConstIntValue(0), ret.first);
@@ -192,7 +198,7 @@ pair<Value*,bool> parseExp(ExpPtr exp, bool is_cond, bool is_exp, bool is_func_p
             }
 
             // 函数存在但返回值是void
-            else if (sym_tb.find_func(tmp -> getIdentifier()) -> _ret_type == BaseType::B_VOID){
+            else if (sym_tb.find_func(tmp -> getIdentifier()) -> _ret_type == BaseType::B_VOID && (is_exp||is_cond||is_func_param)){
                 error_msg = "function " + tmp -> getIdentifier() + " returns void";
                 error_handle();
             }
@@ -215,6 +221,7 @@ pair<Value*,bool> parseExp(ExpPtr exp, bool is_cond, bool is_exp, bool is_func_p
             // 变量不是数组
             if (!var_node->_is_array) return pair<Value*, bool>(parseVarLval(tmp, var_node), var_node->_is_const);
             // 变量是数组
+
             if (!is_func_param){
                 // 检查数组维数是否正确
                 // 是否取到了数
@@ -222,7 +229,7 @@ pair<Value*,bool> parseExp(ExpPtr exp, bool is_cond, bool is_exp, bool is_func_p
                     error_msg = "array " + tmp -> getIdentifier() + " expects " + std::to_string(var_node->_dims.size()) + " dimensions, but " + std::to_string(tmp -> getDims().size()) + " given";
                     error_handle();
                 }
-                return pair<Value*,bool>(parseArrayLval(tmp, var_node, true), var_node->_is_const);
+                return pair<Value*,bool>(parseArrayLval(tmp, var_node, true), false);
             }
             else {
                 // 作为函数实参时可以是数组指针
@@ -232,7 +239,7 @@ pair<Value*,bool> parseExp(ExpPtr exp, bool is_cond, bool is_exp, bool is_func_p
                     error_handle();
                 }
                 else {
-                    exp -> addResType(BaseType::B_ARRAY_PTR);
+                    exp -> addResType(var_node -> _is_float ? BaseType::B_FARRAY_PTR : BaseType::B_ARRAY_PTR);
                     return pair<Value*,bool>(parseArrayLval(tmp, var_node, false), false);
                 }
             }
@@ -318,7 +325,12 @@ pair<Value*,bool> parseExp(ExpPtr exp, bool is_cond, bool is_exp, bool is_func_p
 
 
 
-            // 如果左右值也是一个比较表达式，是否需要类型提升? 不需要
+            // 如果左右值也是一个比较表达式，是否需要类型提升? 不需要 
+            // TODO:可能需要
+            if (tmp -> getExp1() -> getResType() == BaseType::B_BOOL) 
+                left.first = builder.createZextInst(i32Type, left.first), tmp -> getExp1() -> addResType(BaseType::B_INT);
+            if (tmp -> getExp2() -> getResType() == BaseType::B_BOOL) 
+                right.first = builder.createZextInst(i32Type, right.first), tmp -> getExp2() -> addResType(BaseType::B_INT);
             
 
             // 是否含有浮点数
@@ -427,7 +439,7 @@ void parseStmt(StmtPtr _stmt, BBlock* loop_st = nullptr, BBlock* loop_ed = nullp
         parseAssign(dynamic_pointer_cast<AssignStmt>(_stmt));
     }
     else if (_stmt -> getType() == StmtType::ST_IF) {
-        parseIfElse(dynamic_pointer_cast<IfElseStmt>(_stmt));
+        parseIfElse(dynamic_pointer_cast<IfElseStmt>(_stmt), loop_st, loop_ed);
     }
     else if (_stmt -> getType() == StmtType::ST_WHILE) {
         parseWhile(dynamic_pointer_cast<WhileStmt>(_stmt));
@@ -442,10 +454,10 @@ void parseStmt(StmtPtr _stmt, BBlock* loop_st = nullptr, BBlock* loop_ed = nullp
         parseContinue(_stmt, loop_st);
     }
     else if (_stmt -> getType() == StmtType::ST_BLOCK) {
-        parseBlock(dynamic_pointer_cast<BlockStmt>(_stmt)->getBlock());
+        parseBlock(dynamic_pointer_cast<BlockStmt>(_stmt)->getBlock(), nullptr, loop_st, loop_ed);
     }
     else if (_stmt -> getType() == StmtType::ST_EXP) {
-        parseExp(dynamic_pointer_cast<ExpStmt>(_stmt)->getExp(), false, true, false);
+        parseExp(dynamic_pointer_cast<ExpStmt>(_stmt)->getExp(), false, false, false);
     }
 }
 
@@ -636,7 +648,7 @@ void parseAssign(AssignStmtPtr stmt){
 }
 
 int if_cnt = 1;
-void parseIfElse(IfElseStmtPtr stmt){
+void parseIfElse(IfElseStmtPtr stmt, BBlock* loop_st, BBlock* loop_ed){
     // auto cond_inst = parseExp(stmt -> getCond(), true, false, false).first;
     // BBlock* if_else_end = builder.createBBlock("if_end" + to_string(if_cnt), voidType);
     // BBlock* if_true = builder.createBBlock("if_true" + to_string(if_cnt), voidType);
@@ -658,7 +670,7 @@ void parseIfElse(IfElseStmtPtr stmt){
 
     // 处理基本块的跳转
     if (stmt -> getElseStmt() != nullptr) {
-        BBlock* if_false = builder.createBBlock("if_false" + to_string(if_cnt), voidType);
+        BBlock* if_false = builder.createBBlock("if_false" + to_string(if_cnt-1), voidType);
         builder.setChosedBBlock(par_block);
         auto cond_exp = parseExp(stmt -> getCond(), true, false, false, if_true, if_false);
         // 如果不是and和or
@@ -672,7 +684,7 @@ void parseIfElse(IfElseStmtPtr stmt){
 
         // 处理基本块
         builder.setChosedBBlock(if_false);
-        parseStmt(stmt -> getElseStmt());
+        parseStmt(stmt -> getElseStmt(), loop_st, loop_ed);
         builder.createBrInst(nullptr, if_end, nullptr);
     }
     else {
@@ -687,16 +699,38 @@ void parseIfElse(IfElseStmtPtr stmt){
         }
     }
     builder.setChosedBBlock(if_true);
-    parseStmt(stmt -> getThenStmt());
+    parseStmt(stmt -> getThenStmt(), loop_st, loop_ed);
     builder.createBrInst(nullptr, if_end, nullptr);
 
     builder.setChosedBBlock(if_end);
-
-
+    auto last = builder.getChosedBBlk();
 }
+
+//TODO: 解析循环
+// 基本思路：用三个基本块实现
+int loop_cnt = 1;
 void parseWhile(WhileStmtPtr stmt){
+    BBlock* par_block = builder.getChosedBBlk();
+    BBlock* loop_st = builder.createBBlock("loop_st" + to_string(loop_cnt), voidType);
+    BBlock* loop_ck = builder.createBBlock("loop_ck" + to_string(loop_cnt), voidType);
+    BBlock* loop_ed = builder.createBBlock("loop_ed" + to_string(loop_cnt), voidType);
+    loop_cnt += 1;
+    builder.setChosedBBlock(par_block);
+    builder.createBrInst(nullptr, loop_ck, nullptr);
+    builder.setChosedBBlock(loop_ck);
+    auto cond_exp = parseExp(stmt -> getCond(), true, false, false, loop_st, loop_ed);
+    if (stmt -> getCond() -> getResType() != B_JMP ) {
+        if (stmt -> getCond() -> getResType() != B_BOOL) {
+            if (stmt -> getCond() -> getResType() == BaseType::B_INT) cond_exp.first = builder.createIcmpInst(ICondKind::Ne, new ConstIntValue(0), cond_exp.first);
+            if (stmt -> getCond() -> getResType() == BaseType::B_FLOAT) cond_exp.first = builder.createFcmpInst(FCondKind::One, new ConstFloatValue(0), cond_exp.first);    
+        }
+        builder.createBrInst(cond_exp.first, loop_st, loop_ed);
+    }
 
-
+    builder.setChosedBBlock(loop_st);
+    parseStmt(stmt -> getStmt(), loop_ck, loop_ed);
+    builder.createBrInst(nullptr, loop_ck, nullptr);
+    builder.setChosedBBlock(loop_ed);
 }
 // TODO: return void
 void parseReturn(ReturnStmtPtr stmt){
@@ -728,7 +762,8 @@ void parseContinue(StmtPtr stmt, BBlock* bBlock){
     builder.createBrInst(nullptr, bBlock, nullptr);
 }
 
-void parseBlock(BlockPtr block, vector<VarNode*> *va_list) {
+void parseBlock(BlockPtr block, vector<VarNode*> *va_list, BBlock* loop_st, BBlock* loop_ed) {
+    if (block -> getBlockItem() == nullptr) return;
     sym_tb.enter_block();
     
     // 添加形参
@@ -743,7 +778,7 @@ void parseBlock(BlockPtr block, vector<VarNode*> *va_list) {
         else {
             // std::cout << stmt -> _node_type << std::endl;
             auto _stmt = dynamic_pointer_cast<Stmt>(stmt);
-            parseStmt(_stmt);
+            parseStmt(_stmt, loop_st, loop_ed);
 
         }
     }
@@ -816,18 +851,59 @@ Module* initialize(IRBuilder &builder) {
 //   putint_arguTypes.push_back(i32Type);
 //   memset_arguTypes.push_back(std::make_shared<PointerType>(i32Type));  
 //   memset_arguTypes.push_back(i32Type);  
-//   memset_arguTypes.push_back(i32Type);  
+//   memset_arguTypes.push_back(i32Type); 
+
+    auto void_f = nullptr;
+    auto int_f = FuncFParamsPtr(new FuncFParams());
+    int_f -> addFuncFParam(FuncFParamPtr (new FuncFParam(BaseType::B_INT, "i", false, nullptr)));
+    auto float_f = FuncFParamsPtr(new FuncFParams());
+    float_f -> addFuncFParam(FuncFParamPtr (new FuncFParam(BaseType::B_FLOAT, "f", false, nullptr)));
+
+    auto i32_iptr = FuncFParamsPtr(new FuncFParams());
+    i32_iptr -> addFuncFParam(FuncFParamPtr (new FuncFParam(BaseType::B_INT, "i", false, nullptr)));
+    i32_iptr -> addFuncFParam(FuncFParamPtr (new FuncFParam(BaseType::B_INT, "i", true, nullptr)));
+
+    auto i32_fptr = FuncFParamsPtr(new FuncFParams());
+    i32_fptr -> addFuncFParam(FuncFParamPtr (new FuncFParam(BaseType::B_INT, "i", false, nullptr)));
+    i32_fptr -> addFuncFParam(FuncFParamPtr (new FuncFParam(BaseType::B_FLOAT, "f", true, nullptr)));
+
+    auto iptr = FuncFParamsPtr(new FuncFParams());
+    iptr -> addFuncFParam(FuncFParamPtr (new FuncFParam(BaseType::B_INT, "i", true, nullptr)));
+
+    auto fptr = FuncFParamsPtr(new FuncFParams());
+    fptr -> addFuncFParam(FuncFParamPtr (new FuncFParam(BaseType::B_FLOAT, "f", true, nullptr)));
 
   // 初始化一个 Module
-  auto ret = builder.createModule("start", voidType, vector<GlobalVar*>(), vector<Function*>(), vector<Function*>());
-  globals = ret->getGlobalVars();
-  defs = ret->getFuncDefs();
-  declares = ret->getFuncDeclares();
+    auto ret = builder.createModule("start", voidType);
+    globals = ret->getGlobalVars();
+    defs = ret->getFuncDefs();
+    declares = ret->getFuncDeclares();
 
   // 添加库函数到符号表
-  cout << defs->size() <<endl;
-  cout<< declares -> size() <<endl;
-  return ret;
+    for (auto decl : *declares) {
+        if (decl -> getName() == "putch" || decl -> getName() == "putint" || decl -> getName() == "_sysy_starttime" || decl -> getName() == "_sysy_stoptime") {
+            sym_tb.add_func(decl -> getName(), decl -> getType() == i32Type ? BaseType::B_INT : decl -> getType() == floatType ? BaseType::B_FLOAT : BaseType::B_VOID, int_f, decl);
+        }
+        else if (decl -> getName() == "getch" || decl -> getName() == "getint" || decl -> getName() == "getfloat" || decl -> getName() == "before_main" || decl -> getName() == "after_main") {
+            sym_tb.add_func(decl -> getName(), decl -> getType() == i32Type ? BaseType::B_INT : decl -> getType() == floatType ? BaseType::B_FLOAT : BaseType::B_VOID, void_f, decl);
+        }
+        else if (decl -> getName() == "putfloat") {
+            sym_tb.add_func(decl -> getName(), decl -> getType() == i32Type ? BaseType::B_INT : decl -> getType() == floatType ? BaseType::B_FLOAT : BaseType::B_VOID, float_f, decl);
+        }
+        else if (decl -> getName() == "putarray") {
+            sym_tb.add_func(decl -> getName(), decl -> getType() == i32Type ? BaseType::B_INT : decl -> getType() == floatType ? BaseType::B_FLOAT : BaseType::B_VOID, i32_iptr, decl);
+        }
+        else if (decl -> getName() == "putfarray") {
+            sym_tb.add_func(decl -> getName(), decl -> getType() == i32Type ? BaseType::B_INT : decl -> getType() == floatType ? BaseType::B_FLOAT : BaseType::B_VOID, i32_fptr, decl);
+        }
+        else if (decl -> getName() == "getarray") {
+            sym_tb.add_func(decl -> getName(), decl -> getType() == i32Type ? BaseType::B_INT : decl -> getType() == floatType ? BaseType::B_FLOAT : BaseType::B_VOID, iptr, decl);
+        }
+        else if (decl -> getName() == "getfarray") {
+            sym_tb.add_func(decl -> getName(), decl -> getType() == i32Type ? BaseType::B_INT : decl -> getType() == floatType ? BaseType::B_FLOAT : BaseType::B_VOID, fptr, decl);
+        }
+    }
+    return ret;
 }
 
 int main(int argc, char* argv[]){

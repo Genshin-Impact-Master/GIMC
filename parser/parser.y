@@ -336,10 +336,19 @@ InitVals: Exp {
         $$ -> addExp(ExpPtr($1));
         printf("InitVals Find\n");  
     }
-    | InitVals COMMA Exp {
+    | LEFT_BRACKETS ArrayInitVal RIGHT_BRACKETS {
         $$ = $1;
         $$ -> addExp(ExpPtr($3));
         printf("InitVals Find\n");
+    }
+    | ArrayInitVal {
+        
+    }
+    | InitVals COMMA Exp {
+        
+    }
+    | InitVals COMMA ArrayInitVal {
+        
     };
 
 
@@ -351,18 +360,6 @@ ArrayInitVal: LEFT_BRACES InitVals RIGHT_BRACES {
     | LEFT_BRACES RIGHT_BRACES {
         $$ = new ArrayInitVal();
         $$ -> addDimVal(InitValsPtr(nullptr));
-        printf("ArrayInitVal Find\n");
-    }
-    | LEFT_BRACES InitVals COMMA ArrayInitVal RIGHT_BRACES {
-        $$ = new ArrayInitVal();
-        $$ -> addDimVal(InitValsPtr($2));
-        auto tmp = $4 -> getDimVal();
-        for (auto initvals: tmp) $$ -> addDimVal(initvals);
-        printf("ArrayInitVal Find\n");
-    }
-    | LEFT_BRACES ArrayInitVal COMMA InitVals RIGHT_BRACES {
-        $$ = $2;
-        $2 -> addDimVal(InitValsPtr($4));
         printf("ArrayInitVal Find\n");
     };
 
