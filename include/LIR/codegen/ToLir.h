@@ -8,11 +8,11 @@
 #include "../visitor/LirBlock.h"
 #include "../visitor/LirFunction.h"
 #include "../visitor/LirModule.h"
-#include "../IR/Function.h"
-#include "../IR/BBlock.h"
-#include "../IR/Module.h"
+#include "../../IR/Function.h"
+#include "../../IR/BBlock.h"
+#include "../../IR/Module.h"
 #include "../lirOperand/Addr.h"
-#include "../IR/Inst.h"
+#include "../../IR/Inst.h"
 #include "../lirOperand/FVReg.h"
 #include "../lirOperand/IVReg.h"
 #include "../lirOperand/Imm.h"
@@ -42,7 +42,7 @@ class ToLir {
         LirOperand operandResolve(Value* val, LirFunction* lirFunc, LirBlock* lirBlock);
         LirOperand immResolve(Value* val, LirFunction* lirFunc, LirBlock* lirBlock) ;
         FVReg& loadImmToFVReg(float val, LirFunction* lirFunc, LirBlock* lirBlock);
-        IVReg& ToLir::loadImmToIVReg(int val, LirFunction* lirFunc, LirBlock* lirBlock);
+        IVReg& loadImmToIVReg(int val, LirFunction* lirFunc, LirBlock* lirBlock);
 
         
 

@@ -1,8 +1,8 @@
 #ifndef LIR_BINARY_H
 #define LIR_BINARY_H
 #include "../../Config.h"
-#include "LirBlock.h"
-#include "lirOperand.h"
+#include "../visitor/LirBlock.h"
+#include "../lirOperand/lirOperand.h"
 #include "LirInst.h"
 GIMC_NAMESPACE_BEGIN
 USING_GIMC_NAMESPACE

@@ -2,7 +2,7 @@
 cmake_minimum_required( VERSION 3.10.0 )
 
 # 比赛要求使用 clang-10.0.0 版本
-set(CMAKE_CXX_COMPILER "clang++")
+set(CMAKE_CXX_COMPILER "g++")
 
 # 项目名称
 project( GIMC CXX)
@@ -27,10 +27,36 @@ add_executable(gimc_arm
   ../include/LIR/visitor/LirBlock.h
   ../include/LIR/visitor/LirFunction.h
   ../include/LIR/visitor/LirModule.h
-  ../include/LirToArm/LirToArm1.h
+  ../include/LirToArm/LirToArm.h
+  ../include/IR/BBlock.h
+  ../include/IR/ConstValue.h
+  ../include/IR/Function.h
+  ../include/IR/GlobalVar.h
+  ../include/IR/Inst.h
+  ../include/IR/IRBuilder.h
+  ../include/IR/libsysy.h
+  ../include/IR/Module.h
+  ../include/IR/tacIRBuilder.h
+  ../include/IR/Type.h
+  ../include/IR/Value.h
   ../Config.cpp
   example.cpp
-  LirToArm1.cpp
+  ../IR/BBlock.cpp
+  ../IR/ConstValue.cpp
+  ../IR/example.cpp
+  ../IR/Function.cpp
+  ../IR/GlobalVar.cpp
+  ../IR/Inst.cpp
+  ../IR/IRBuilder.cpp
+  ../IR/lib.ll
+  ../IR/libsysy.c
+  ../IR/Module.cpp
+  ../IR/tacIRBuilder.cpp
+  ../IR/testIR.sh
+  ../IR/Type.cpp
+  ../IR/Value.cpp
+
+
 )
 
 # 可执行文件 gimc 的依赖文件
@@ -44,7 +70,7 @@ add_executable(gimc_arm
 SET( CMAKE_CXX_FLAGS "--std=c++17 -g -lm")
 
 # 增加 graphviz 动态链接库
-target_link_libraries(gimc_arm -lgvc -lcgraph -lcdt)
+# target_link_libraries(gimc_arm -lgvc -lcgraph -lcdt)
 
 # build 目录位置
 set(CMAKE_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/build)
