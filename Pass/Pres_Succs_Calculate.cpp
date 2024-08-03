@@ -39,7 +39,7 @@ void Pres_Succs_Calculate::calculate_Func(Function *func) {
       // 说明为 Ret 指令
       Ret *ret = dynamic_cast<Ret*>(terminator);
       if (!ret) {
-        fprintf(stderr, "请检查基本块结尾是否为有效的终结符指令：Br 或 Ret\n");
+        error( "请检查基本块结尾是否为有效的终结符指令：Br 或 Ret");
         exit(1);
       }
       

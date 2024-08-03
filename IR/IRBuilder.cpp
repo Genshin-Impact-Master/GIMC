@@ -42,7 +42,7 @@ GlobalVar* IRBuilder::createGlobalVar<std::vector<Value*>>(const std::string &na
 BBlock* IRBuilder::createBBlock(const std::string &name, baseTypePtr type, Function* parent) {
   // 在创建 BBlock 前未创建函数
   if (parent == nullptr && chosedFunc_ == nullptr) {
-    fprintf(stderr, "请先调用 createFunction 构造一个函数\n");
+    error( "请先调用 createFunction 构造一个函数\n");
     return nullptr;
   }
 
@@ -57,7 +57,7 @@ BBlock* IRBuilder::createBBlock(const std::string &name, baseTypePtr type, Funct
 BBlock* IRBuilder::checkBlockParent(BBlock* parent){
   // 在创建 Instruction 前未创建 BBlock
   if (parent == nullptr && chosedBBlock_ == nullptr) {
-    fprintf(stderr, "请先调用 createBBlock 构造一个基本块\n");
+    error( "请先调用 createBBlock 构造一个基本块");
     return nullptr;
   }
   else if (parent == nullptr) parent = chosedBBlock_;
@@ -70,7 +70,7 @@ BBlock* IRBuilder::checkBlockParent(BBlock* parent){
 Instruction* IRBuilder::createBinaryInst(InstKind kind, const std::string &name, Value *lhs, Value *rhs, BBlock* parent) {
   parent = checkBlockParent(parent);
   if (!isBinaryOp(kind)) { 
-    fprintf(stderr, "%s 指令并非 二元操作指令", ST_Insts[static_cast<int>(kind)].c_str());
+    error(ST_Insts[static_cast<int>(kind)] + "指令并非 二元操作指令");
     return nullptr;
   }
   BinaryInst *inst = new BinaryInst(name, lhs->getType(), kind, parent, lhs, rhs);
@@ -180,7 +180,7 @@ Instruction* IRBuilder::createBrInst(Value *cond, BBlock *ifTure, BBlock *ifFals
     inst = new Br("anonymous", voidType, parent, cond, ifTure, ifFalse);
   }
   else
-    fprintf(stderr, "生成 Br 指令异常\n");
+    error( "生成 Br 指令异常");
   parent->addInst(inst);
   return inst;
 }
@@ -264,6 +264,7 @@ Instruction* IRBuilder::createInitMemInst(baseTypePtr type, Value *ptr, int leng
 /*****************************************************************************/
 void IRBuilder::emitIRModule(Module *module) {
   irout.close();
+  module->correctCheck();
   irout = std::ofstream(module->getName() + ".ll");
   std::vector<GlobalVar*> &globalVars = module->globalVars_;
   std::vector<Function*> &defs = module->funcDefs_;
@@ -281,7 +282,7 @@ void IRBuilder::emitIRModule(Module *module) {
 
 void IRBuilder::emitIRFuncDef(Function *func) {
   if (func->getEntryBBlock() == nullptr) {
-    fprintf(stdout, "请先设置函数入口基本块\n");
+    error("请先设置函数入口基本块");
   }
   std::vector<baseTypePtr> &arguTypes = func->arguTypes_;
   std::vector<Value> &argus = func->getArgus();
@@ -413,10 +414,9 @@ void IRBuilder::emitIRInst(Instruction *inst) {
   else if (inst->kind_ == InstKind::GEP) {
     GEP *i = dynamic_cast<GEP*>(inst);
     Value *ptr = i->getPtr();
-    ConstIntValue *offset = dynamic_cast<ConstIntValue*>(i->getOffsetValue());
     irout << '\t' << inst->getFullName() << " = getelementptr inbounds " << ptr->getType()->getDetailName()
           << ", ptr " << ptr->getFullName() << ", " << AddrLenPtr->getName() << " 0, " 
-          << AddrLenPtr->getName() << " " << std::to_string(offset->getInt()) << std::endl;
+          << AddrLenPtr->getName() << " " << i->getOffsetValue()->getFullName() << std::endl;
   }
   // Int2Fp | Fp2Int 指令
   else if (inst->kind_ == InstKind::Int2Fp || inst->kind_ == InstKind::Fp2Int) {

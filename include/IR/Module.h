@@ -54,6 +54,8 @@ public:
   Function* getGetFloat() {return funcDeclares_[start + 11];}
   Function* getGetArray() {return funcDeclares_[start + 12];}
   Function* getGetFarray() {return funcDeclares_[start + 13];}
+
+  void correctCheck();
 };
 
 GIMC_NAMESPACE_END

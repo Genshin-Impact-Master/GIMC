@@ -1,6 +1,6 @@
 #ifndef LIR_FVREG_H
 #define LIR_FVREG_H
-#include "Config.h"
+#include "../../Config.h"
 #include "lirOperand.h"
 #include "Reg.h"
 

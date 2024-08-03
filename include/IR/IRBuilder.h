@@ -61,7 +61,6 @@ public:
   */
   template<typename T>
   GlobalVar* createGlobalVar(const std::string &name, baseTypePtr type, T values);
-
   /**
    * 创建 BBlock
    * @param type 基本块的数据类型（可设为 VoidType）
@@ -231,6 +230,13 @@ public:
   void setEntry(BBlock *bBlk) {chosedFunc_->setEntry(bBlk);}
 
 };
+
+  template<>
+  GlobalVar* IRBuilder::createGlobalVar<std::vector<Value*>>(const std::string &name, baseTypePtr type, std::vector<Value*> values);
+
+  template<>
+  GlobalVar* IRBuilder::createGlobalVar<Value*>(const std::string &name, baseTypePtr type, Value* values);
+  
 
 GIMC_NAMESPACE_END
 

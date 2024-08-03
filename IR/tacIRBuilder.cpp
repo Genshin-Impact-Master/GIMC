@@ -41,7 +41,7 @@ GlobalVar* tacIRBuilder::createGlobalVar<std::vector<Value*>>(const std::string 
 BBlock* tacIRBuilder::createBBlock(const std::string &name, baseTypePtr type, Function* parent) {
   // 在创建 BBlock 前未创建函数
   if (parent == nullptr && chosedFunc_ == nullptr) {
-    fprintf(stderr, "请先调用 createFunction 构造一个函数\n");
+    error( "请先调用 createFunction 构造一个函数");
     return nullptr;
   }
 
@@ -56,7 +56,7 @@ BBlock* tacIRBuilder::createBBlock(const std::string &name, baseTypePtr type, Fu
 BBlock* tacIRBuilder::checkBlockParent(BBlock* parent){
   // 在创建 Instruction 前未创建 BBlock
   if (parent == nullptr && chosedBBlock_ == nullptr) {
-    fprintf(stderr, "请先调用 createBBlock 构造一个基本块\n");
+    error( "请先调用 createBBlock 构造一个基本块");
     return nullptr;
   }
   else if (parent == nullptr) parent = chosedBBlock_;
@@ -69,7 +69,7 @@ BBlock* tacIRBuilder::checkBlockParent(BBlock* parent){
 Instruction* tacIRBuilder::createBinaryInst(InstKind kind, const std::string &name, Value *lhs, Value *rhs, BBlock* parent) {
   parent = checkBlockParent(parent);
   if (!isBinaryOp(kind)) { 
-    fprintf(stderr, "%s 指令并非 二元操作指令", ST_Insts[static_cast<int>(kind)].c_str());
+    error( ST_Insts[static_cast<int>(kind)] + "指令并非 二元操作指令");
     return nullptr;
   }
   BinaryInst *inst = new BinaryInst(name, lhs->getType(), kind, parent, lhs, rhs);
@@ -179,7 +179,7 @@ Instruction* tacIRBuilder::createBrInst(Value *cond, BBlock *ifTure, BBlock *ifF
     inst = new Br("anonymous", voidType, parent, cond, ifTure, ifFalse);
   }
   else
-    fprintf(stderr, "生成 Br 指令异常\n");
+    error( "生成 Br 指令异常");
   parent->addInst(inst);
   return inst;
 }

@@ -1,13 +1,12 @@
 #ifndef ERROR_CONFIG_H_
 #define ERROR_CONFIG_H_
 
-#include "../Config.h"
+#include <iostream>
 
-GIMC_NAMESPACE_BEGIN
+namespace GIMC{
 
-/****************** 差错处理全局变量 *******************/
- 
+// 报错函数
+void error(const std::string &msg);
 
-GIMC_NAMESPACE_END
-
+}
 #endif

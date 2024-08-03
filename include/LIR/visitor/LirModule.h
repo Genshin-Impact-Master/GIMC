@@ -1,8 +1,9 @@
 #ifndef LIR_MODULE_H
 #define LIR_MODULE_H
-#include "Config.h"
-#include "GlobalVar.h"
-#include "Function.h"
+#include "../../Config.h"
+#include "../../IR/GlobalVar.h"
+#include "../../IR/Function.h"
+#include "LirFunction.h"
 #include <map>
 #include <list>
 

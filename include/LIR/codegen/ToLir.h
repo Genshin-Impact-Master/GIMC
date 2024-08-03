@@ -1,26 +1,26 @@
 #ifndef LIR_TOLIR_H
 #define LIR_TOLIR_H
-#include "Config.h"
-#include "lirOperand.h"
+#include "../../Config.h"
+#include "../lirOperand/lirOperand.h"
 #include <map>
 #include <set>
-#include "Value.h"
-#include "LirBlock.h"
-#include "LirFunction.h"
-#include "LirModule.h"
-#include "Function.h"
-#include "BBlock.h"
-#include "Module.h"
-#include "Addr.h"
-#include "Inst.h"
-#include "FVReg.h"
-#include "IVReg.h"
-#include "Imm.h"
-#include "FImm.h"
-#include "IImm.h"
-#include "LirInst.h"
-#include "LirInstMove.h"
-#include "LirBinary.h"
+#include "../../IR/Value.h"
+#include "../visitor/LirBlock.h"
+#include "../visitor/LirFunction.h"
+#include "../visitor/LirModule.h"
+#include "../../IR/Function.h"
+#include "../../IR/BBlock.h"
+#include "../../IR/Module.h"
+#include "../lirOperand/Addr.h"
+#include "../../IR/Inst.h"
+#include "../lirOperand/FVReg.h"
+#include "../lirOperand/IVReg.h"
+#include "../lirOperand/Imm.h"
+#include "../lirOperand/FImm.h"
+#include "../lirOperand/IImm.h"
+#include "../lirInst/LirInst.h"
+#include "../lirInst/LirInstMove.h"
+#include "../lirInst/LirBinary.h"
 
 GIMC_NAMESPACE_BEGIN
 USING_GIMC_NAMESPACE
@@ -42,7 +42,7 @@ class ToLir {
         LirOperand operandResolve(Value* val, LirFunction* lirFunc, LirBlock* lirBlock);
         LirOperand immResolve(Value* val, LirFunction* lirFunc, LirBlock* lirBlock) ;
         FVReg& loadImmToFVReg(float val, LirFunction* lirFunc, LirBlock* lirBlock);
-        IVReg& ToLir::loadImmToIVReg(int val, LirFunction* lirFunc, LirBlock* lirBlock);
+        IVReg& loadImmToIVReg(int val, LirFunction* lirFunc, LirBlock* lirBlock);
 
         
 

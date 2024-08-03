@@ -113,6 +113,7 @@ public:
   // 一般指令的 hash 计算 InstKind + ops_
   uint32_t getHash() override;
   bool isEqual(Value *t) override;
+  virtual void correctCheck() {};
 };
 
 /**
@@ -146,6 +147,18 @@ public:
 
   // 对于某些二元操作数，可以换位
   uint32_t getHash() override;
+
+  void correctCheck() override {
+    if (ops_.size() != 2) {
+      error("BinaryInst 必须为两个操作数");
+    }
+    if (!ops_[0] || !ops_[1]) {
+      error("BinaryInst 两个 Value* 不能为 nullptr");
+    }
+    if (!ops_[0]->getType()->isEqual(getType()) || !ops_[1]->getType()->isEqual(getType())) {
+      error("BinaryInst 两个操作数类型不等或不与二元操作指令类型相等");
+    }
+  }
 };
 
 /**
@@ -160,6 +173,12 @@ public:
   Alloca(const std::string &name,
          baseTypePtr type,
          BBlock *parent) : Instruction(name, type, InstKind::Alloca, parent) {}
+  
+  void correctCheck() override {
+    if (!TypeBase::isPointer(getType())) {
+      error("Alloca 指令必须为 pointer 类型");
+    }
+  }
 };
 
 /**
@@ -187,6 +206,16 @@ public:
   Value *getPtr() {
     return ops_[1];
   }
+
+  void correctCheck() override {
+    if (ops_.size() != 2)
+      error("Store 参数数目不匹配");
+    if (!ops_[0] || !ops_[1])
+      error("Store 参数不能为 nullptr");
+    if (!TypeBase::isPointer(getPtr()->getType())) {
+      error("Store 指令存入内存指针非 Pointer 类型");
+    }
+  }
 };
 
 class Load final : public Instruction {
@@ -202,6 +231,15 @@ public:
   
   // 获取需要加载的指针
   Value *getPtr() {return ops_[0];} 
+
+  void correctCheck() override {
+    if (ops_.size() != 1)
+      error("Load 参数数目有误");
+    if (!getPtr())
+      error("Load 参数不能为 nullptr");
+    if (!getType()->isEqual(getPtr()->getType()))
+      error("Load 存入地址指针类型必须是 Pointer"); 
+  }
 };
 
 class Call final : public Instruction {
@@ -222,6 +260,17 @@ public:
 
   // 获取所 Call 函数的参数链表，注意从 1 开始
   std::vector<Value*> &getArgus() {return ops_;}
+
+  void correctCheck() override {
+    if (static_cast<int>(ops_.size()) < 1)
+      error("Call 参数数目有误");
+    if (!ops_[0]) {
+      error("Call Function 不能为 nullptr");
+    }
+    if (!getType()->isEqual(ops_[0]->getType())) {
+      error("Call 函数返回值类型与 Call 指令类型不相等");
+    }
+  }
 };
 
 /**
@@ -241,6 +290,14 @@ public:
   
   // 获取返回值
   Value *getRetValue() {return ops_[0];}
+
+  void correctCheck() override {
+    // 接下来的指令只检测 Type，不再进行 nullptr 检验
+    if (!ops_[0]->getType()->isEqual(getType())) {
+      error("Ret 类型错误");
+    }
+  }
+
 };
 
 /**
@@ -264,6 +321,13 @@ public:
 
   // 获取第二个数据
   Value *getSecond() {return ops_[1];}
+
+  void correctCheck() override {
+    // 检验两个数据类型是否相等
+    if (!ops_[0]->getType()->isEqual(ops_[1]->getType())) {
+      error("Icmp 两个类型不同的操作数不能比较");
+    }
+  }
 };
 
 /**
@@ -286,6 +350,13 @@ public:
 
   // 获取第二个数据
   Value *getSecond() {return ops_[1];}
+
+  void correctCheck() override {
+    // 检验两个数据类型是否相等
+    if (!ops_[0]->getType()->isEqual(ops_[1]->getType())) {
+      error("Fcmp 两个类型不同的操作数不能比较");
+    }
+  }
 };
 
 /**
@@ -310,7 +381,7 @@ public:
   // 获取条件值
   Value *getCond() {
     if (isUnconditional()) {
-      fprintf(stderr, "为无条件跳转，没有 Cond\n");
+      error("为无条件跳转，没有 Cond");
       exit(1);
     }
     return ops_[0];
@@ -326,8 +397,7 @@ public:
   // 获取 条件为 False 的 BBlock
   BBlock *getFalseBBlk() {
     if (isUnconditional()) {
-      fprintf(stderr, "无条件跳转，没有 False 基本块");
-      exit(1);
+      error("无条件跳转，没有 False 基本块");
     }
     return dynamic_cast<BBlock*>(ops_[2]);
   }
@@ -354,8 +424,12 @@ public:
   // 获得偏移量的 Value
   Value* getOffsetValue() {return ops_[1];}
 
-  // 获得偏移量，相较于 getOffsetValue 是直接得到一个 int
-  int getOffset() {return dynamic_cast<ConstIntValue*>(ops_[1])->getInt();}
+  void correctCheck() override {
+    // 检验两个数据类型
+    if (!TypeBase::isPointer(ops_[0]->getType())) {
+      error("GEP 指针参数的类型必须为 Pointer");
+    }
+  }
 };
 
 /**
@@ -370,6 +444,12 @@ public:
 
   // 获取待转换的 Float Value
   Value *getFp() {return ops_[0];}
+  void correctCheck() override {
+    // 检验 float 类型
+    if (!TypeBase::isFloat(ops_[0]->getType())) {
+      error("Fp2Int 转换的数据类型必须为 Float");
+    }
+  }
 };
 
 /**
@@ -383,6 +463,11 @@ public:
           Value *i32);
   // 获取待转换的 Int Value
   Value *getInt() {return ops_[0];}
+  void correctCheck() override {
+    if (!TypeBase::isInteger(ops_[0]->getType())) {
+      error("Int2Fp 转换的数据类型必须为 int");
+    }
+  }
 };
 
 class Zext final : public Instruction {
@@ -398,6 +483,11 @@ public:
 
   // 获得零拓展前的 Value
   Value *getProto() {return ops_[0];}
+  void correctCheck() override {
+    if (!TypeBase::isInteger(ops_[0]->getType())) {
+      error("Zext 转换的数据类型必须为 int");
+    }
+  }
 };
 
 class Phi final : public Instruction {
@@ -415,6 +505,12 @@ public:
 
   // 获取 ops
   std::vector<Value*>& getOps() {return ops_;}
+
+  void correctCheck() override {
+    if (!TypeBase::isPointer(ops_[0]->getType())) {
+      error("Phi 指令第一个参数必须为 Alloca 类型");
+    }
+  }
 };
 
 class InitMem final : public Instruction {
@@ -428,6 +524,19 @@ public:
           BBlock *parent,
           Value *ptr,
           int length);
+
+  int getLength() {
+    uint32_t len = dynamic_cast<ConstIntValue*>(ops_[1])->getInt();
+    return (int)len;
+  }
+
+  Value* getPtr() {return ops_[0];}
+
+  void correctCheck() override {
+    if (!TypeBase::isPointer(ops_[0]->getType())) {
+      error("InitMem 内存参数的数据类型必须是 pointer");
+    }
+  }
 };
 GIMC_NAMESPACE_END
 

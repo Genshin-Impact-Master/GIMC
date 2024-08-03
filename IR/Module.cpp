@@ -78,3 +78,12 @@ void Module::addLibs() {
   funcDeclares_.push_back(getarray);
   funcDeclares_.push_back(getfarray);
 }
+
+void Module::correctCheck() {
+  for (auto global : globalVars_) {
+    global->correctCheck();
+  }
+  for (auto func : funcDefs_) {
+    func->correctCheck();
+  }
+}

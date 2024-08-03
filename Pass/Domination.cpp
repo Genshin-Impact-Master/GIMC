@@ -21,7 +21,7 @@ void Domination::initialize(Function *func) {
 
 void Domination::calculate() {
   if (!isInitialize) {
-    fprintf(stderr, "请先调用初始化函数\n");
+    error( "请先调用初始化函数");
     exit(1);
   }
   dfs(root);

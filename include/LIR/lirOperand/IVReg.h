@@ -1,6 +1,6 @@
 #ifndef LIR_IVREG_H
 #define LIR_IVREG_H
-#include "Config.h"
+#include "../../Config.h"
 #include "lirOperand.h"
 #include "Reg.h"
 

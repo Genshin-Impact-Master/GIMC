@@ -5,7 +5,7 @@ std::string GlobalVar::getData() {
   // 返回 value 的初始化 llvm 代码
   std::shared_ptr<PointerType> ptr = std::dynamic_pointer_cast<PointerType>(this->getType());
   if (ptr == nullptr) {
-    fprintf(stderr, "GlobalVar type error\n");
+    error("GlobalVar type error");
     exit(1);
   }
   if (ptr->isArray() == false) {
@@ -32,5 +32,13 @@ std::string GlobalVar::getData() {
     }
     ret += "]";
     return ret;
+  }
+}
+
+void GlobalVar::correctCheck() {
+  baseTypePtr ty = getValueType();
+  if (TypeBase::isPointer(ty)) {
+    // 说明全局变量为数组，则数组中每个元素的类型需要相同
+    // @todo
   }
 }

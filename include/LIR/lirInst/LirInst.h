@@ -1,12 +1,11 @@
 #ifndef LIR_INST_H
 #define LIR_INST_H
-#include "Config.h"
-#include "lirOperand.h"
-#include  "LirBlock.h"
+#include "../../Config.h"
+#include "../lirOperand/lirOperand.h"
 
 GIMC_NAMESPACE_BEGIN
 USING_GIMC_NAMESPACE
-
+class LirBlock;
 enum class LirInstKind {
     Add,
     Sub,

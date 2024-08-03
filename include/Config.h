@@ -12,7 +12,7 @@
 #include <string>
 #include <vector>
 #include <memory>
-
+#include "Utils/ErrorConfig.h"
 GIMC_NAMESPACE_BEGIN
 /*********************************** 类型重命名 ***********************************/
 class TypeBase;

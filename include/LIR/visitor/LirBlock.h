@@ -1,15 +1,15 @@
 #ifndef LIR_BLOCK_H
 #define LIR_BLOCK_H
-#include "Config.h"
-#include "GlobalVar.h"
-#include "LirInst.h"
+#include "../../Config.h"
+#include "../../IR/GlobalVar.h"
+#include "../lirInst/LirInst.h"
 #include <unordered_set>
 
 
 
 GIMC_NAMESPACE_BEGIN
 USING_GIMC_NAMESPACE
-
+class LirFunction;
 class LirBlock {
     private:
         std::string label;
@@ -20,7 +20,7 @@ class LirBlock {
         IList<LirBlock, LirInst> lirInstLists;
 
     public:
-        LirBlock() {}
+        // 修改 1 LirBlock 的无参初始化是不允许的
         LirBlock(LirFunction* lirFunction, const std::string &label);
         void addPres(LirBlock* lirPre);
         void setTrueLirSucc(LirBlock* tureLirSucc);

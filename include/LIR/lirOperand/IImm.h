@@ -1,6 +1,6 @@
 #ifndef LIR_IIMM_H
 #define LIR_IIMM_H
-#include "Config.h"
+#include "../../Config.h"
 #include "lirOperand.h"
 #include "Imm.h"
 #include <iostream>

@@ -1,8 +1,8 @@
 #ifndef LIR_FUNC_H
 #define LIR_FUNC_H
-#include "Config.h"
-#include "lirOperand.h"
-#include "LirInstMove.h"
+#include "../../Config.h"
+#include "../lirOperand/lirOperand.h"
+#include "../lirInst/LirInstMove.h"
 #include <map>
 
 
@@ -18,7 +18,12 @@ class LirFunction {
         baseTypePtr returnType;
         LirBlock prologue;
         std::vector<Value> paramter;
-        std::map<LirOperand&, LirInstMove&> immMap;
+
+        /* @C++_Learn std::map<LirOperand&, LirInstMove&> 这样的声明在 C++ 中是不允许的。
+         标准库容器（例如 std::map、std::vector 等）不能直接包含引用类型，
+         因为它们要求元素类型必须是可复制的，而引用本身不是一个对象，它只是一个别名。
+        */
+        std::map<LirOperand, LirInstMove> immMap;
 
 
     public:
@@ -27,7 +32,7 @@ class LirFunction {
         void setIParamsCnt(int intcnt);
         void setFParamsCnt(int floatcnt);
         void setReturnType(baseTypePtr returnType);
-        std::map<LirOperand&, LirInstMove&>& getImmMap();
+        std::map<LirOperand, LirInstMove>& getImmMap();
 
 
         
