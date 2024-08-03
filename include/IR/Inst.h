@@ -428,6 +428,13 @@ public:
           BBlock *parent,
           Value *ptr,
           int length);
+
+  int getLength() {
+    uint32_t len = dynamic_cast<ConstIntValue*>(ops_[1])->getInt();
+    return (int)len;
+  }
+
+  Value* getPtr() {return ops_[0];}
 };
 GIMC_NAMESPACE_END
 

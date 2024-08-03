@@ -1,8 +1,8 @@
 #ifndef LIR_BLOCK_H
 #define LIR_BLOCK_H
-#include "Config.h"
-#include "GlobalVar.h"
-#include "LirInst.h"
+#include "../../Config.h"
+#include "../../IR/GlobalVar.h"
+#include "../lirInst/LirInst.h"
 #include <unordered_set>
 
 

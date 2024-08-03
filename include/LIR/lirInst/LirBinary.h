@@ -1,6 +1,6 @@
 #ifndef LIR_BINARY_H
 #define LIR_BINARY_H
-#include "Config.h"
+#include "../../Config.h"
 #include "LirBlock.h"
 #include "lirOperand.h"
 #include "LirInst.h"

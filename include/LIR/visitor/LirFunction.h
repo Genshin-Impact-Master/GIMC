@@ -1,8 +1,8 @@
 #ifndef LIR_FUNC_H
 #define LIR_FUNC_H
-#include "Config.h"
-#include "lirOperand.h"
-#include "LirInstMove.h"
+#include "../../Config.h"
+#include "../lirOperand/lirOperand.h"
+#include "../lirInst/LirInstMove.h"
 #include <map>
 
 

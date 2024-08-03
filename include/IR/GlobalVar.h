@@ -28,6 +28,8 @@ public:
   std::string getData() override;     // @C++_Learn 注意 override 关键字不能出现在 class 外的函数定义中
 
   baseTypePtr getValueType() {return std::dynamic_pointer_cast<PointerType>(this->getType())->getBaseType();}
+
+  std::vector<Value*> &getGlobalVarValues() {return values_;}
 };
 
 GIMC_NAMESPACE_END

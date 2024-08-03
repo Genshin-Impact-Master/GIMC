@@ -1,6 +1,6 @@
 #ifndef LIR_FIMM_H
 #define LIR_FIMM_H
-#include "Config.h"
+#include "../../Config.h"
 #include "lirOperand.h"
 #include "Imm.h"
 #include <iostream>

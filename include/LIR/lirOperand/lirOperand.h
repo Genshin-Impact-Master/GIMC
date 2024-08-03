@@ -1,4 +1,4 @@
-#include "Config.h"
+#include "../../Config.h"
 
 #ifndef LIR_OPERAND_H
 #define LIR_OPERAND_H

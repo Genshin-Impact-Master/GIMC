@@ -1,6 +1,6 @@
 #ifndef LIR_REG_H
 #define LIR_REG_H
-#include "Config.h"
+#include "../../Config.h"
 #include "lirOperand.h"
 #include <set>
 GIMC_NAMESPACE_BEGIN

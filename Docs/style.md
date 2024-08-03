@@ -1,5 +1,5 @@
 ## namespace 说明
-本项目 class 均在 GIMC (Genshin Impact Master Compiler)命名空间中，以区别 llvm
+本项目 class 均在 GIMC (Genshin Impact Master Compiler) 命名空间中，以区别 llvm
 
 ### 注释解释
 `@todo` 还未实现功能
