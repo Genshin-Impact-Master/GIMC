@@ -50,8 +50,6 @@
     BlockItems* blockItems;
     ConstDefs* constDefs;
     ArrayDim* arrayDim;
-    ConstArrayInitVal* constArrayInitVal;
-    ConstInitVals* constInitVals;
     InitVals* initVals;
     ArrayInitVal* arrayInitVal;
     ParamArrayDim* paramArrayDim;
@@ -77,8 +75,6 @@
 %type <paramArrayDim> ParamArrayDim
 %type <arrayInitVal> ArrayInitVal
 %type <initVals> InitVals
-%type <constInitVals> ConstInitVals
-%type <constArrayInitVal> ConstArrayInitVal
 %type <arrayDim> ArrayDim
 %type <constDefs> ConstDefs 
 %type <blockItems> BlockItems
@@ -202,12 +198,12 @@ ConstDef: IDENTIFIER ASSIGN ConstExp{
         $$ -> addInitVal(ConstExpPtr($3));
         printf("ConstDef Find\n");
     }
-    | IDENTIFIER ArrayDim ASSIGN ConstArrayInitVal {
+    | IDENTIFIER ArrayDim ASSIGN ArrayInitVal {
         $$ = new ConstDef();
-        // $$ -> addIdentifier($1);
+        $$ -> addIdentifier($1);
         $$ -> addArray(true);
         $$ -> addArrayDim(ArrayDimPtr($2));
-        // $$ -> addArrayInitVal(ConstArrayInitValPtr($4));
+        $$ -> addArrayInitVal(ArrayInitValPtr($4));
         printf("ConstDef Find\n");
     };
 
@@ -228,7 +224,7 @@ ArrayDim: LEFT_BRACKETS ConstExp RIGHT_BRACKETS {
 
         printf("ConstInitVal Find\n");
     }; */
-ConstInitVals: ConstExp {
+/* ConstInitVals: ConstExp {
         $$ = new ConstInitVals();
         $$ -> addConstExp(ConstExpPtr($1));
         printf("ConstInitVals Find\n");
@@ -265,7 +261,7 @@ ConstArrayInitVal: LEFT_BRACES ConstInitVals RIGHT_BRACES {
         $$ = $2;
         $2 -> addDimVal(ConstInitValsPtr($4));
         printf("ConstArrayInitVal Find\n");
-    };
+    }; */
 
 /* VarDecl → BType VarDef { ',' VarDef } ';' */
 VarDecl: BaseType VarDefs SEMICOLON{
@@ -336,30 +332,34 @@ InitVals: Exp {
         $$ -> addExp(ExpPtr($1));
         printf("InitVals Find\n");  
     }
-    | LEFT_BRACKETS ArrayInitVal RIGHT_BRACKETS {
+    | ArrayInitVal {
+        $$ = new InitVals();
+        $$ -> addExp(ExpPtr($1));
+        printf("InitVals Find\n");
+    }
+    | InitVals COMMA Exp {
         $$ = $1;
         $$ -> addExp(ExpPtr($3));
         printf("InitVals Find\n");
-    }
-    | ArrayInitVal {
-        
-    }
-    | InitVals COMMA Exp {
         
     }
     | InitVals COMMA ArrayInitVal {
-        
+        $$ = $1;
+        $$ -> addExp(ExpPtr($3));
+        printf("InitVals Find\n");
     };
 
 
 ArrayInitVal: LEFT_BRACES InitVals RIGHT_BRACES {
         $$ = new ArrayInitVal();
         $$ -> addDimVal(InitValsPtr($2));
+        $$ -> addType(ExpType::ET_DIM);
         printf("ArrayInitVal Find\n");
     }
     | LEFT_BRACES RIGHT_BRACES {
         $$ = new ArrayInitVal();
         $$ -> addDimVal(InitValsPtr(nullptr));
+        $$ -> addType(ExpType::ET_DIM);
         printf("ArrayInitVal Find\n");
     };
 
@@ -417,6 +417,7 @@ FuncFParam: BaseType IDENTIFIER {
     };
 
 ParamArrayDim: LEFT_BRACKETS RIGHT_BRACKETS {
+        $$ = new 
         $$ -> addDim(nullptr);
         printf("ParamArrayDim Find\n");
     }
@@ -856,6 +857,7 @@ ConstExp: AddExp {
     }
     yyparse();
     std::cout << root << std::endl;
+    return 0;
 } */
 
 CompUnit* parse(char *filename) {

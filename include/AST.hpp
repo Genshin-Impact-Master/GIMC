@@ -30,7 +30,7 @@ enum StmtType {
     ST_BLANK
 };
 enum ExpType {
-    ET_INT,ET_FLOAT,ET_LVAL,ET_FUNC,ET_BIN,ET_NOT,ET_DIM
+    ET_INT,ET_FLOAT,ET_LVAL,ET_FUNC,ET_BIN,ET_DIM
 };
 enum BinOpType {
     OP_ADD,OP_SUB,OP_MUL,OP_DIV,OP_MOD,
@@ -180,7 +180,7 @@ private:
     ConstExpPtr _init_val;
     bool _array;
     ArrayDimPtr _array_dim;
-    ConstArrayInitValPtr _array_init_val;
+    ArrayInitValPtr _array_init_val;
 public:
     void addIdentifier(string* identity){_identifier=(*identity);}
     bool isArray(){return _array;};
@@ -190,8 +190,8 @@ public:
     ArrayDimPtr getArrayDim(){return _array_dim;};
     ConstExpPtr getInitVal(){return _init_val;};
     string getIdentifier(){return _identifier;}; 
-    void addArrayInitVal(ConstArrayInitValPtr array_init_val){_array_init_val=array_init_val;}
-    ConstArrayInitValPtr getArrayInitVal(){return _array_init_val;};
+    void addArrayInitVal(ArrayInitValPtr array_init_val){_array_init_val=array_init_val;}
+    ArrayInitValPtr getArrayInitVal(){return _array_init_val;};
 };
 
 class ArrayDim {
@@ -208,22 +208,6 @@ private:
 public:
     void addConstDef(ConstDefPtr const_def){_const_defs.pb(const_def);};
     vector<ConstDefPtr> getConstDef(){return _const_defs;};   
-};
-
-class ConstInitVals {
-private: 
-    vector<ConstExpPtr> _const_init_vals;
-public:
-    vector<ConstExpPtr> getConstInitVal(){return _const_init_vals;};
-    void addConstExp(ConstExpPtr const_exp){_const_init_vals.pb(const_exp);}; 
-};
-
-class ConstArrayInitVal {
-private:
-    vector<ConstInitValsPtr> _dim_vals;
-public:
-    void addDimVal (ConstInitValsPtr dim_val){_dim_vals.pb(dim_val);}
-    vector<ConstInitValsPtr> getDimVal(){return _dim_vals;}
 };
 
 class VarDecl {
@@ -264,21 +248,7 @@ public:
 
 
 
-class InitVals{
-private:
-    vector<ExpPtr> _exps;
-public:
-    void addExp(ExpPtr exp) {_exps.pb(exp);}
-    vector<ExpPtr> getInitVal() {return _exps;}
-};
 
-class ArrayInitVal: public Exp{
-private:
-    vector<InitValsPtr> _dim_vals;
-public:
-    void addDimVal(InitValsPtr dim_val) {_dim_vals.pb(dim_val);}
-    vector<InitValsPtr> getDimVal() {return _dim_vals;}
-};
 
 class VarDefs {
 private:
@@ -466,6 +436,27 @@ public:
     BaseType getResType(){return _res_type;}
 };
 
+
+class InitVals{
+private:
+    vector<ExpPtr> _exps;
+public:
+    void addExp(ExpPtr exp) {_exps.pb(exp);}
+    vector<ExpPtr> getInitVal() {return _exps;}
+};
+
+class ArrayInitVal: public Exp{
+private:
+    InitValsPtr _dim_vals;
+    int depth = 0;
+public:
+    void addDimVal(InitValsPtr dim_val) {_dim_vals = (dim_val);}
+    InitValsPtr getDimVal() {return _dim_vals;}
+    int getDepth() {return depth;}
+    void addDepth() {depth ++ ;}
+};
+
+
 class BinaryExp : public Exp {
 private:
     ExpPtr _exp1;
@@ -544,9 +535,24 @@ class ConstExp: public Exp{
 private:
     ExpPtr _exp;
 public:
+    virtual ~ConstExp() = default;
     void addExp(ExpPtr exp){_exp=exp;}
     ExpPtr getExp(){return _exp;}
 };
 
+// class ConstInitVals {
+// private: 
+//     vector<ConstExpPtr> _const_init_vals;
+// public:
+//     vector<ConstExpPtr> getConstInitVal(){return _const_init_vals;};
+//     void addConstExp(ConstExpPtr const_exp){_const_init_vals.pb(const_exp);}; 
+// };
 
+// class ConstArrayInitVal: public ConstExp{
+// private:
+//     ConstInitValsPtr _dim_vals;
+// public:
+//     void addDimVal (ConstInitValsPtr dim_val){_dim_vals = dim_val;}
+//     ConstInitValsPtr getDimVal(){return _dim_vals;}
+// };
 #endif

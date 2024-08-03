@@ -135,8 +135,6 @@ union YYSTYPE
     BlockItems* blockItems;
     ConstDefs* constDefs;
     ArrayDim* arrayDim;
-    ConstArrayInitVal* constArrayInitVal;
-    ConstInitVals* constInitVals;
     InitVals* initVals;
     ArrayInitVal* arrayInitVal;
     ParamArrayDim* paramArrayDim;
@@ -145,7 +143,7 @@ union YYSTYPE
     float floatVal;
     string* identifier;
 
-#line 149 "parser.hpp"
+#line 147 "parser.hpp"
 
 };
 typedef union YYSTYPE YYSTYPE;

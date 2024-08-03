@@ -25,6 +25,8 @@ struct VarNode {
         _type(type), _identifier(identifier), _is_array(is_array), _is_const(is_const), _is_float(is_float), _inst(inst) {}
     VarNode(BaseType type, string identifier, bool is_array,  bool is_const, bool is_float, Value* inst, int const_int, float const_float):
         _type(type), _identifier(identifier), _is_array(is_array), _is_const(is_const), _is_float(is_float), _inst(inst), _const_int(const_int), _const_float(const_float) {}
+    VarNode(BaseType type, string identifier, bool is_array,  bool is_const, bool is_float, Value* inst, vector<int>dims):
+        _type(type), _identifier(identifier), _is_array(is_array), _is_const(is_const), _is_float(is_float), _inst(inst), _dims(dims) {}
 };
 struct FuncNode {
     BaseType _ret_type;
@@ -55,6 +57,9 @@ struct SymbolTable {
     }
     void add_var(string identifier, BaseType type, bool is_array, bool is_const, bool is_float, Value* _inst) {
         _var_list.front().insert(pair<string, VarNode*>(identifier, new VarNode(type, identifier, is_array, is_const, is_float, _inst)));
+    }
+    void add_var(string identifier, BaseType type, bool is_array, bool is_const, bool is_float, Value* _inst, vector<int>_dim) {
+        _var_list.front().insert(pair<string, VarNode*>(identifier, new VarNode(type, identifier, is_array, is_const, is_float, _inst, _dim)));
     }
     void add_var(string identifier, BaseType type, bool is_array, bool is_const, bool is_float, Value* _inst, int const_int, float const_float) {
         _var_list.front().insert(pair<string, VarNode*>(identifier, new VarNode(type, identifier, is_array, is_const, is_float, _inst, const_int, const_float)));
