@@ -113,6 +113,7 @@ public:
   // 一般指令的 hash 计算 InstKind + ops_
   uint32_t getHash() override;
   bool isEqual(Value *t) override;
+  virtual void correctCheck() {};
 };
 
 /**
@@ -146,6 +147,18 @@ public:
 
   // 对于某些二元操作数，可以换位
   uint32_t getHash() override;
+
+  void correctCheck() override {
+    if (ops_.size() != 2) {
+      error("BinaryInst 必须为两个操作数");
+    }
+    if (!ops_[0] || !ops_[1]) {
+      error("BinaryInst 两个 Value* 不能为 nullptr");
+    }
+    if (!ops_[0]->getType()->isEqual(getType()) || !ops_[1]->getType()->isEqual(getType())) {
+      error("BinaryInst 两个操作数类型不等或不与二元操作指令类型相等");
+    }
+  }
 };
 
 /**
@@ -160,6 +173,12 @@ public:
   Alloca(const std::string &name,
          baseTypePtr type,
          BBlock *parent) : Instruction(name, type, InstKind::Alloca, parent) {}
+  
+  void correctCheck() override {
+    if (!TypeBase::isPointer(getType())) {
+      error("Alloca 指令必须为 pointer 类型");
+    }
+  }
 };
 
 /**
@@ -187,6 +206,16 @@ public:
   Value *getPtr() {
     return ops_[1];
   }
+
+  void correctCheck() override {
+    if (ops_.size() != 2)
+      error("Store 参数数目不匹配");
+    if (!ops_[0] || !ops_[1])
+      error("Store 参数不能为 nullptr");
+    if (!TypeBase::isPointer(getPtr()->getType())) {
+      error("Store 指令存入内存指针非 Pointer 类型");
+    }
+  }
 };
 
 class Load final : public Instruction {
@@ -202,6 +231,15 @@ public:
   
   // 获取需要加载的指针
   Value *getPtr() {return ops_[0];} 
+
+  void correctCheck() override {
+    if (ops_.size() != 1)
+      error("Load 参数数目有误");
+    if (!getPtr())
+      error("Load 参数不能为 nullptr");
+    if (!getType()->isEqual(getPtr()->getType()))
+      error("Load 存入地址指针类型必须是 Pointer"); 
+  }
 };
 
 class Call final : public Instruction {
@@ -222,6 +260,17 @@ public:
 
   // 获取所 Call 函数的参数链表，注意从 1 开始
   std::vector<Value*> &getArgus() {return ops_;}
+
+  void correctCheck() override {
+    if (static_cast<int>(ops_.size()) < 1)
+      error("Call 参数数目有误");
+    if (!ops_[0]) {
+      error("Call Function 不能为 nullptr");
+    }
+    if (!getType()->isEqual(ops_[0]->getType())) {
+      error("Call 函数返回值类型与 Call 指令类型不相等");
+    }
+  }
 };
 
 /**
@@ -310,7 +359,7 @@ public:
   // 获取条件值
   Value *getCond() {
     if (isUnconditional()) {
-      fprintf(stderr, "为无条件跳转，没有 Cond\n");
+      error("为无条件跳转，没有 Cond");
       exit(1);
     }
     return ops_[0];
@@ -326,7 +375,7 @@ public:
   // 获取 条件为 False 的 BBlock
   BBlock *getFalseBBlk() {
     if (isUnconditional()) {
-      fprintf(stderr, "无条件跳转，没有 False 基本块");
+      error("无条件跳转，没有 False 基本块");
       exit(1);
     }
     return dynamic_cast<BBlock*>(ops_[2]);

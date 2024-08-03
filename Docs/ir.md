@@ -44,7 +44,15 @@ TypeBase
 含有 `TypeBase` 原因是在 SSA 中，每条指令实际上指代的是一个 __值__ 
 #### def-use 关系
 Instruction 中的 `ops_`成员变量就是代表着该 Value Use 的 Value，而此条 Instruction 指代的 Value 就是被 define 的。
-
+### IR 正确性检验
+correctCheck 函数
+**Module**
+  * **全局变量 Check**
+  * **函数定义 Check**
+Function Declare 函数声明不必检验。
+**GlobalVar**
+  * GlobalVar 类型只能是 i32,float，或 ptr
+  * 对于数组类型的 GlobalVar 需要 vector 中 value 类型一致
 ## LLVM IR
 ### LLVM IR Type 
 [LLVM IR Type 参考链接](https://llvm.org/docs/LangRef.html#type-system)

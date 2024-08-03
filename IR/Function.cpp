@@ -85,3 +85,12 @@ void Function::drawCFG() {
   gvFreeContext(gvc);
 }
 #endif
+
+void Function::correctCheck() {
+  INode<BBlock> *node = blkList_.getHeadPtr();
+  while (!node->isEnd()) {
+    node = node->getNext();
+    BBlock *bBlk = node->getOwner();
+    bBlk->correctCheck();
+  }
+}

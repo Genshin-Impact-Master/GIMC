@@ -74,8 +74,11 @@ public:
   // 获得 BBLock 中的指令条数
   int getInstCnt() {return instList_.getSize();}
 
-  // 输出 BBLock 到 中端
+  // 输出 BBLock 到 终端
   void coutBBlock();
+
+  // IR 检验
+  void correctCheck();
 };
 
 

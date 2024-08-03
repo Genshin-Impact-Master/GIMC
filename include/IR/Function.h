@@ -60,6 +60,7 @@ public:
   // 获取函数参数类型链表
   std::vector<baseTypePtr> &getArguTypes() {return arguTypes_;}
 
+  void correctCheck();
 #ifdef PRINT_CFG
   // 利用 graphviz 绘制 CFG
   void drawCFG();

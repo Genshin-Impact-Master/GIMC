@@ -5,7 +5,7 @@
 
 GIMC_NAMESPACE_BEGIN
 USING_GIMC_NAMESPACE
-
+class LirBlock;
 enum class LirInstKind {
     Add,
     Sub,

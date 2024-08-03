@@ -21,7 +21,7 @@ public:
   GlobalVar(const std::string &name, baseTypePtr type, std::vector<Value*> values)
            : Value(name, type), values_(values) { 
                                                   if(!TypeBase::isPointer(type)) 
-                                                    fprintf(stderr, "全局变量类型必须为指针\n");
+                                                    error("全局变量类型必须为指针");
                                                   this->setGlobalVarPrefix(); 
                                                 }
 
@@ -30,6 +30,8 @@ public:
   baseTypePtr getValueType() {return std::dynamic_pointer_cast<PointerType>(this->getType())->getBaseType();}
 
   std::vector<Value*> &getGlobalVarValues() {return values_;}
+
+  void correctCheck();
 };
 
 GIMC_NAMESPACE_END

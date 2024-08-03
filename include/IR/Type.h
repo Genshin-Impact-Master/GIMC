@@ -40,6 +40,9 @@ public:
   bool static isVoid(baseTypePtr type) {
     return std::dynamic_pointer_cast<VoidType>(type) != nullptr;
   }
+
+  // 判断类型是否相等
+  virtual bool isEqual(baseTypePtr ty) = 0;
 };  
 
 // 整数数据类型
@@ -53,7 +56,7 @@ public:
           && "整型字长必须为 1 or 16 or 32 or 64");
 
     if (!(length == 1 ||  length == 8  || length == 16 || length == 32 || length == 64))
-      fprintf(stderr, "Invalid Int length\n");              //@todo 统一的错误报告模板
+      error("Invalid Int length");              //@todo 统一的错误报告模板
     switch (length) {
       case 1:
       case 8:
@@ -75,6 +78,18 @@ public:
 
   // 整型获取类型名用于 emit llvm
   std::string getName() const override { return "i" + std::to_string(int_w); }
+
+  // 获取 type 的长度
+  int getBitWidth() {return int_w;}
+
+  bool isEqual(baseTypePtr ty) override {
+    std::shared_ptr<IntegerType> intTy = std::dynamic_pointer_cast<IntegerType>(ty);
+    if (!intTy) 
+      return false;
+    if (intTy->getBitWidth() != int_w)
+      return false;
+    return true;
+  }
 };  
 
 // 浮点数数据类型
@@ -88,7 +103,11 @@ public:
   /**
    * 浮点数获取类型名用于 emit llvm
   */
-  std::string getName() const override { return "float"; }  
+  std::string getName() const override { return "float"; }
+
+  bool isEqual(baseTypePtr ty) override {
+    return TypeBase::isFloat(ty);
+  }
 };
 
 // void 数据类型
@@ -97,6 +116,9 @@ public:
   VoidType() {size_ = 0;}
   std::string getName() const override {
     return "void";
+  }
+  bool isEqual(baseTypePtr ty) override {
+    return TypeBase::isVoid(ty);
   }
 };
 
@@ -119,6 +141,15 @@ public:
   int getArraySizeCnt() {return cnt_;}
 
   bool isArray() {return cnt_!=0;}
+
+  bool isEqual(baseTypePtr ty) override {
+    std::shared_ptr<PointerType> ptr = std::dynamic_pointer_cast<PointerType>(ty);
+    if (!ptr) 
+      return false;
+    if (cnt_ != ptr->getArraySizeCnt())
+      return false;
+    return true;
+  }
 };
 
 /**

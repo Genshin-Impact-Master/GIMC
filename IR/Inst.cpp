@@ -204,7 +204,7 @@ bool Br::isUnconditional() {
     return true;
   else if(ops_.size() == 3)
     return false;
-  fprintf(stderr, "Br 指令参数异常\n");
+  error("Br 指令参数异常");
   exit(1);
 }
 
@@ -225,7 +225,7 @@ Fp2Int::Fp2Int(const std::string &name,
                   // 对于类型检查
                   if (!TypeBase::isFloat(fp->getType())) {
                     // 若 fp 的类型非浮点数
-                    fprintf(stderr, "Not a float!\n");
+                    error( "Not a float!");
                     exit(1);
                   }
                   ops_.push_back(fp);
@@ -239,7 +239,7 @@ Int2Fp::Int2Fp(const std::string &name,
                   // 对于类型检查
                   if (!TypeBase::isInteger(i32->getType())) {
                     // 若 i32 的类型非整数
-                    fprintf(stderr, "Not a int!\n");
+                    error( "Not a int!");
                     exit(1);
                   }
                   ops_.push_back(i32);
