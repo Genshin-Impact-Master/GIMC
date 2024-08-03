@@ -50,7 +50,7 @@ void BBlock::correctCheck() {
     error("BBlock 至少包含一条跳转指令 Ret || Br");
   Instruction *inst = node->getOwner();
   // 基本块末尾必须是 ret 或 br 指令
-  if (!dynamic_cast<Br*>(inst) || !dynamic_cast<Ret*>(inst))
+  if (!dynamic_cast<Br*>(inst) && !dynamic_cast<Ret*>(inst))
     error("BBlock 最后一条指令只能为跳转指令 Ret || Br");
   while (!node->isEnd()) {
     node = node->getNext();

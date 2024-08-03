@@ -17,12 +17,12 @@ private:
   std::ofstream armOut;           // 输出 arm 汇编的字符流
 public:
   LirToArm(LirModule lirModule) : lirModule_(lirModule) {
-    armOut("test.s");             // 急切地需要一个 Module 的名字
+    armOut.open("test.s");             // 急切地需要一个 Module 的名字
   }
   
   // @C++_Learn 变长参数模板，实现类似 printf 的功能 (采用递归的方法解析)
   template<typename... Args>
-  void smartOut(std::string &attr, Args... args) {
+  void smartOut(const std::string &attr, Args... args) {
     armOut << "\t" << attr << " ";
     if (sizeof...(args) > 0) {
       armOut << " ";              // 在 attr 和第一个参数间添加空格

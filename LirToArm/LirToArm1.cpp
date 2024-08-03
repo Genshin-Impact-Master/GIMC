@@ -1,11 +1,11 @@
-#include "include/LirToArm/LirToArm1.h"
+#include "../include/LirToArm/LirToArm1.h"
 #include <list>
 
 USING_GIMC_NAMESPACE
 
 void LirToArm::genModule() {
   // 准备工作
-  smartOut(".arch", "armv7");
+  smartOut(".arch", "armv7", "right", "getMeyes");
 }
 
 

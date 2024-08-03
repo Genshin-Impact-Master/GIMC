@@ -290,6 +290,14 @@ public:
   
   // 获取返回值
   Value *getRetValue() {return ops_[0];}
+
+  void correctCheck() override {
+    // 接下来的指令只检测 Type，不再进行 nullptr 检验
+    if (!ops_[0]->getType()->isEqual(getType())) {
+      error("Ret 类型错误");
+    }
+  }
+
 };
 
 /**
@@ -313,6 +321,13 @@ public:
 
   // 获取第二个数据
   Value *getSecond() {return ops_[1];}
+
+  void correctCheck() override {
+    // 检验两个数据类型是否相等
+    if (!ops_[0]->getType()->isEqual(ops_[1]->getType())) {
+      error("Icmp 两个类型不同的操作数不能比较");
+    }
+  }
 };
 
 /**
@@ -335,6 +350,13 @@ public:
 
   // 获取第二个数据
   Value *getSecond() {return ops_[1];}
+
+  void correctCheck() override {
+    // 检验两个数据类型是否相等
+    if (!ops_[0]->getType()->isEqual(ops_[1]->getType())) {
+      error("Fcmp 两个类型不同的操作数不能比较");
+    }
+  }
 };
 
 /**
@@ -376,7 +398,6 @@ public:
   BBlock *getFalseBBlk() {
     if (isUnconditional()) {
       error("无条件跳转，没有 False 基本块");
-      exit(1);
     }
     return dynamic_cast<BBlock*>(ops_[2]);
   }
@@ -403,8 +424,12 @@ public:
   // 获得偏移量的 Value
   Value* getOffsetValue() {return ops_[1];}
 
-  // 获得偏移量，相较于 getOffsetValue 是直接得到一个 int
-  int getOffset() {return dynamic_cast<ConstIntValue*>(ops_[1])->getInt();}
+  void correctCheck() override {
+    // 检验两个数据类型
+    if (!TypeBase::isPointer(ops_[0]->getType())) {
+      error("GEP 指针参数的类型必须为 Pointer");
+    }
+  }
 };
 
 /**
@@ -419,6 +444,12 @@ public:
 
   // 获取待转换的 Float Value
   Value *getFp() {return ops_[0];}
+  void correctCheck() override {
+    // 检验 float 类型
+    if (!TypeBase::isFloat(ops_[0]->getType())) {
+      error("Fp2Int 转换的数据类型必须为 Float");
+    }
+  }
 };
 
 /**
@@ -432,6 +463,11 @@ public:
           Value *i32);
   // 获取待转换的 Int Value
   Value *getInt() {return ops_[0];}
+  void correctCheck() override {
+    if (!TypeBase::isInteger(ops_[0]->getType())) {
+      error("Int2Fp 转换的数据类型必须为 int");
+    }
+  }
 };
 
 class Zext final : public Instruction {
@@ -447,6 +483,11 @@ public:
 
   // 获得零拓展前的 Value
   Value *getProto() {return ops_[0];}
+  void correctCheck() override {
+    if (!TypeBase::isInteger(ops_[0]->getType())) {
+      error("Zext 转换的数据类型必须为 int");
+    }
+  }
 };
 
 class Phi final : public Instruction {
@@ -464,6 +505,12 @@ public:
 
   // 获取 ops
   std::vector<Value*>& getOps() {return ops_;}
+
+  void correctCheck() override {
+    if (!TypeBase::isPointer(ops_[0]->getType())) {
+      error("Phi 指令第一个参数必须为 Alloca 类型");
+    }
+  }
 };
 
 class InitMem final : public Instruction {
@@ -484,6 +531,12 @@ public:
   }
 
   Value* getPtr() {return ops_[0];}
+
+  void correctCheck() override {
+    if (!TypeBase::isPointer(ops_[0]->getType())) {
+      error("InitMem 内存参数的数据类型必须是 pointer");
+    }
+  }
 };
 GIMC_NAMESPACE_END
 

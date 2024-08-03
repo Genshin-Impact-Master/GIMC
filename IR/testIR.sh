@@ -19,7 +19,7 @@ if [ ${skip_make} = false ]; then
   cd ../
   cmake -Bbuild
   cd build
-  make
+  make gimc_ir
   ./gimc_ir
 else 
   echo "Skipping make..."

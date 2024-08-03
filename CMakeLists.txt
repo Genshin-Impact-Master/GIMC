@@ -44,8 +44,7 @@ add_executable(gimc_ir
 
 # 可执行文件 gimc 的依赖文件
 # @todo 基建搭好后使用
-# add_executable(gimc
-# )
+# 可执行文件 gimc_ir_test 的依赖文件
 
 # 编译参数
 # SET( CMAKE_CXX_FLAGS "--std=c++17 -O2 -lm ")

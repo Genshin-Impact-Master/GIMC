@@ -12,6 +12,6 @@ void LirFunction::setFParamsCnt(int floatcnt) {this->fparamsCnt = floatcnt;}
 
 void LirFunction::setReturnType(baseTypePtr returnType) {this->returnType = returnType;}
 
-std::map<LirOperand&, LirInstMove&>& LirFunction::getImmMap() {
+std::map<LirOperand, LirInstMove>& LirFunction::getImmMap() {
     return immMap;
 }

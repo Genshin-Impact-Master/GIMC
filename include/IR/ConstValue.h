@@ -84,10 +84,10 @@ public:
   ConstFloatValue(float value)
     : ConstValue(floatType) {value_.f = value;}
   
-  // 重载 Value 中的 getName
+  // 重载 Value 中的 getName，输出为单精度浮点数
   std::string& getName() override;
 
-  // 重载 Value 中的 getFullName
+  // 重载 Value 中的 getFullName，输出为双精度浮点数
   std::string& getFullName() override;
 
   // 重载 Value 中的 getData
