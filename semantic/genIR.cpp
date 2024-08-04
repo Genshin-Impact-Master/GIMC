@@ -839,7 +839,12 @@ void parseFuncDefine(FuncDefPtr func_def) {
         for (int i = 0; i< params.size(); i++) {
             auto F_param = func_def->getFuncFParams()->getFuncFParam()[i];
             Instruction* param_ptr = builder.createAllocaInst(F_param -> getIdentifier(), F_param -> getType() == BaseType::B_INT ? int32PointerType : floatPointerType);
-            va_list.push_back(new VarNode(F_param -> getType(), F_param -> getIdentifier(), F_param -> isArray(), false, F_param -> getType() == BaseType::B_FLOAT, param_ptr));
+            if (F_param -> isArray()) {
+                vector<int> dims;
+                dims.resize(F_param -> getArrayDim() -> getDim().size());
+                va_list.push_back(new VarNode(F_param -> getType(), F_param -> getIdentifier(), true, false, F_param -> getType() == BaseType::B_FLOAT, param_ptr, dims));
+            }
+            else va_list.push_back(new VarNode(F_param -> getType(), F_param -> getIdentifier(), F_param -> isArray(), false, F_param -> getType() == BaseType::B_FLOAT, param_ptr));
             builder.createStoreInst(&params[i], param_ptr);
         }
         sym_tb.add_func(func_def -> getIdentifier(), func_def -> getReturnType(), func_def -> getFuncFParams(), func);
@@ -1057,7 +1062,7 @@ int main(int argc, char* argv[]){
         module = initialize(builder);
         auto rt = parse(argv[0]);
         parseCompUnit(CompUnitPtr(rt));
-        
+
         builder.emitIRModule(module);
         builder.close();
         return 0;

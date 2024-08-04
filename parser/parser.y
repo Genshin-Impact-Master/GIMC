@@ -417,11 +417,12 @@ FuncFParam: BaseType IDENTIFIER {
     };
 
 ParamArrayDim: LEFT_BRACKETS RIGHT_BRACKETS {
-        $$ = new 
+        $$ = new ParamArrayDim();
         $$ -> addDim(nullptr);
         printf("ParamArrayDim Find\n");
     }
     | ParamArrayDim LEFT_BRACKETS Exp RIGHT_BRACKETS {
+        $$ = $1;
         $$ -> addDim(ExpPtr($3));
         printf("ParamArrayDim Find\n");
     };

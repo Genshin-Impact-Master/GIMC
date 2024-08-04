@@ -570,13 +570,13 @@ static const yytype_int16 yyrline[] =
        0,   124,   124,   129,   134,   140,   147,   153,   161,   168,
      173,   179,   183,   187,   194,   201,   210,   215,   267,   274,
      279,   287,   295,   303,   311,   330,   335,   340,   346,   353,
-     359,   367,   377,   391,   396,   403,   410,   419,   423,   429,
-     434,   440,   445,   450,   455,   460,   473,   482,   490,   496,
-     504,   514,   524,   533,   539,   545,   553,   563,   571,   578,
-     598,   606,   618,   622,   626,   630,   639,   647,   651,   657,
-     678,   683,   690,   694,   703,   712,   723,   726,   735,   746,
-     750,   759,   768,   777,   788,   792,   801,   812,   816,   827,
-     831,   842
+     359,   367,   377,   391,   396,   403,   410,   419,   424,   431,
+     436,   442,   447,   452,   457,   462,   475,   484,   492,   498,
+     506,   516,   526,   535,   541,   547,   555,   565,   573,   580,
+     600,   608,   620,   624,   628,   632,   641,   649,   653,   659,
+     680,   685,   692,   696,   705,   714,   725,   728,   737,   748,
+     752,   761,   770,   779,   790,   794,   803,   814,   818,   829,
+     833,   844
 };
 #endif
 
@@ -1652,92 +1652,94 @@ yyreduce:
   case 37: /* ParamArrayDim: LEFT_BRACKETS RIGHT_BRACKETS  */
 #line 419 "parser.y"
                                             {
+        (yyval.paramArrayDim) = new ParamArrayDim();
         (yyval.paramArrayDim) -> addDim(nullptr);
         printf("ParamArrayDim Find\n");
     }
-#line 1659 "parser.cpp"
+#line 1660 "parser.cpp"
     break;
 
   case 38: /* ParamArrayDim: ParamArrayDim LEFT_BRACKETS Exp RIGHT_BRACKETS  */
-#line 423 "parser.y"
+#line 424 "parser.y"
                                                      {
+        (yyval.paramArrayDim) = (yyvsp[-3].paramArrayDim);
         (yyval.paramArrayDim) -> addDim(ExpPtr((yyvsp[-1].exp)));
         printf("ParamArrayDim Find\n");
     }
-#line 1668 "parser.cpp"
+#line 1670 "parser.cpp"
     break;
 
   case 39: /* Block: LEFT_BRACES RIGHT_BRACES  */
-#line 429 "parser.y"
+#line 431 "parser.y"
                                 {
         (yyval.block) = new Block();
         (yyval.block) -> addBlockItem(BlockItemsPtr(nullptr));
         printf("Empty Block Find\n");
     }
-#line 1678 "parser.cpp"
+#line 1680 "parser.cpp"
     break;
 
   case 40: /* Block: LEFT_BRACES BlockItems RIGHT_BRACES  */
-#line 434 "parser.y"
+#line 436 "parser.y"
                                          {
         (yyval.block) = new Block();
         (yyval.block) -> addBlockItem(BlockItemsPtr((yyvsp[-1].blockItems)));
         printf("Block Find\n");
     }
-#line 1688 "parser.cpp"
+#line 1690 "parser.cpp"
     break;
 
   case 41: /* BlockItems: Decl  */
-#line 440 "parser.y"
+#line 442 "parser.y"
                  {
         (yyval.blockItems) = new BlockItems();
         (yyval.blockItems) -> addDecl(DeclPtr((yyvsp[0].decl)));
         printf("BlockItems Find\n");
     }
-#line 1698 "parser.cpp"
+#line 1700 "parser.cpp"
     break;
 
   case 42: /* BlockItems: Stmt  */
-#line 445 "parser.y"
+#line 447 "parser.y"
            {
         (yyval.blockItems) = new BlockItems();
         (yyval.blockItems) -> addStmt(StmtPtr((yyvsp[0].stmt)));
         printf("BlockItems Find\n");
     }
-#line 1708 "parser.cpp"
+#line 1710 "parser.cpp"
     break;
 
   case 43: /* BlockItems: BlockItems Decl  */
-#line 450 "parser.y"
+#line 452 "parser.y"
                       {
         (yyval.blockItems) = (yyvsp[-1].blockItems);
         (yyval.blockItems) -> addDecl(DeclPtr((yyvsp[0].decl)));
         printf("BlockItems Find\n");
     }
-#line 1718 "parser.cpp"
+#line 1720 "parser.cpp"
     break;
 
   case 44: /* BlockItems: BlockItems Stmt  */
-#line 455 "parser.y"
+#line 457 "parser.y"
                       {
         (yyval.blockItems) = (yyvsp[-1].blockItems);
         (yyval.blockItems) -> addStmt(StmtPtr((yyvsp[0].stmt)));
         printf("BlockItems Find\n");
     }
-#line 1728 "parser.cpp"
+#line 1730 "parser.cpp"
     break;
 
   case 45: /* BlockItems: BlockItems SEMICOLON  */
-#line 460 "parser.y"
+#line 462 "parser.y"
                            {
         (yyval.blockItems) = (yyvsp[-1].blockItems);
         printf("BlockItems Find\n");
     }
-#line 1737 "parser.cpp"
+#line 1739 "parser.cpp"
     break;
 
   case 46: /* Stmt: LVal ASSIGN Exp SEMICOLON  */
-#line 473 "parser.y"
+#line 475 "parser.y"
                                 {
         AssignStmt* assign = new AssignStmt();
         assign -> addLVal(LValPtr((yyvsp[-3].lVal)));
@@ -1747,11 +1749,11 @@ yyreduce:
         (yyval.stmt) -> _node_type = NodeType::NT_STMT;
         printf("Assign Stmt Find\n");
     }
-#line 1751 "parser.cpp"
+#line 1753 "parser.cpp"
     break;
 
   case 47: /* Stmt: Exp SEMICOLON  */
-#line 482 "parser.y"
+#line 484 "parser.y"
                     {
         ExpStmt* exp = new ExpStmt();
         exp -> addExp(ExpPtr((yyvsp[-1].exp)));
@@ -1760,22 +1762,22 @@ yyreduce:
         (yyval.stmt) -> _node_type = NodeType::NT_STMT;
         printf("Exp Stmt Find\n");
     }
-#line 1764 "parser.cpp"
+#line 1766 "parser.cpp"
     break;
 
   case 48: /* Stmt: SEMICOLON  */
-#line 490 "parser.y"
+#line 492 "parser.y"
                 {
         (yyval.stmt) = new Stmt();
         (yyval.stmt) -> addType(StmtType::ST_BLANK);
         (yyval.stmt) -> _node_type = NodeType::NT_STMT;
         printf("Blank Stmt Find\n");
     }
-#line 1775 "parser.cpp"
+#line 1777 "parser.cpp"
     break;
 
   case 49: /* Stmt: Block  */
-#line 496 "parser.y"
+#line 498 "parser.y"
             {
         BlockStmt* block = new BlockStmt();
         block -> addBlock(BlockPtr((yyvsp[0].block)));
@@ -1784,11 +1786,11 @@ yyreduce:
         (yyval.stmt) -> _node_type = NodeType::NT_STMT;
         printf("Block Stmt Find\n");
     }
-#line 1788 "parser.cpp"
+#line 1790 "parser.cpp"
     break;
 
   case 50: /* Stmt: IF LEFT_PARENTHESES LOrExp RIGHT_PARENTHESES Stmt  */
-#line 504 "parser.y"
+#line 506 "parser.y"
                                                         {
         IfElseStmt* ifelsestmt = new IfElseStmt();
         ifelsestmt -> addCond(ExpPtr((yyvsp[-2].lOrExp)));
@@ -1799,11 +1801,11 @@ yyreduce:
         (yyval.stmt) -> _node_type = NodeType::NT_STMT;
         printf("If Stmt Find\n");
     }
-#line 1803 "parser.cpp"
+#line 1805 "parser.cpp"
     break;
 
   case 51: /* Stmt: IF LEFT_PARENTHESES LOrExp RIGHT_PARENTHESES Stmt ELSE Stmt  */
-#line 514 "parser.y"
+#line 516 "parser.y"
                                                                   {
         IfElseStmt* ifelsestmt = new IfElseStmt();
         ifelsestmt -> addCond(ExpPtr((yyvsp[-4].lOrExp)));
@@ -1814,11 +1816,11 @@ yyreduce:
         (yyval.stmt) -> _node_type = NodeType::NT_STMT;
         printf("If Else Stmt Find\n");
     }
-#line 1818 "parser.cpp"
+#line 1820 "parser.cpp"
     break;
 
   case 52: /* Stmt: WHILE LEFT_PARENTHESES LOrExp RIGHT_PARENTHESES Stmt  */
-#line 524 "parser.y"
+#line 526 "parser.y"
                                                            {
         WhileStmt* whilestmt = new WhileStmt();
         whilestmt -> addCond(ExpPtr((yyvsp[-2].lOrExp)));
@@ -1828,33 +1830,33 @@ yyreduce:
         (yyval.stmt) -> _node_type = NodeType::NT_STMT;
         printf("While Stmt Find\n");
     }
-#line 1832 "parser.cpp"
+#line 1834 "parser.cpp"
     break;
 
   case 53: /* Stmt: BREAK SEMICOLON  */
-#line 533 "parser.y"
+#line 535 "parser.y"
                      {
         (yyval.stmt) = new Stmt();
         (yyval.stmt) -> addType(StmtType::ST_BREAK);
         (yyval.stmt) -> _node_type = NodeType::NT_STMT;
         printf("Break Stmt Find\n");
     }
-#line 1843 "parser.cpp"
+#line 1845 "parser.cpp"
     break;
 
   case 54: /* Stmt: CONTINUE SEMICOLON  */
-#line 539 "parser.y"
+#line 541 "parser.y"
                          {
         (yyval.stmt) = new Stmt();
         (yyval.stmt) -> addType(StmtType::ST_CONTINUE);
         (yyval.stmt) -> _node_type = NodeType::NT_STMT;
         printf("Continue Stmt Find\n");
     }
-#line 1854 "parser.cpp"
+#line 1856 "parser.cpp"
     break;
 
   case 55: /* Stmt: RETURN SEMICOLON  */
-#line 545 "parser.y"
+#line 547 "parser.y"
                        {
         ReturnStmt* returnstmt = new ReturnStmt();
         returnstmt -> addExp(nullptr);
@@ -1863,11 +1865,11 @@ yyreduce:
         (yyval.stmt) -> _node_type = NodeType::NT_STMT;
         printf("Return Stmt Find\n");
     }
-#line 1867 "parser.cpp"
+#line 1869 "parser.cpp"
     break;
 
   case 56: /* Stmt: RETURN Exp SEMICOLON  */
-#line 553 "parser.y"
+#line 555 "parser.y"
                            {
         ReturnStmt* returnstmt = new ReturnStmt();
         returnstmt -> addExp(ExpPtr((yyvsp[-1].exp)));
@@ -1876,20 +1878,20 @@ yyreduce:
         (yyval.stmt) -> _node_type = NodeType::NT_STMT;
         printf("Return Stmt Find\n");
     }
-#line 1880 "parser.cpp"
+#line 1882 "parser.cpp"
     break;
 
   case 57: /* Exp: AddExp  */
-#line 563 "parser.y"
+#line 565 "parser.y"
             {
         (yyval.exp) = (yyvsp[0].addExp);
         printf("Exp Find\n");
     }
-#line 1889 "parser.cpp"
+#line 1891 "parser.cpp"
     break;
 
   case 58: /* LVal: IDENTIFIER  */
-#line 571 "parser.y"
+#line 573 "parser.y"
                  {
         (yyval.lVal) = new LVal();
         (yyval.lVal) -> addIdentifier((yyvsp[0].identifier));
@@ -1897,11 +1899,11 @@ yyreduce:
         (yyval.lVal) -> addType(ExpType::ET_LVAL);
         printf("LVal Find\n");
     }
-#line 1901 "parser.cpp"
+#line 1903 "parser.cpp"
     break;
 
   case 59: /* LVal: LVal LEFT_BRACKETS Exp RIGHT_BRACKETS  */
-#line 578 "parser.y"
+#line 580 "parser.y"
                                             {
         (yyval.lVal) = (yyvsp[-3].lVal);
         (yyval.lVal) -> addIsArray(true);
@@ -1909,11 +1911,11 @@ yyreduce:
         (yyval.lVal) -> addType(ExpType::ET_LVAL);
         printf("LVal Find\n");
     }
-#line 1913 "parser.cpp"
+#line 1915 "parser.cpp"
     break;
 
   case 60: /* Number: INTVAL  */
-#line 598 "parser.y"
+#line 600 "parser.y"
                 {
         (yyval.number) = new Number(0, 0, false);
         (yyval.number) -> addIntVal((yyvsp[0].intVal));
@@ -1922,11 +1924,11 @@ yyreduce:
         (yyval.number) -> addType(ExpType::ET_INT);
         printf("%d, %f, Number Find\n", (yyval.number) -> getIntVal(), (yyval.number) -> getFloatVal());
     }
-#line 1926 "parser.cpp"
+#line 1928 "parser.cpp"
     break;
 
   case 61: /* Number: FLOATVAL  */
-#line 606 "parser.y"
+#line 608 "parser.y"
                {
         (yyval.number) = new Number(0, 0, false);
         (yyval.number) -> addFloatVal((yyvsp[0].floatVal));
@@ -1936,38 +1938,38 @@ yyreduce:
         printf("%d, %f, Number Find\n", (yyval.number) -> getIntVal(), (yyval.number) -> getFloatVal());
         
     }
-#line 1940 "parser.cpp"
+#line 1942 "parser.cpp"
     break;
 
   case 62: /* UnaryExp: LEFT_PARENTHESES Exp RIGHT_PARENTHESES  */
-#line 618 "parser.y"
+#line 620 "parser.y"
                                                  {
         (yyval.unaryExp) = (yyvsp[-1].exp);
         printf("UnaryExp Find\n");
     }
-#line 1949 "parser.cpp"
+#line 1951 "parser.cpp"
     break;
 
   case 63: /* UnaryExp: LVal  */
-#line 622 "parser.y"
+#line 624 "parser.y"
            {
         (yyval.unaryExp) = (Exp*)((yyvsp[0].lVal));
         printf("UnaryExp Find\n");
     }
-#line 1958 "parser.cpp"
+#line 1960 "parser.cpp"
     break;
 
   case 64: /* UnaryExp: Number  */
-#line 626 "parser.y"
+#line 628 "parser.y"
              {
         (yyval.unaryExp) = (Exp*)((yyvsp[0].number));
         printf("UnaryExp Find\n");
     }
-#line 1967 "parser.cpp"
+#line 1969 "parser.cpp"
     break;
 
   case 65: /* UnaryExp: IDENTIFIER LEFT_PARENTHESES RIGHT_PARENTHESES  */
-#line 630 "parser.y"
+#line 632 "parser.y"
                                                     {
         auto tmp = new FuncCall();
         tmp -> addIdentifier((yyvsp[-2].identifier));
@@ -1977,11 +1979,11 @@ yyreduce:
         
         printf("UnaryExp Find\n");
     }
-#line 1981 "parser.cpp"
+#line 1983 "parser.cpp"
     break;
 
   case 66: /* UnaryExp: IDENTIFIER LEFT_PARENTHESES FuncRParams RIGHT_PARENTHESES  */
-#line 639 "parser.y"
+#line 641 "parser.y"
                                                                {
         auto tmp = new FuncCall();
         tmp -> addIdentifier((yyvsp[-3].identifier));
@@ -1990,70 +1992,70 @@ yyreduce:
         (yyval.unaryExp) -> addType(ExpType::ET_FUNC); 
         printf("UnaryExp Find\n");
     }
-#line 1994 "parser.cpp"
+#line 1996 "parser.cpp"
     break;
 
   case 67: /* UnaryExp: ADD UnaryExp  */
-#line 647 "parser.y"
+#line 649 "parser.y"
                   {
         (yyval.unaryExp) = (yyvsp[0].unaryExp);
         printf("UnaryExp Find\n");
     }
-#line 2003 "parser.cpp"
+#line 2005 "parser.cpp"
     break;
 
   case 68: /* UnaryExp: SUB UnaryExp  */
-#line 651 "parser.y"
+#line 653 "parser.y"
                   {
         (yyval.unaryExp) = (yyvsp[0].unaryExp);
         (yyval.unaryExp) -> addNeg();
         printf("UnaryExp Find\n");
         
     }
-#line 2014 "parser.cpp"
+#line 2016 "parser.cpp"
     break;
 
   case 69: /* UnaryExp: NOT UnaryExp  */
-#line 657 "parser.y"
+#line 659 "parser.y"
                   {
         (yyval.unaryExp) = (yyvsp[0].unaryExp);
         (yyval.unaryExp) -> addNot();
         printf("UnaryExp Find\n");
     }
-#line 2024 "parser.cpp"
+#line 2026 "parser.cpp"
     break;
 
   case 70: /* FuncRParams: Exp  */
-#line 678 "parser.y"
+#line 680 "parser.y"
                  {
         (yyval.funcRParams) = new FuncRParams();
         (yyval.funcRParams) -> addArgs(ExpPtr((yyvsp[0].exp)));
         printf("FuncRParams Find\n");
     }
-#line 2034 "parser.cpp"
+#line 2036 "parser.cpp"
     break;
 
   case 71: /* FuncRParams: FuncRParams COMMA Exp  */
-#line 683 "parser.y"
+#line 685 "parser.y"
                             {
         (yyval.funcRParams) = (yyvsp[-2].funcRParams);
         (yyval.funcRParams) -> addArgs(ExpPtr((yyvsp[0].exp)));
         printf("FuncRParams Find\n");
     }
-#line 2044 "parser.cpp"
+#line 2046 "parser.cpp"
     break;
 
   case 72: /* MulExp: UnaryExp  */
-#line 690 "parser.y"
+#line 692 "parser.y"
                  {
         (yyval.mulExp) = (yyvsp[0].unaryExp);
         printf("MulExp Find\n");
     }
-#line 2053 "parser.cpp"
+#line 2055 "parser.cpp"
     break;
 
   case 73: /* MulExp: MulExp MUL UnaryExp  */
-#line 694 "parser.y"
+#line 696 "parser.y"
                           {
         auto tmp = new BinaryExp();
         tmp -> addExp1(ExpPtr((yyvsp[-2].mulExp)));
@@ -2063,11 +2065,11 @@ yyreduce:
         (yyval.mulExp) = (Exp*)(tmp);
         printf("MulExp Find\n");
     }
-#line 2067 "parser.cpp"
+#line 2069 "parser.cpp"
     break;
 
   case 74: /* MulExp: MulExp DIV UnaryExp  */
-#line 703 "parser.y"
+#line 705 "parser.y"
                           {
         auto tmp = new BinaryExp();
         tmp -> addExp1(ExpPtr((yyvsp[-2].mulExp)));
@@ -2077,11 +2079,11 @@ yyreduce:
         (yyval.mulExp) -> addType(ExpType::ET_BIN);
         printf("MulExp Find\n");
     }
-#line 2081 "parser.cpp"
+#line 2083 "parser.cpp"
     break;
 
   case 75: /* MulExp: MulExp MOD UnaryExp  */
-#line 712 "parser.y"
+#line 714 "parser.y"
                           {
         auto tmp = new BinaryExp();
         tmp -> addExp1(ExpPtr((yyvsp[-2].mulExp)));
@@ -2091,19 +2093,19 @@ yyreduce:
         (yyval.mulExp) -> addType(ExpType::ET_BIN);
         printf("MulExp Find\n");
     }
-#line 2095 "parser.cpp"
+#line 2097 "parser.cpp"
     break;
 
   case 76: /* AddExp: MulExp  */
-#line 723 "parser.y"
+#line 725 "parser.y"
                {
          (yyval.addExp) = (yyvsp[0].mulExp);
     }
-#line 2103 "parser.cpp"
+#line 2105 "parser.cpp"
     break;
 
   case 77: /* AddExp: AddExp ADD MulExp  */
-#line 726 "parser.y"
+#line 728 "parser.y"
                         {
         auto tmp = new BinaryExp();
         tmp -> addExp1(ExpPtr((yyvsp[-2].addExp)));
@@ -2113,11 +2115,11 @@ yyreduce:
         (yyval.addExp) -> addType(ExpType::ET_BIN);
         printf("AddExp Find\n");
     }
-#line 2117 "parser.cpp"
+#line 2119 "parser.cpp"
     break;
 
   case 78: /* AddExp: AddExp SUB MulExp  */
-#line 735 "parser.y"
+#line 737 "parser.y"
                         {
         auto tmp = new BinaryExp();
         tmp -> addExp1(ExpPtr((yyvsp[-2].addExp)));
@@ -2127,20 +2129,20 @@ yyreduce:
         (yyval.addExp) -> addType(ExpType::ET_BIN);
         printf("AddExp Find\n");
     }
-#line 2131 "parser.cpp"
+#line 2133 "parser.cpp"
     break;
 
   case 79: /* RelExp: AddExp  */
-#line 746 "parser.y"
+#line 748 "parser.y"
                {
         (yyval.relExp) = (yyvsp[0].addExp);
         printf("RelExp Find\n");
     }
-#line 2140 "parser.cpp"
+#line 2142 "parser.cpp"
     break;
 
   case 80: /* RelExp: RelExp LT AddExp  */
-#line 750 "parser.y"
+#line 752 "parser.y"
                        {
         auto tmp = new BinaryExp();
         tmp -> addExp1(ExpPtr((yyvsp[-2].relExp)));
@@ -2150,11 +2152,11 @@ yyreduce:
         (yyval.relExp) -> addType(ExpType::ET_BIN);
         printf("RelExp Find\n");
     }
-#line 2154 "parser.cpp"
+#line 2156 "parser.cpp"
     break;
 
   case 81: /* RelExp: RelExp GT AddExp  */
-#line 759 "parser.y"
+#line 761 "parser.y"
                        {
         auto tmp = new BinaryExp();
         tmp -> addExp1(ExpPtr((yyvsp[-2].relExp)));
@@ -2164,11 +2166,11 @@ yyreduce:
         (yyval.relExp) -> addType(ExpType::ET_BIN);
         printf("RelExp Find\n");
     }
-#line 2168 "parser.cpp"
+#line 2170 "parser.cpp"
     break;
 
   case 82: /* RelExp: RelExp LTE AddExp  */
-#line 768 "parser.y"
+#line 770 "parser.y"
                         {
         auto tmp = new BinaryExp();
         tmp -> addExp1(ExpPtr((yyvsp[-2].relExp)));
@@ -2178,11 +2180,11 @@ yyreduce:
         (yyval.relExp) -> addType(ExpType::ET_BIN);
         printf("RelExp Find\n");
     }
-#line 2182 "parser.cpp"
+#line 2184 "parser.cpp"
     break;
 
   case 83: /* RelExp: RelExp GTE AddExp  */
-#line 777 "parser.y"
+#line 779 "parser.y"
                         {
         auto tmp = new BinaryExp();
         tmp -> addExp1(ExpPtr((yyvsp[-2].relExp)));
@@ -2192,20 +2194,20 @@ yyreduce:
         (yyval.relExp) -> addType(ExpType::ET_BIN);
         printf("RelExp Find\n");
     }
-#line 2196 "parser.cpp"
+#line 2198 "parser.cpp"
     break;
 
   case 84: /* EqExp: RelExp  */
-#line 788 "parser.y"
+#line 790 "parser.y"
               {
         (yyval.eqExp) = (yyvsp[0].relExp);
         printf("EqExp Find\n");
     }
-#line 2205 "parser.cpp"
+#line 2207 "parser.cpp"
     break;
 
   case 85: /* EqExp: EqExp EQ RelExp  */
-#line 792 "parser.y"
+#line 794 "parser.y"
                       {
         auto tmp = new BinaryExp();
         tmp -> addExp1(ExpPtr((yyvsp[-2].eqExp)));
@@ -2215,11 +2217,11 @@ yyreduce:
         (yyval.eqExp) -> addType(ExpType::ET_BIN);
         printf("EqExp Find\n");
     }
-#line 2219 "parser.cpp"
+#line 2221 "parser.cpp"
     break;
 
   case 86: /* EqExp: EqExp NEQ RelExp  */
-#line 801 "parser.y"
+#line 803 "parser.y"
                        {
         auto tmp = new BinaryExp();
         tmp -> addExp1(ExpPtr((yyvsp[-2].eqExp)));
@@ -2229,20 +2231,20 @@ yyreduce:
         (yyval.eqExp) -> addType(ExpType::ET_BIN);
         printf("EqExp Find\n");
     }
-#line 2233 "parser.cpp"
+#line 2235 "parser.cpp"
     break;
 
   case 87: /* LAndExp: EqExp  */
-#line 812 "parser.y"
+#line 814 "parser.y"
                {
         (yyval.lAndExp) = (yyvsp[0].eqExp);
         printf("LAndExp Find\n");
     }
-#line 2242 "parser.cpp"
+#line 2244 "parser.cpp"
     break;
 
   case 88: /* LAndExp: LAndExp AND EqExp  */
-#line 816 "parser.y"
+#line 818 "parser.y"
                         {
         auto tmp = new BinaryExp();
         tmp -> addExp1(ExpPtr((yyvsp[-2].lAndExp)));
@@ -2252,20 +2254,20 @@ yyreduce:
         (yyval.lAndExp) -> addType(ExpType::ET_BIN);
         printf("LAndExp Find\n");
     }
-#line 2256 "parser.cpp"
+#line 2258 "parser.cpp"
     break;
 
   case 89: /* LOrExp: LAndExp  */
-#line 827 "parser.y"
+#line 829 "parser.y"
                 {
         (yyval.lOrExp) = (yyvsp[0].lAndExp);
         printf("LOrExp Find\n");
     }
-#line 2265 "parser.cpp"
+#line 2267 "parser.cpp"
     break;
 
   case 90: /* LOrExp: LOrExp OR LAndExp  */
-#line 831 "parser.y"
+#line 833 "parser.y"
                         {
         auto tmp = new BinaryExp();
         tmp -> addExp1(ExpPtr((yyvsp[-2].lOrExp)));
@@ -2275,21 +2277,21 @@ yyreduce:
         (yyval.lOrExp) -> addType(ExpType::ET_BIN);
         printf("LOrExp Find\n");
     }
-#line 2279 "parser.cpp"
+#line 2281 "parser.cpp"
     break;
 
   case 91: /* ConstExp: AddExp  */
-#line 842 "parser.y"
+#line 844 "parser.y"
                  {
         (yyval.constExp) = new ConstExp();
         (yyval.constExp) -> addExp(ExpPtr((yyvsp[0].addExp)));
         printf("ConstExp Find\n");
     }
-#line 2289 "parser.cpp"
+#line 2291 "parser.cpp"
     break;
 
 
-#line 2293 "parser.cpp"
+#line 2295 "parser.cpp"
 
       default: break;
     }
@@ -2482,7 +2484,7 @@ yyreturnlab:
   return yyresult;
 }
 
-#line 847 "parser.y"
+#line 849 "parser.y"
 
 
 
