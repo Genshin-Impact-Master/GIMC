@@ -36,14 +36,12 @@ add_executable(gimc_arm
   ../include/IR/IRBuilder.h
   ../include/IR/libsysy.h
   ../include/IR/Module.h
-  ../include/IR/tacIRBuilder.h
   ../include/IR/Type.h
   ../include/IR/Value.h
   ../Config.cpp
   example.cpp
   ../IR/BBlock.cpp
   ../IR/ConstValue.cpp
-  ../IR/example.cpp
   ../IR/Function.cpp
   ../IR/GlobalVar.cpp
   ../IR/Inst.cpp
@@ -51,7 +49,6 @@ add_executable(gimc_arm
   ../IR/lib.ll
   ../IR/libsysy.c
   ../IR/Module.cpp
-  ../IR/tacIRBuilder.cpp
   ../IR/testIR.sh
   ../IR/Type.cpp
   ../IR/Value.cpp
