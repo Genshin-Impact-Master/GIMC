@@ -190,6 +190,7 @@ Instruction* IRBuilder::createGEPInst(const std::string &name, Value *ptr, Value
   std::shared_ptr<PointerType> type = std::static_pointer_cast<PointerType>(ptr->getType());
   GEP *inst = new GEP(name, type->getBaseType(), parent, ptr, offset);
   parent->addInst(inst);
+
   return inst;
 }
 

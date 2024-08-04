@@ -6,7 +6,7 @@ int main() {
   LirModule module = LirModule();
   // LirToArm armCode(module);
   // armCode.genModule();
-  std::map<std::string, GlobalVar*> gs = module.getGlobalvars();
+  std::map<std::string, GlobalVar*> &gs = module.getGlobalvars();
   std::vector<Value*> shit_a;
   shit_a.push_back(new ConstIntValue(123));
   shit_a.push_back(new ConstIntValue(13));
@@ -20,8 +20,11 @@ int main() {
   baseTypePtr ty2 = std::make_shared<PointerType>(floatType, 3);
   GlobalVar a = GlobalVar("a", ty1, shit_a);
   GlobalVar b = GlobalVar("b", ty2, shit_b);
-  gs.insert(std::pair<std::string, GlobalVar *>("a", &a));
-  gs.insert(std::pair<std::string, GlobalVar *>("b", &b));
+  gs["a"] = &a;
+  gs["b"] = &b;
+  std::cout << gs.size() << std::endl;
+  // gs.insert(std::pair<std::string, GlobalVar *>("a", &a));
+  // gs.insert(std::pair<std::string, GlobalVar *>("b", &b));
   LirToArm armCode = LirToArm(module);
   armCode.Output_Arm_global();
 }

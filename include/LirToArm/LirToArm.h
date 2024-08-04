@@ -1,6 +1,6 @@
 #ifndef TO_ARM_H
 #define TO_ARM_H
-#include "..\LIR\codegen\ToLir.h"
+#include "../LIR/codegen/ToLir.h"
 #include <fstream>
 #include <string>
 #include <iostream>
@@ -11,7 +11,7 @@ USING_GIMC_NAMESPACE
 class LirToArm
 {
     private:
-        LirModule lirModule_;    //LirModule 包含了所有LIR的指令和数据
+        LirModule lirModule_;    //LirModule 包含了所有 LIR 的指令和数据
         std::ofstream armOut;           // 输出 arm 汇编的字符流
     public:
         LirToArm(LirModule lirModule) : lirModule_(lirModule) {
@@ -36,16 +36,15 @@ class LirToArm
       appendToStream(args...);
     }
   }
-        void Output_Arm_global()       //输出Arm指令的全局变量部分
+        void Output_Arm_global()       //输出 Arm 指令的全局变量部分
         {   
-            for(std::map<std::string,GlobalVar*>::iterator iter = lirModule_.getGlobalvars().begin(); 
-            iter != lirModule_.getGlobalvars().end(); iter++)    //iter迭代所有的全局变量
+            for(auto iter : lirModule_.getGlobalvars())    //iter 迭代所有的全局变量
             {
-                std::cout<<iter->first<<":"<<"\n";  
-                armOut << iter->first << ":" << "\n";
-                std::vector<Value*> &s = iter->second->getGlobalVarValues();
+                std::cout<<iter.first<<":"<<"\n";  
+                armOut << iter.first << ":" << "\n";
+                std::vector<Value*> &s = iter.second->getGlobalVarValues();
 
-                if(TypeBase::isInteger(iter->second->getValueType()))
+                if(TypeBase::isInteger(iter.second->getValueType()))
                 {
                     for(auto iter_value:s)
                     {   
@@ -53,11 +52,11 @@ class LirToArm
                         std::cout<<".long"<<"\t";
                         std::cout<<iter_value->getName();
                         std::cout<<"\n";
-                        smartOut(".long", iter_value->getName(), "shit");
+                        smartOut(".long", iter_value->getName());
                     }
                 }
                 
-                if(TypeBase::isFloat(iter->second->getValueType()))
+                if(TypeBase::isFloat(iter.second->getValueType()))
                 {
                     for(auto iter_value:s)
                     {   
@@ -65,6 +64,7 @@ class LirToArm
                         std::cout<<".long"<<"\t";
                         std::cout<<iter_value->getName();
                         std::cout<<"\n";
+                        smartOut(".long", iter_value->getName());
                     }
                 }
             }
