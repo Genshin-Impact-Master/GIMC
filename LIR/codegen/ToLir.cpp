@@ -23,6 +23,7 @@ LirModule ToLir::moduleGen() {
         LirFunction lirFunc = LirFunction(func->getName(), paramsCnt);
         std::set<int> idx = std::set<int>();
         
+        //  处理 Function 参数
         for(int i = 0; i < paramsCnt; i++) {
             Value param = funcParams[i];
             if(!TypeBase::isFloat(param.getType())) {
@@ -68,7 +69,6 @@ LirModule ToLir::moduleGen() {
                 BBlock *block = blockNode->getOwner();
                 LirBlock lirBlock = LirBlock(&lirFunc, block->getName() + "_" + func->getName());
                 blockMap[block] = &lirBlock;
-                blockNode = blockNode->getNext();
             }
         }
 
@@ -176,16 +176,66 @@ void ToLir::instResolve(Function *func, BBlock *block) {
                 lhsReg = ToLir::operandResolve(lhs, lirFunc, lirBlock);
                 rhsReg = ToLir::operandResolve(rhs, lirFunc, lirBlock);
                 dstReg = ToLir::operandResolve(i, lirFunc, lirBlock);
-                lirInstKind = LirInstKind::Mul;
+                lirInstKind = LirInstKind::Div;
                 LirBinary lirBin = LirBinary(lirInstKind, lirBlock, lhsReg, rhsReg, dstReg);
                 lirBlock->addInst(dynamic_cast<LirInst*>(&lirBin));
                 break;
             
+            case InstKind::Addf:     
+                if(dynamic_cast<ConstValue*>(lhs)) {
+                    rhsReg = ToLir::operandResolve(lhs, lirFunc, lirBlock);
+                    lhsReg = ToLir::operandResolve(rhs, lirFunc, lirBlock);
+                }
+                else {
+                    lhsReg = ToLir::operandResolve(lhs, lirFunc, lirBlock);
+                    rhsReg = ToLir::operandResolve(rhs, lirFunc, lirBlock);
+                }
+                dstReg = ToLir::operandResolve(i, lirFunc, lirBlock);
+                lirInstKind = LirInstKind::Addf;
+                LirBinary lirBin = LirBinary(lirInstKind, lirBlock, lhsReg, rhsReg, dstReg);
+                lirBlock->addInst(dynamic_cast<LirInst*>(&lirBin));
+                break;
             
+            case InstKind::Subf:
+                if(dynamic_cast<ConstValue*>(lhs)) {
+                    rhsReg = ToLir::operandResolve(lhs, lirFunc, lirBlock);
+                    lhsReg = ToLir::operandResolve(rhs, lirFunc, lirBlock);
+                    lirInstKind = LirInstKind::Rsbf;//逆向减法
+                }else {
+                    lhsReg = ToLir::operandResolve(lhs, lirFunc, lirBlock);
+                    rhsReg = ToLir::operandResolve(rhs, lirFunc, lirBlock);
+                    lirInstKind =LirInstKind::Subf;
+                }
+                dstReg = ToLir::operandResolve(i, lirFunc, lirBlock);
+                LirBinary lirBin = LirBinary(lirInstKind, lirBlock, lhsReg, rhsReg, dstReg);
+                lirBlock->addInst(dynamic_cast<LirInst*>(&lirBin));
+                break;
             
+            case InstKind::Mulf:
+                if(dynamic_cast<ConstValue*>(lhs)) {
+                    rhsReg = ToLir::operandResolve(lhs, lirFunc, lirBlock);
+                    lhsReg = ToLir::operandResolve(rhs, lirFunc, lirBlock);
+                }
+                else {
+                    lhsReg = ToLir::operandResolve(lhs, lirFunc, lirBlock);
+                    rhsReg = ToLir::operandResolve(rhs, lirFunc, lirBlock);
+                }
+                dstReg = ToLir::operandResolve(i, lirFunc, lirBlock);
+                lirInstKind = LirInstKind::Mulf;
+                LirBinary lirBin = LirBinary(lirInstKind, lirBlock, lhsReg, rhsReg, dstReg);
+                lirBlock->addInst(dynamic_cast<LirInst*>(&lirBin));
+                break;
             
-            
-            
+            case InstKind::Divf:
+                lhsReg = ToLir::operandResolve(lhs, lirFunc, lirBlock);
+                rhsReg = ToLir::operandResolve(rhs, lirFunc, lirBlock);
+                dstReg = ToLir::operandResolve(i, lirFunc, lirBlock);
+                lirInstKind = LirInstKind::Divf;
+                LirBinary lirBin = LirBinary(lirInstKind, lirBlock, lhsReg, rhsReg, dstReg);
+                lirBlock->addInst(dynamic_cast<LirInst*>(&lirBin));
+                break;
+
+
             default:
                 break;
             }
