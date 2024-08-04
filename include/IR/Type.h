@@ -23,7 +23,8 @@ public:
   virtual std::string getName() const = 0;    //@C++_Learn 纯虚函数，子类必须实现  
   virtual std::string getDetailName() {return getName();}
 
-  int getSize() {return size_;}
+  // 获取类型占据的空间，若为 PointerType 则返回其指向数组大小
+  virtual int getSize() {return size_;}
 
   bool static isInteger(baseTypePtr type) {
     return std::dynamic_pointer_cast<IntegerType>(type) != nullptr;   // @C++_Learn 智能指针转换
@@ -42,7 +43,7 @@ public:
   }
 
   // 判断类型是否相等
-  virtual bool isEqual(baseTypePtr ty) = 0;
+  virtual bool isEqual(baseTypePtr ty) = 0; 
 };  
 
 // 整数数据类型
@@ -149,6 +150,15 @@ public:
     if (cnt_ != ptr->getArraySizeCnt())
       return false;
     return true;
+  }
+
+  int getSize() override {
+    if (size_ == 0) {
+      // 说明为非数组变量，pointer 所指向的大小即为 baseType 的大小
+      return base_->getSize();
+    }
+    size_ = getBaseType()->getSize() * cnt_;
+    return size_;
   }
 };
 
