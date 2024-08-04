@@ -140,6 +140,8 @@ public:
    */
   Instruction* createGEPInst(const std::string &name, Value *ptr, Value *offset, BBlock *parent = nullptr);
   Instruction* createGEPInst(Value *ptr, Value *offset, BBlock *parent  = nullptr);
+  Instruction* createGEPInst(const std::string &name, baseTypePtr type, Value *ptr, Value *offset, BBlock *parent = nullptr);
+  Instruction* createGEPInst(baseTypePtr type, Value *ptr, Value *offset, BBlock *parent = nullptr);
 
   /**
    * @note 修改 GEP 指令为 形参模式

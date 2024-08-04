@@ -198,6 +198,19 @@ Instruction* IRBuilder::createGEPInst(Value *ptr, Value *offset, BBlock *parent)
   return createGEPInst(GET_CNT_NAME, ptr, offset, parent);
 }
 
+Instruction* IRBuilder::createGEPInst(const std::string &name, baseTypePtr type, Value *ptr, Value *offset, BBlock *parent) {
+  parent = checkBlockParent(parent);
+  std::shared_ptr<PointerType> ty = std::static_pointer_cast<PointerType>(type);
+  GEP *inst = new GEP(name, ty, parent, ptr, offset);
+  parent->addInst(inst);
+  return inst;
+}
+
+Instruction* IRBuilder::createGEPInst(baseTypePtr type, Value *ptr, Value *offset, BBlock *parent) {
+  parent = checkBlockParent(parent);
+  return createGEPInst(GET_CNT_NAME, type, ptr, offset, parent);
+}
+
 Instruction* IRBuilder::createInt2FpInst(const std::string &name, Value *i32, BBlock *parent) {
   parent = checkBlockParent(parent);
   Int2Fp *inst = new Int2Fp(name, floatType, parent, i32);  // 一定转换为 floatType
