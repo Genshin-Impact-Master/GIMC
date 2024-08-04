@@ -91,6 +91,7 @@ private:
   INode<Instruction> instNode_;     // 自身对应于一个 Instruction 结点
 protected:
   CondKind ckind_;                  // 在 icmp 指令或 fcmp 指令中的 compare 类型
+  bool isParam_ = false;
 public:
   Instruction(const std::string &name,
               baseTypePtr type,
@@ -429,6 +430,10 @@ public:
     if (!TypeBase::isPointer(ops_[0]->getType())) {
       error("GEP 指针参数的类型必须为 Pointer");
     }
+  }
+
+  void setIsParam(bool isParam) {
+    isParam_ = isParam;
   }
 };
 

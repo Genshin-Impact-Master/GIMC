@@ -23,6 +23,9 @@ void Function::clearFunc() {
 }
 
 void Function::addBBlock(BBlock* bBlk) {
+  if (blkList_.getSize() == 0) {
+    setEntry(bBlk);
+  }
   blkList_.append(bBlk->getNode());
 }
 

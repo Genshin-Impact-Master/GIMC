@@ -23,6 +23,7 @@ LirModule ToLir::moduleGen() {
         LirFunction lirFunc = LirFunction(func->getName(), paramsCnt);
         std::set<int> idx = std::set<int>();
         
+        //  处理 Function 参数
         for(int i = 0; i < paramsCnt; i++) {
             Value param = funcParams[i];
             if(!TypeBase::isFloat(param.getType())) {

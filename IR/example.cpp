@@ -558,13 +558,17 @@ int main(int argc, char** args) {
   builder.emitIRModule(myModule);
 
   /**
-   * eg.12. 支持 void 返回值
+   * eg.12. 支持 void 返回值，多维全局变量，多维数组形参
    * void f(int a) {
       putint(a);
       return;
     }
+    int b[1][3] = {1,2,3};
+    int foo(int a[][3]){
+      return a[0][2];
+    }
     int main() {
-      f(getint());
+      f(foo(b));
     }
    */
   newModule(builder, myModule);
@@ -586,11 +590,38 @@ int main(int argc, char** args) {
   // 记得加入 module 的 defs
   defs->push_back(eg_12_f);
 
+  // 构建 foo
+  std::vector<baseTypePtr> eg12_foo_ty;
+  baseTypePtr eg12_ty_1 = std::make_shared<PointerType>(i32Type, 3);
+  eg12_foo_ty.push_back(eg12_ty_1);
+  Function *eg12_foo = builder.createFunction("foo", i32Type, eg12_foo_ty);
+  BBlock *eg12_foo_entry = builder.createBBlock("entry", voidType, eg12_foo);
+  // 我懒得 load store 了直接用形参
+  std::vector<Value>eg12_foo_args = eg12_foo->getArgus();
+  Instruction *gep1 = builder.createGEPInst(&eg12_foo_args[0], new ConstIntValue(0));
+  // 将用到函数形参的 GEP 指令调用 setGEPInst 设置 isParam 为 true
+  builder.setGEPInst(gep1, true);
+  // 注意在第二次调用 createGEPInst 前，必须先调用 setGEPInst.而后如有更高维度，不必再调用 setGEPInst
+  // 需要将 gep2 的 baseTypePtr 修改为与形参相同
+  Instruction *gep2 = builder.createGEPInst(eg12_ty_1, gep1, new ConstIntValue(2));
+  builder.createRetInst(gep2);
+  defs->push_back(eg12_foo);
+
   // 构建 main 
   builder.setChosedFunc(myFunc);
   builder.setChosedBBlock(entry);
 
-  Instruction *eg_12_call_1 = builder.createCallInst(getint, Zero_Argu_List);
+  // 创建临时变量 b_tmp  = {1,2,3}
+  GlobalVar *eg12_b_tmp = new GlobalVar("b_tmp", eg12_ty_1, {new ConstIntValue(1), new ConstIntValue(2), new ConstIntValue(3)});
+  // 创建全局变量 b[1][3] = {{1,2,3}}
+  baseTypePtr eg12_ty_2 = std::make_shared<PointerType>(eg12_ty_1, 1);
+  std::vector<Value*> eg12_b_init = {eg12_b_tmp};
+  GlobalVar *eg12_b = builder.createGlobalVar("b", eg12_ty_2, eg12_b_init);
+  globals->push_back(eg12_b);
+
+  std::vector<Value*> eg_12_call_foo_args;
+  eg_12_call_foo_args.push_back(eg12_b);
+  Instruction *eg_12_call_1 = builder.createCallInst(eg12_foo, eg_12_call_foo_args);
   std::vector<Value*> eg_12_f_argus;
   eg_12_f_argus.push_back(eg_12_call_1);
   Instruction *eg_12_call_2 = builder.createCallInst(eg_12_f, eg_12_f_argus);

@@ -46,8 +46,10 @@ void BBlock::coutBBlock() {
 void BBlock::correctCheck() {
   INode<Instruction> *node = instList_.getHeadPtr();
   node = instList_.getRearPtr();
-  if (instList_.isEmpty())
-    error("BBlock 至少包含一条跳转指令 Ret || Br");
+  if (instList_.isEmpty()) {
+    addInst(new Ret(std::to_string(parent_->getCnt()), voidType, this, &voidValue));
+    std::cout << "BBlock 至少包含一条跳转指令 Ret || Br，已自动添加 ret void\n";
+  }
   Instruction *inst = node->getOwner();
   // 基本块末尾必须是 ret 或 br 指令
   if (!dynamic_cast<Br*>(inst) && !dynamic_cast<Ret*>(inst))

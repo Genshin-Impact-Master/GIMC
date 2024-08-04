@@ -217,7 +217,7 @@ __store__ 指令
 ```llvm
 store <ty> <value>, ptr <pointer>
 ``` 
-__getelementptr__ 指令
+__getelementptr__ **GEP** 指令
 用于获得数组某个子元素的地址。
 ```llvm
 <result> = getelementptr inbounds <ty>, ptr <ptrval>{, <ty> <idx>}*
@@ -229,7 +229,10 @@ __getelementptr__ 指令
   %arrayidx2 = getelementptr inbounds [3 x [4 x i32]], ptr %arrayidx1, i64 0, i64 1
   %arrayidx3 = getelementptr inbounds [4 x i32], ptr %arrayidx2, i64 0, i64 2
 ```
-第一个 i64 后面的数似乎必须取 0
+~~第一个 i64 后面的数似乎必须取 0~~，非也，其含义是传入的指针如 `int a[2][3]` 那么指令 `gep [2 x [3 x i32]], ptr %a, i32 0, i32 1` 表示取 `a[1]` 这个指针，那么第一个参数是 `%a`,第二个和第三个参数是类型为 `i32` 的 `0` 和 `1`,对于指针 `a` 而言（数组也被看做一个指针），llvm 会把他解释为一个基类型为 `int [2][3]` 的三维数组的指针（即为 `int [][2][3]`，这么做能将普通的变量和函数形参统一起来），那么访问这个三维数组的第一个元素（即是二维数组 `a`）就需要第二个参数为 `0`。在此基础上再访问 `a` 的第 2 个元素就需要第三个参数为 `1`.
+[参考链接](https://llvm.org/docs/GetElementPtr.html#what-is-the-first-index-of-the-gep-instruction)
+*对于形参*
+`int* foo(int a[][3]) {return a[1];}` 传入 `foo` 的 `a` 是一个指针类型，`gep inbounds [3 x i32], ptr %a, i32 1`，因为这里直接是把 `a` 当作一个二维数组 `int [][3]` 来处理的，（而非跟上述情况 `a` 被当作 `int [][2][3]`）所以要想访问 `a[1]` 只用两个参数即可（`ptr %a`，`i32 1`）
 
 #### 其他指令
 __icmp__ 指令
