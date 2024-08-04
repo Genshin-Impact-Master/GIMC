@@ -21,7 +21,7 @@ void IRToArm::genBBlock(BBlock *bBlk) {
   
 }
 
-int getStackSize(Function *func) {
+int IRToArm::getStackSize(Function *func) {
   int cnt = 0;
   INode<BBlock> *bBlkNode = func->getBBlockList().getHeadPtr();
   while (!bBlkNode->isEnd()) {
@@ -33,8 +33,12 @@ int getStackSize(Function *func) {
       Instruction *inst = instNode->getOwner();
       if (inst->getKind() == InstKind::Alloca) {
         baseTypePtr ty = inst->getType();
+        // 规定：a_ptr 一定存储在 a 的下方，a_ptr.offset + STACK_ALIGN 即为
+        stackOffset[inst] = cnt;
+        cnt = alignsTo(cnt + 4, STACK_ALIGN);
         // 由于 Alloca 指令创建的一定为指针，故其取到的为所指空间大小
-        cnt += alignsTo(space, STACK_ALIGN);
+        cnt += alignsTo(ty->getSize(), STACK_ALIGN);
+        
       }
     }
   }

@@ -7,6 +7,7 @@
 #include "../IR/Module.h"
 #include "../IR/BBlock.h"
 #include "../IR/Function.h"
+#include <unordered_map>
 
 GIMC_NAMESPACE_BEGIN
 USING_GIMC_NAMESPACE
@@ -15,6 +16,7 @@ class IRToArm {
 private:
   Module module_;
   std::ofstream armOut;
+  std::unordered_map<Value*, int> stackOffset;
 public:
   // 特殊时期，暂时用栈操作过渡
   IRToArm(Module module) : module_(module) {

@@ -53,8 +53,10 @@ void BBlock::correctCheck() {
   }
   Instruction *inst = instList_.getRearPtr()->getOwner();
   // 基本块末尾必须是 ret 或 br 指令
-  if (!dynamic_cast<Br*>(inst) && !dynamic_cast<Ret*>(inst))
-    error("BBlock 最后一条指令只能为跳转指令 Ret || Br");
+  if (!dynamic_cast<Br*>(inst) && !dynamic_cast<Ret*>(inst)) {
+    addInst(new Ret(std::to_string(parent_->getCnt()), voidType, this, &voidValue));
+    std::cout << "Warning : BBlock 最后一条指令只能为跳转指令 Ret || Br，默认处理为添加 ret void" << std::endl;
+  }
   while (!node->isEnd()) {
     node = node->getNext();
     Instruction *inst = node->getOwner();
