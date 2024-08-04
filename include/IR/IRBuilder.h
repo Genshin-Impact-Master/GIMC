@@ -142,6 +142,18 @@ public:
   Instruction* createGEPInst(Value *ptr, Value *offset, BBlock *parent  = nullptr);
 
   /**
+   * @note 修改 GEP 指令为 形参模式
+   * @param isParam 若为形参则设为 true
+   * */
+  void setGEPInst(Instruction *gep, bool isParam) {
+    GEP *inst = dynamic_cast<GEP*>(gep);
+    if (!inst) {
+      error("setGEPInst gep 实际类型必须为 GEP*");
+    }
+    inst->setIsParam(isParam);
+  }
+
+  /**
    * 创建 Fp2Int 指令
    */
   Instruction* createFp2IntInst(const std::string &name, Value *fp, BBlock *parent = nullptr);

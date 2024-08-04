@@ -414,8 +414,11 @@ void IRBuilder::emitIRInst(Instruction *inst) {
     GEP *i = dynamic_cast<GEP*>(inst);
     Value *ptr = i->getPtr();
     irout << '\t' << inst->getFullName() << " = getelementptr inbounds " << ptr->getType()->getDetailName()
-          << ", ptr " << ptr->getFullName() << ", " << AddrLenPtr->getName() << " 0, " 
-          << AddrLenPtr->getName() << " " << i->getOffsetValue()->getFullName() << std::endl;
+          << ", ptr " << ptr->getFullName() << ", ";
+    if (!i->isParam_) {
+      irout << AddrLenPtr->getName() << " 0, ";
+    }  
+      irout << AddrLenPtr->getName() << " " << i->getOffsetValue()->getFullName() << std::endl;
   }
   // Int2Fp | Fp2Int 指令
   else if (inst->kind_ == InstKind::Int2Fp || inst->kind_ == InstKind::Fp2Int) {

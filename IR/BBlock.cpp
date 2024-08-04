@@ -47,7 +47,7 @@ void BBlock::correctCheck() {
   INode<Instruction> *node = instList_.getHeadPtr();
   node = instList_.getRearPtr();
   if (instList_.isEmpty()) {
-    addInst(new Ret(std::to_string(parent_->getCnt()), voidType, this, voidValue));
+    addInst(new Ret(std::to_string(parent_->getCnt()), voidType, this, &voidValue));
     std::cout << "BBlock 至少包含一条跳转指令 Ret || Br，已自动添加 ret void\n";
   }
   Instruction *inst = node->getOwner();
