@@ -52,7 +52,7 @@ class LirToArm
                         std::cout<<".long"<<"\t";
                         std::cout<<iter_value->getName();
                         std::cout<<"\n";
-                        smartOut(".long", iter_value->getName(), "shit");
+                        smartOut(".long", iter_value->getName());
                     }
                 }
                 
@@ -64,6 +64,7 @@ class LirToArm
                         std::cout<<".long"<<"\t";
                         std::cout<<iter_value->getName();
                         std::cout<<"\n";
+                        smartOut(".long", iter_value->getName());
                     }
                 }
             }
