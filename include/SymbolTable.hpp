@@ -23,11 +23,11 @@ struct VarNode {
     // vector<int> _const_int_vals;
     Value* _inst;
     VarNode(BaseType type, string identifier, bool is_array,  bool is_const, bool is_float, Value* inst):
-        _type(type), _identifier(identifier), _is_array(is_array), _is_const(is_const), _is_float(is_float), _inst(inst) {}
+        _type(type), _identifier(identifier), _is_array(is_array), _is_const(is_const), _is_float(is_float), _inst(inst) {_is_param = false;}
     VarNode(BaseType type, string identifier, bool is_array,  bool is_const, bool is_float, Value* inst, int const_int, float const_float):
-        _type(type), _identifier(identifier), _is_array(is_array), _is_const(is_const), _is_float(is_float), _inst(inst), _const_int(const_int), _const_float(const_float) {}
+        _type(type), _identifier(identifier), _is_array(is_array), _is_const(is_const), _is_float(is_float), _inst(inst), _const_int(const_int), _const_float(const_float) {_is_param = false;}
     VarNode(BaseType type, string identifier, bool is_array,  bool is_const, bool is_float, Value* inst, vector<int>dims):
-        _type(type), _identifier(identifier), _is_array(is_array), _is_const(is_const), _is_float(is_float), _inst(inst), _dims(dims) {}
+        _type(type), _identifier(identifier), _is_array(is_array), _is_const(is_const), _is_float(is_float), _inst(inst), _dims(dims) {_is_param = false;}
     VarNode(BaseType type, string identifier, bool is_array,  bool is_const, bool is_float, Value* inst, vector<int>dims, bool is_param):
         _type(type), _identifier(identifier), _is_array(is_array), _is_const(is_const), _is_float(is_float), _inst(inst), _dims(dims), _is_param(is_param) {}
       

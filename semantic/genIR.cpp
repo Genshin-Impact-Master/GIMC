@@ -461,6 +461,12 @@ void parseStmt(StmtPtr _stmt, BBlock* loop_st = nullptr, BBlock* loop_ed = nullp
 
 NumberPtr getConstExpValue(ExpPtr exp, bool array_dim = false) {
     auto ret = NumberPtr(new Number());
+    if (exp -> getNegCnt() % 2 != 0) {
+        ret = getConstExpValue(exp, array_dim);
+        ret -> addIntVal(-ret -> getIntVal());
+        ret -> addFloatVal(-ret -> getFloatVal());
+        return ret;
+    }
     switch (exp -> getType()) {
         case ExpType::ET_INT: {
             ret = dynamic_pointer_cast<Number>(exp);
@@ -860,6 +866,7 @@ void parseBlock(BlockPtr block, vector<VarNode*> *va_list, BBlock* loop_st, BBlo
 }
 
 
+
 // TODO:形参加入符号表
 void parseFuncDefine(FuncDefPtr func_def) {
     // 获取形参类型
@@ -908,9 +915,8 @@ void parseFuncDefine(FuncDefPtr func_def) {
                     va_list.push_back(new VarNode(F_param -> getType(), F_param -> getIdentifier(), true, false, F_param -> getType() == BaseType::B_FLOAT, param_ptr, dims, true));
                 } 
                 else {
-                    auto base = make_shared<PointerType>(func_def->getFuncFParams()->getFuncFParam()[i]->getType() == BaseType::B_INT ? i32Type : floatType, 3);
                     auto fi = getConstExpValue(_dims[1], true);
-                    base = make_shared<PointerType>(base, fi -> getIntVal());
+                    auto base = make_shared<PointerType>(func_def->getFuncFParams()->getFuncFParam()[i]->getType() == BaseType::B_INT ? i32Type : floatType, fi -> getIntVal());
                     for (int i=2;i < _dims.size();i++) base = make_shared<PointerType>(base, getConstExpValue(_dims[i], true) -> getIntVal());
                     param_ptr = builder.createAllocaInst(F_param -> getIdentifier()+".addr", base, nullptr, true);
                     auto tmp = builder.createStoreInst(&params[i], param_ptr);
