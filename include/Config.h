@@ -6,8 +6,12 @@
 #define GIMC_NAMESPACE_END }                          // GIMC namespace
 #define USING_GIMC_NAMESPACE using namespace GIMC;
 #define ADDR_LENGTH 32                                // 机器字长
-#define STACK_ALIGN 8                                 // arm 栈对齐大小
 //#define PRINT_CFG                                     // 设置此宏，将 CFG 生成出来
+
+
+/*********************************************** 后端宏定义 **********************************************/
+#define STACK_ALIGN 8                                 // arm 栈对齐大小
+#define FP_REG "r7"                                   // 默认 r7 为 fp 寄存器
 
 #include <string>
 #include <vector>

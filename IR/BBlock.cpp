@@ -49,13 +49,32 @@ void BBlock::correctCheck() {
   if (instList_.isEmpty()) {
     addInst(new Ret(std::to_string(parent_->getCnt()), voidType, this, &voidValue));
     std::cout << "BBlock 至少包含一条跳转指令 Ret || Br，已自动添加 ret void\n";
-    return;
   }
-  Instruction *inst = instList_.getRearPtr()->getOwner();
+  Instruction *terminator = instList_.getRearPtr()->getOwner();
   // 基本块末尾必须是 ret 或 br 指令
-  if (!dynamic_cast<Br*>(inst) && !dynamic_cast<Ret*>(inst)) {
-    addInst(new Ret(std::to_string(parent_->getCnt()), voidType, this, &voidValue));
-    std::cout << "Warning : BBlock 最后一条指令只能为跳转指令 Ret || Br，默认处理为添加 ret void" << std::endl;
+  Br *branch = dynamic_cast<Br*>(terminator);
+  if (branch) {
+    // 说明为 Br 指令
+    // 判断是否为无条件跳转指令
+    if (branch->isUnconditional()) {
+      BBlock *ifTrue = branch->getTrueBBlk();
+      BBlock::addEdge(this, ifTrue);
+    }
+    else {
+      BBlock *ifTrue = branch->getTrueBBlk();
+      BBlock *ifFalse = branch->getFalseBBlk();
+      BBlock::addEdge(this, ifTrue);
+      BBlock::addEdge(this, ifFalse);
+    }
+  }
+  else {
+    // 说明为 Ret 指令
+    Ret *ret = dynamic_cast<Ret*>(terminator);
+    if (!ret) {
+      addInst(new Ret(std::to_string(parent_->getCnt()), voidType, this, &voidValue));
+      std::cout << "Warning : BBlock 最后一条指令只能为跳转指令 Ret || Br，默认处理为添加 ret void" << std::endl;
+    }
+    // ret 指令没有 succs
   }
   while (!node->isEnd()) {
     node = node->getNext();

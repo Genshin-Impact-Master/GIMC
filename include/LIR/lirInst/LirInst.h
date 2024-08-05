@@ -24,7 +24,8 @@ enum class LirInstKind {
     cmp,
     Br,
     Fp2Int,
-    Int2Fp
+    Int2Fp,
+    Move      // Move 指令，转移寄存器的值
 };
 
 class LirInst {
