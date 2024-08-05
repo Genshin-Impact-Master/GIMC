@@ -26,4 +26,12 @@ void error(const std::string &msg) {
   std::cerr << "Error: " << msg << std::endl;
   std::exit(EXIT_FAILURE);
 }
+
+int alignsTo(int size, int alignSize) {
+  int cnt = size / alignSize;
+  if ((size % alignSize) != 0) {
+    cnt++;
+  }
+  return cnt * alignSize;
+}
 GIMC_NAMESPACE_END
