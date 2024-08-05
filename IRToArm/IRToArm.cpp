@@ -18,7 +18,15 @@ void IRToArm::genFunction(Function *func) {
   smartOut(".thumb");
   smartOut(".thumb_func");
   smartOut(".type", name, "\%function");
-  
+  armOut << name << ":" << std::endl;
+
+  // 预备的栈处理工作，fp 设为 r7
+  smartOut("/********* 函数预处理 *********/");
+  push("r7");
+  int offset = getStackSize(func);
+  smartOut("sub", "sp", "sp", "#" + std::to_string(offset));
+
+
   // @C++_Learn 两字符串比较
   if (name.compare("main") == 0) {
 
@@ -51,6 +59,5 @@ int IRToArm::getStackSize(Function *func) {
       }
     }
   }
-
   // 处理形参偏移，思考下，如若每次均是 alloca 则已经包含在上面
 }
