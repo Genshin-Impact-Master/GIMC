@@ -92,7 +92,7 @@ public:
 
   // 重载 Value 中的 getData
   std::string getData() override {
-    return getName();
+    return getFullName();
   }
 
   // 返回 符号浮点数

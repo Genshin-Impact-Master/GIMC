@@ -16,8 +16,9 @@ class LirFunction {
         int fparamsCnt; //浮点参数数量
         int iparamsCnt; //整型参数数量
         baseTypePtr returnType;
-        LirBlock prologue;
+        LirBlock prologue;    // 即开始的基本块 entry
         std::vector<Value> paramter;
+        int stackSize = 0;
 
         /* @C++_Learn std::map<LirOperand&, LirInstMove&> 这样的声明在 C++ 中是不允许的。
          标准库容器（例如 std::map、std::vector 等）不能直接包含引用类型，
@@ -25,6 +26,9 @@ class LirFunction {
         */
         std::map<LirOperand, LirInstMove> immMap;
 
+        /*******************中间变量，即为了辅助 Lir 的生成****************/
+        // 中端 alloca 出的局部变量到 IImm 的映射表
+        std::map<Value*, IImm> stackOffsetMap;
 
     public:
         LirFunction(std::string name, int paramsCnt);
@@ -33,6 +37,8 @@ class LirFunction {
         void setFParamsCnt(int floatcnt);
         void setReturnType(baseTypePtr returnType);
         std::map<LirOperand, LirInstMove>& getImmMap();
+
+        int getStackSize() {return stackSize;}
 
 
         

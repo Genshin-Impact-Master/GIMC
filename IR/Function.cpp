@@ -91,6 +91,20 @@ void Function::drawCFG() {
 
 void Function::correctCheck() {
   INode<BBlock> *node = blkList_.getHeadPtr();
+  if (blkList_.isEmpty()) {
+    error("一个函数中至少含有一个基本块");
+  }
+  if (entry_->getName().compare("entry") != 0 || node->getNext()->getOwner() != entry_) {
+    error("函数的入口基本块名称必须是 entry 且需要在侵入式链表的第一个结点");
+  }
+  // 首先将每个 BBlock 的 pres 和 succs 清空
+  while (!node->isEnd()) {
+    node = node->getNext();
+    BBlock *bBlk = node->getOwner();
+    bBlk->getSuccs().clear();
+    bBlk->getPres().clear();
+  }
+  node = blkList_.getHeadPtr();
   while (!node->isEnd()) {
     node = node->getNext();
     BBlock *bBlk = node->getOwner();

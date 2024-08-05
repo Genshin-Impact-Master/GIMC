@@ -16,10 +16,13 @@ class LirModule {
     private :
         std::map<std::string, GlobalVar*> globalvars;
         std::list<LirFunction*> lirfunctions;
-        
+        std::string name_;
     public:
+        LirModule() {}
         std::map<std::string, GlobalVar*> &getGlobalvars() {return globalvars;}
         std::list<LirFunction*> &getFunctions() {return lirfunctions;}
+
+        void setName(std::string &name) {name_ = name;}
 };
 
 

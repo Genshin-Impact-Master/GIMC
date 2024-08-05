@@ -7,7 +7,7 @@
 #include "../Utils/IList.h"
 #include "Mem2reg.h"
 #include "Domination.h"
-#include "Pres_Succs_Calculate.h"
+// #include "Pres_Succs_Calculate.h"    // 无效了，已在 IR 中实现
 #include "../IR/Inst.h"
 
 USING_GIMC_NAMESPACE

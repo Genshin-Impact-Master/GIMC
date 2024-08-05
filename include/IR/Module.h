@@ -55,6 +55,7 @@ public:
   Function* getGetArray() {return funcDeclares_[start + 12];}
   Function* getGetFarray() {return funcDeclares_[start + 13];}
 
+  // 重要！！！在向下一级传递时一定要先进行 correctCheck()，其中包含了 BBlock 的前驱后继结点计算
   void correctCheck();
 };
 

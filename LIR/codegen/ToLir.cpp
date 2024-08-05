@@ -3,12 +3,14 @@
 
 USING_GIMC_NAMESPACE
 
-ToLir::ToLir(Module irModule) : irModule(irModule) {};
+ToLir::ToLir(Module irModule) : irModule(irModule) {
+  lirModule.setName(irModule.getName());
+};
 
 LirModule ToLir::moduleGen() {
     for(GlobalVar* globalVar : *irModule.getGlobalVars()) {
-        lirModule.getGlobalvars()[globalVar->getName()] = globalVar;
-        valMap[globalVar] = &Addr(globalVar->getName());
+        lirModule.getGlobalvars()[globalVar->getFullName()] = globalVar;
+        valMap[globalVar] = &Addr(globalVar->getFullName());
     }
 
     for(Function* func : *(irModule.getFuncDefs())) {
@@ -115,9 +117,10 @@ void ToLir::instResolve(Function *func, BBlock *block) {
     while(!instNode->isEnd()) {
         instNode = instNode->getNext();
         Instruction* inst = instNode->getOwner();
+        InstKind kind = inst->getKind();
 
         //TODO:已经实现了整除加减乘除，需要实现其他二元指令
-        if(inst->getKind()> InstKind::BinaryOPBegin && inst->getKind() < InstKind::BinaryOpEnd) {
+        if(kind > InstKind::BinaryOPBegin && kind < InstKind::BinaryOpEnd) {
             BinaryInst* i = dynamic_cast<BinaryInst*>(inst);
             Value *lhs = i->getLhs();
             Value *rhs = i->getRhs();
@@ -234,11 +237,28 @@ void ToLir::instResolve(Function *func, BBlock *block) {
                 LirBinary lirBin = LirBinary(lirInstKind, lirBlock, lhsReg, rhsReg, dstReg);
                 lirBlock->addInst(dynamic_cast<LirInst*>(&lirBin));
                 break;
-
-
+            
+            // @todo 通过除法乘法减法来做 
+            case InstKind::SRem:
+                lhsReg = ToLir::operandResolve(lhs, lirFunc, lirBlock);
+                rhsReg = ToLir::operandResolve(rhs, lirFunc, lirBlock);
+                dstReg = ToLir::operandResolve(i, lirFunc, lirBlock);
+                lirInstKind = LirInstKind::Divf;
+                LirBinary lirBin = LirBinary(lirInstKind, lirBlock, lhsReg, rhsReg, dstReg);
+                lirBlock->addInst(dynamic_cast<LirInst*>(&lirBin));
+                break;
             default:
                 break;
             }
+        }
+
+        else if(kind == InstKind::Alloca) {
+
+        }
+
+        else if (kind == InstKind::Store) {
+          // 考虑为添加一条 move 指令
+
         }
     }
 }
@@ -249,11 +269,12 @@ LirOperand ToLir::operandResolve(Value* val, LirFunction* lirFunc, LirBlock* lir
         return immResolve(val, lirFunc, lirBlock);
     }
     else {
-        if(TypeBase::isInteger(val->getType())) {
-            return IVReg();
+        //  这里 TypeBase 的检验需要用 isFloat，因为指针类型也在通用寄存器中
+        if(TypeBase::isFloat(val->getType())) {
+            return FVReg();
         }
         else 
-            return FVReg();
+            return IVReg();
     }
 }
 
@@ -261,7 +282,7 @@ LirOperand ToLir::immResolve(Value* val, LirFunction* lirFunc, LirBlock* lirBloc
     if(dynamic_cast<ConstFloatValue*>(val)) {
         return loadImmToFVReg(dynamic_cast<ConstFloatValue*>(val)->getFloat(), lirFunc, lirBlock);
     } else {
-        
+        return loadImmToIVReg(dynamic_cast<ConstIntValue*>(val)->getInt(), lirFunc, lirBlock);
     }
 }
 

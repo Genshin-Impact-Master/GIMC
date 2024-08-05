@@ -7,6 +7,7 @@
 #include "../IR/Module.h"
 #include "../IR/BBlock.h"
 #include "../IR/Function.h"
+#include "../IR/Inst.h"
 #include <unordered_map>
 
 GIMC_NAMESPACE_BEGIN
@@ -26,30 +27,49 @@ public:
   void genModule();
   void genFunction(Function *func);
   void genBBlock(BBlock *bBlk);
+  void genInst(Instruction *inst);
 
   int getStackSize(Function *func);
+
+  /* 简单的线性寄存器分配 */
+  
 
 
   /********************************** 通用函数（之后也可复用） *******************************/
 
+  /**
+   * 通用寄存器压栈
+   */
   void push(std::string reg) {
     smartOut("push", "{" + reg + "}");
   }
 
+  /**
+   * 整数 dst <- lhs - rhs
+   */
   void sub(std::string dst, std::string lhs, std::string rhs) {
     smartOut("sub", dst, lhs, rhs + "\t@ " + dst + " <- " + lhs + " - " + rhs);
   }
 
+  /**
+   * 整数 dst <- lhs + rhs
+   */
   void add(std::string dst, std::string lhs, std::string rhs) {
     smartOut("add", dst, lhs, rhs + "\t@ " + dst + " <- " + lhs + " + " + rhs);
   }
 
+  /**
+   * 整数 dst <- lhs * rhs
+   */
   void mul(std::string dst, std::string lhs, std::string rhs) {
     smartOut("mul", dst, lhs, rhs + "\t@ " + dst + " <- " + lhs + " * " + rhs);
   }
   
+  /**
+   * 整数 dst <- lhs / rhs
+   */
   void div(std::string dst, std::string lhs, std::string rhs) {
-    smartOut("sdiv", dst, lhs, rhs + "\t@ " + dst + " <- " + lhs + " - " + rhs);
+    smartOut("sdiv", dst, lhs, rhs + "\t@ " + dst + " <- " + lhs + " / " + rhs);
   }
 
   // @C++_Learn 变长参数模板，实现类似 printf 的功能 (采用递归的方法解析)

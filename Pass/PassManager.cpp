@@ -25,7 +25,6 @@ void PassManager::calDefUse() {
 void PassManager::pres_succs() {
   if (do_pres_succs)
     return;
-  Pres_Succs_Calculate::calculate_Func(func_);
   do_pres_succs = true;
 #ifdef PRINT_CFG
   // 使用 graphviz 画 main 的数据流图

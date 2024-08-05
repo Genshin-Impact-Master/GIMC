@@ -1,5 +1,6 @@
 #include "../include/IRToArm/IRToArm.h"
 #include "../include/IR/Inst.h"
+#define IMM(v) "#" + std::to_string(v)
 
 USING_GIMC_NAMESPACE
 
@@ -21,21 +22,61 @@ void IRToArm::genFunction(Function *func) {
   armOut << name << ":" << std::endl;
 
   // 预备的栈处理工作，fp 设为 r7
-  smartOut("/********* 函数预处理 *********/");
-  push("r7");
+  smartOut("/* ******** 函数预处理 ******** */");
+  smartOut("@ 将 fp 压栈");
+  push(FP_REG);
+  smartOut("@ 将 lr 压栈");
+  push("lr");
   int offset = getStackSize(func);
-  smartOut("sub", "sp", "sp", "#" + std::to_string(offset));
-
-
-  // @C++_Learn 两字符串比较
-  if (name.compare("main") == 0) {
-
+  sub("sp", "sp", IMM(offset));
+  add(FP_REG, sp, IMM(0));
+  
+  // 处理基本块
+  INode<BBlock> *node = func->getBBlockList().getHeadPtr();
+  while (!node->isEnd()) {
+    node = node->getNext();
+    BBlock *bBlk = node->getOwner();
+    genBBlock(bBlk);
   }
 }
 
 void IRToArm::genBBlock(BBlock *bBlk) {
-  
+  if (bBlk->getName().compare("entry") != 0) {
+    // 非起始基本块则直接输出标签
+    armOut << "." << bBlk->getName() << "_" << bBlk->getParent()->getName() << ":" << std::endl;
+  }
+  // 处理 Instruction
+  INode<Instruction> *node = bBlk->getInstList().getHeadPtr();
+  while (!node->isEnd()) {
+    node = node->getNext();
+    Instruction *inst = node->getOwner();
+    genInst(inst);
+  }
 }
+
+void IRToArm::genInst(Instruction *inst) {
+  InstKind kind = inst->getKind();
+  switch (kind) {
+    case InstKind::Add: {
+      
+    }
+      break;
+    case InstKind::Sub: {
+      sub("r0", "r0", "r1");
+    }
+      break;
+    case InstKind::Mul: {
+      mul("");
+    }
+      break;
+    case InstKind::Div: {
+      
+    }
+      break;
+    default:
+      break;
+  }
+} 
 
 int IRToArm::getStackSize(Function *func) {
   int cnt = 0;

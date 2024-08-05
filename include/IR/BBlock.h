@@ -79,6 +79,9 @@ public:
 
   // IR 检验
   void correctCheck();
+
+  // 获取其所在 Function
+  Function *getParent() {return parent_;}
 };
 
 

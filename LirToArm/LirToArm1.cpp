@@ -1,4 +1,4 @@
-#include "../include/LirToArm/LirToArm1.h"
+#include "../include/LirToArm/LirToArm.h"
 #include <list>
 
 USING_GIMC_NAMESPACE
