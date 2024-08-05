@@ -28,6 +28,7 @@ private:
   bool isValid_ = true;                             // 是否有效（优化可能会删除）
   uint32_t hashcode = 0;                            // 存储 hash 值，避免每次都要重新计算
   bool hashed = false;                              // 记录是否进行了 hashcode 的计算
+  bool is_param_ = false;
 protected:
   std::vector<Value*> ops_;                         // 用到了哪些 Value
 public:
@@ -35,6 +36,8 @@ public:
    * @todo 带名称 Value 初始化
    * 如 Function,变量等
   */
+  void setParam() {is_param_ = true;}  
+  bool getIsParam() {return is_param_;}
   Value(const std::string &name, baseTypePtr type) : 
         valueName(name),
         type_(type),

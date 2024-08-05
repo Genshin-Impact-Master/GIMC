@@ -36,7 +36,7 @@ void error_handle(){
 // 表达式解析数组
 Value* parseArrayLval(LValPtr lval, VarNode* var_node, bool is_number, bool ptr=false){
     auto array_entry = var_node -> _inst;
-
+    int i = 0;
     for (auto dim: lval -> getDims()) {
         auto inst = parseExp(dim, false, true, false).first;
         
@@ -45,7 +45,9 @@ Value* parseArrayLval(LValPtr lval, VarNode* var_node, bool is_number, bool ptr=
             error_msg = "array index must be integer";
             error_handle();
         }
-        array_entry = builder.createGEPInst(array_entry, inst);
+        if (i == 0 && var_node -> _is_param) array_entry = builder.createGEPInst(array_entry, inst, nullptr,true);
+        else array_entry = builder.createGEPInst(array_entry, inst);
+        i++;
     }
                         
 
@@ -875,7 +877,6 @@ void parseFuncDefine(FuncDefPtr func_def) {
                     auto base = make_shared<PointerType>(func_def->getFuncFParams()->getFuncFParam()[i]->getType() == BaseType::B_INT ? i32Type : floatType, fi -> getIntVal());
                     for (int i=2;i < dims.size();i++) base = make_shared<PointerType>(base, getConstExpValue(dims[i], true) -> getIntVal());
                     param_types.pb(base);
-
                 }
             }
             else param_types.pb(func_def->getFuncFParams()->getFuncFParam()[i]->getType() == BaseType::B_INT ? i32Type : floatType);
@@ -889,14 +890,35 @@ void parseFuncDefine(FuncDefPtr func_def) {
         vector<Value> &params = func -> getArgus();
         for (int i = 0; i< params.size(); i++) {
             auto F_param = func_def->getFuncFParams()->getFuncFParam()[i];
-            Instruction* param_ptr = builder.createAllocaInst(F_param -> getIdentifier(), F_param -> getType() == BaseType::B_INT ? int32PointerType : floatPointerType);
-            if (F_param -> isArray()) {
-                vector<int> dims;
-                dims.resize(F_param -> getArrayDim() -> getDim().size());
-                va_list.push_back(new VarNode(F_param -> getType(), F_param -> getIdentifier(), true, false, F_param -> getType() == BaseType::B_FLOAT, param_ptr, dims));
+            Instruction* param_ptr =nullptr;
+            if (!F_param -> isArray()){
+                param_ptr = builder.createAllocaInst(F_param -> getIdentifier(), F_param -> getType() == BaseType::B_INT ? int32PointerType : floatPointerType);
+                auto tmp = builder.createStoreInst(&params[i], param_ptr);
+                va_list.push_back(new VarNode(F_param -> getType(), F_param -> getIdentifier(), F_param -> isArray(), false, F_param -> getType() == BaseType::B_FLOAT, param_ptr));
+
             }
-            else va_list.push_back(new VarNode(F_param -> getType(), F_param -> getIdentifier(), F_param -> isArray(), false, F_param -> getType() == BaseType::B_FLOAT, param_ptr));
-            auto tmp = builder.createStoreInst(&params[i], param_ptr);
+            else {
+                auto _dims = func_def -> getFuncFParams() -> getFuncFParam()[i] -> getArrayDim() -> getDim();
+                vector<int> dims;
+                dims.resize(_dims.size());
+                if (_dims.size() == 1) {
+                    param_ptr = builder.createAllocaInst(F_param -> getIdentifier()+".addr", F_param -> getType() == BaseType::B_INT ? int32PointerType : floatPointerType, nullptr, true);
+                    auto tmp = builder.createStoreInst(&params[i], param_ptr);
+                    param_ptr = builder.createLoadInst(F_param -> getIdentifier(), F_param -> getType() == BaseType::B_INT ? int32PointerType : floatPointerType, param_ptr,  nullptr, true);
+                    va_list.push_back(new VarNode(F_param -> getType(), F_param -> getIdentifier(), true, false, F_param -> getType() == BaseType::B_FLOAT, param_ptr, dims, true));
+                } 
+                else {
+                    auto base = make_shared<PointerType>(func_def->getFuncFParams()->getFuncFParam()[i]->getType() == BaseType::B_INT ? i32Type : floatType, 3);
+                    auto fi = getConstExpValue(_dims[1], true);
+                    base = make_shared<PointerType>(base, fi -> getIntVal());
+                    for (int i=2;i < _dims.size();i++) base = make_shared<PointerType>(base, getConstExpValue(_dims[i], true) -> getIntVal());
+                    param_ptr = builder.createAllocaInst(F_param -> getIdentifier()+".addr", base, nullptr, true);
+                    auto tmp = builder.createStoreInst(&params[i], param_ptr);
+                    param_ptr = builder.createLoadInst(F_param -> getIdentifier(), base, param_ptr,  nullptr, true);
+                    va_list.push_back(new VarNode(F_param -> getType(), F_param -> getIdentifier(), true, false, F_param -> getType() == BaseType::B_FLOAT, param_ptr, dims, true));
+                }
+            }
+            
             // TODO: 处理形参数组
         }
         sym_tb.add_func(func_def -> getIdentifier(), func_def -> getReturnType(), func_def -> getFuncFParams(), func);

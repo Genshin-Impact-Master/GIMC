@@ -83,10 +83,11 @@ Instruction* IRBuilder::createBinaryInst(InstKind kind, Value *lhs, Value *rhs, 
   return createBinaryInst(kind, GET_CNT_NAME, lhs, rhs, parent);
 }
 
-Instruction* IRBuilder::createAllocaInst(const std::string &name, baseTypePtr type, BBlock *parent) {
+Instruction* IRBuilder::createAllocaInst(const std::string &name, baseTypePtr type, BBlock *parent, bool is_param) {
   parent = checkBlockParent(parent);
   Alloca *inst = new Alloca(name, type, parent);
   parent->addInst(inst);
+  if (is_param) inst->setParam();
   return inst;
 }
 
@@ -95,17 +96,24 @@ Instruction* IRBuilder::createAllocaInst(baseTypePtr type, BBlock *parent) {
   return createAllocaInst(GET_CNT_NAME, type, parent);
 }
 
-Instruction* IRBuilder::createStoreInst(Value *input, Value *ptr, BBlock *parent) {
+Instruction* IRBuilder::createStoreInst(Value *input, Value *ptr, BBlock *parent, bool is_param) {
   parent = checkBlockParent(parent);
   Store *inst = new Store("anonimous", voidType, parent, input, ptr);
   // fprintf(stdout, "the input is %s \n", input->getTypeName().data());
   parent->addInst(inst);
+  if (is_param) inst->setParam();
   return inst;
 }
 
-Instruction* IRBuilder::createLoadInst(const std::string &name, baseTypePtr type, Value *ptr, BBlock *parent) {
+Instruction* IRBuilder::createLoadInst(const std::string &name, baseTypePtr type, Value *ptr, BBlock *parent, bool is_param) {
   parent = checkBlockParent(parent);
   baseTypePtr loadType = type;
+  if (is_param) {
+    Load *inst = new Load(name, loadType, parent, ptr);
+    inst->setParam();
+    parent->addInst(inst);
+    return inst;
+  }
   if (TypeBase::isPointer(type)) {
     loadType = std::static_pointer_cast<PointerType>(type)->getBaseType();
   }
@@ -114,9 +122,13 @@ Instruction* IRBuilder::createLoadInst(const std::string &name, baseTypePtr type
   return inst;
 }
 
-Instruction* IRBuilder::createLoadInst(baseTypePtr type, Value *ptr, BBlock *parent) {
+
+
+Instruction* IRBuilder::createLoadInst(baseTypePtr type, Value *ptr, BBlock *parent, bool is_param) {
   parent = checkBlockParent(parent);
-  return createLoadInst(GET_CNT_NAME, type, ptr, parent);
+  auto tmp = createLoadInst(GET_CNT_NAME, type, ptr, parent);
+  if (is_param) tmp->setParam();
+  return tmp;
 }
 
 Instruction* IRBuilder::createCallInst(const std::string &name, Function *func, std::vector<Value*> &argus, BBlock *parent) {
@@ -185,18 +197,24 @@ Instruction* IRBuilder::createBrInst(Value *cond, BBlock *ifTure, BBlock *ifFals
   return inst;
 }
 
-Instruction* IRBuilder::createGEPInst(const std::string &name, Value *ptr, Value *offset, BBlock *parent) {
+Instruction* IRBuilder::createGEPInst(const std::string &name, Value *ptr, Value *offset, BBlock *parent, bool is_param) {
   parent = checkBlockParent(parent);
   std::shared_ptr<PointerType> type = std::static_pointer_cast<PointerType>(ptr->getType());
-  GEP *inst = new GEP(name, type->getBaseType(), parent, ptr, offset);
+  
+  GEP *inst =nullptr;
+  if (!is_param) inst = new GEP(name, type->getBaseType(), parent, ptr, offset);
+  else {
+    inst = new GEP(name, type, parent, ptr, offset);
+    inst->setParam();
+  }
   parent->addInst(inst);
 
   return inst;
 }
 
-Instruction* IRBuilder::createGEPInst(Value *ptr, Value *offset, BBlock *parent) {
+Instruction* IRBuilder::createGEPInst(Value *ptr, Value *offset, BBlock *parent, bool is_param) {
   parent = checkBlockParent(parent);
-  return createGEPInst(GET_CNT_NAME, ptr, offset, parent);
+  return createGEPInst(GET_CNT_NAME, ptr, offset, parent, is_param);
 }
 
 Instruction* IRBuilder::createGEPInst(const std::string &name, baseTypePtr type, Value *ptr, Value *offset, BBlock *parent) {
@@ -355,7 +373,8 @@ void IRBuilder::emitIRInst(Instruction *inst) {
   else if (inst->kind_ == InstKind::Alloca) {
     Alloca *i = dynamic_cast<Alloca*>(inst);
     std::shared_ptr<PointerType> ptr = std::dynamic_pointer_cast<PointerType>(inst->getType()); 
-    irout << '\t' << i->getFullName() << " = " << INST_STRING << ptr->getDetailName() << std::endl; 
+    if (inst -> getIsParam()) irout << '\t' << i->getFullName() << " = " << INST_STRING << "ptr" << std::endl; 
+    else irout << '\t' << i->getFullName() << " = " << INST_STRING << ptr->getDetailName() << std::endl; 
   }
   // store 指令
   else if (inst->kind_ == InstKind::Store) {
@@ -366,8 +385,8 @@ void IRBuilder::emitIRInst(Instruction *inst) {
   // load 指令
   else if (inst->kind_ == InstKind::Load) {
     Load *i = dynamic_cast<Load*>(inst);
-    irout << '\t' << i->getFullName() << " = " << INST_STRING
-          << i->getTypeName() << ", ptr " << i->getPtr()->getFullName()<< std::endl;
+    if (inst -> getIsParam()) irout << '\t' << i->getFullName() << " = " << INST_STRING << "ptr" << ", ptr " << i->getPtr()->getFullName()<< std::endl;
+    else irout << '\t' << i->getFullName() << " = " << INST_STRING << i->getTypeName() << ", ptr " << i->getPtr()->getFullName()<< std::endl;
   }
   // call 指令
   else if (inst->kind_ == InstKind::Call) {
@@ -430,7 +449,7 @@ void IRBuilder::emitIRInst(Instruction *inst) {
     Value *ptr = i->getPtr();
     irout << '\t' << inst->getFullName() << " = getelementptr inbounds " << ptr->getType()->getDetailName()
           << ", ptr " << ptr->getFullName() << ", ";
-    if (!i->isParam_) {
+    if (!i->getIsParam()) {
       irout << AddrLenPtr->getName() << " 0, ";
     }  
       irout << AddrLenPtr->getName() << " " << i->getOffsetValue()->getFullName() << std::endl;

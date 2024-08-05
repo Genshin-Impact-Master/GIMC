@@ -86,7 +86,7 @@ public:
    * @param type 指针指向内存的基类
    * @param cnt 数组元素个数（非数组设置为 1）
   */
-  Instruction* createAllocaInst(const std::string &name, baseTypePtr type, BBlock *parent = nullptr);
+  Instruction* createAllocaInst(const std::string &name, baseTypePtr type, BBlock *parent = nullptr, bool is_param = false);
   Instruction* createAllocaInst(baseTypePtr type, BBlock *parent = nullptr);
 
   /**
@@ -94,14 +94,14 @@ public:
    * @param input 待存入的值指针
    * @param ptr   指针指向存入地址
   */
-  Instruction* createStoreInst(Value *input, Value *ptr, BBlock *parent = nullptr);
+  Instruction* createStoreInst(Value *input, Value *ptr, BBlock *parent = nullptr, bool is_param = false);
 
   /**
    * 创建 load 指令
    * @param ptr 需要读取的内存的指针
   */
-  Instruction* createLoadInst(const std::string &name, baseTypePtr type, Value *ptr, BBlock *parent = nullptr);
-  Instruction* createLoadInst(baseTypePtr type, Value *ptr, BBlock *parent = nullptr);
+  Instruction* createLoadInst(const std::string &name, baseTypePtr type, Value *ptr, BBlock *parent = nullptr, bool is_param = false);
+  Instruction* createLoadInst(baseTypePtr type, Value *ptr, BBlock *parent = nullptr, bool is_param = false);
 
   /**
    * 创建 call 指令，调用函数
@@ -138,8 +138,8 @@ public:
   /**
    * 创建 GEP 指令
    */
-  Instruction* createGEPInst(const std::string &name, Value *ptr, Value *offset, BBlock *parent = nullptr);
-  Instruction* createGEPInst(Value *ptr, Value *offset, BBlock *parent  = nullptr);
+  Instruction* createGEPInst(const std::string &name, Value *ptr, Value *offset, BBlock *parent = nullptr, bool is_param = false);
+  Instruction* createGEPInst(Value *ptr, Value *offset, BBlock *parent  = nullptr, bool is_param = false);
   Instruction* createGEPInst(const std::string &name, baseTypePtr type, Value *ptr, Value *offset, BBlock *parent = nullptr);
   Instruction* createGEPInst(baseTypePtr type, Value *ptr, Value *offset, BBlock *parent = nullptr);
 
