@@ -475,6 +475,7 @@ int main(int argc, char** args) {
   Instruction *eg_10_load_x = builder.createLoadInst(i32Type, eg_10_x_ptr);
   builder.createRetInst(eg_10_load_x);
 
+  myModule->correctCheck();
   PassManager eg_10_pm(myFunc);
   eg_10_pm.mem2reg();
 

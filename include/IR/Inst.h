@@ -115,6 +115,8 @@ public:
   uint32_t getHash() override;
   bool isEqual(Value *t) override;
   virtual void correctCheck() {};
+  // 对于 Fcmp 和 Icmp 获得其对比类型
+  CondKind getCondKind() {return ckind_;}
 };
 
 /**
@@ -401,6 +403,16 @@ public:
       error("无条件跳转，没有 False 基本块");
     }
     return dynamic_cast<BBlock*>(ops_[2]);
+  }
+
+  void correctCheck() override {
+    // GIMC 中 Br 指令必须在 cmp 指令后
+    if (isUnconditional())
+      return;
+    Instruction *pre = getNode().getPre()->getOwner();
+    if (pre != ops_[0]) {
+      error("GIMC 中有条件跳转前一条指令必须为其跳转条件");
+    }
   }
 };
 
