@@ -3,10 +3,5 @@
 # tmp
 tmp*
 # 编译器默认输出文件
-a.out
 # cmake build 文件夹
 build
-logger
-main
-main.cpp
-local
