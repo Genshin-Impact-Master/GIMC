@@ -72,6 +72,7 @@ Value* parseVarLval(LValPtr lval){
         error_handle();
     }
     auto var_node = sym_tb.find_var(id);
+    lval -> addResType(var_node -> _type);
     // 数组
     if (var_node -> _is_array) {
         if (lval -> getDims().size() != var_node->_dims.size()){
@@ -579,10 +580,13 @@ void parseDecl(DeclPtr decl, bool is_global) {
         auto const_type = const_decl -> getType() == BaseType::B_INT ? int32PointerType : floatPointerType;
         auto const_defs = const_decl -> getConstDef() -> getConstDef();
         for (auto def: const_defs) {
+
             if (sym_tb.check_var_current_bk(def -> getIdentifier())) {
                 error_msg = "redeclared identifier: " + def -> getIdentifier();
                 error_handle();
             }
+            string alloca_name = def -> getIdentifier();
+            if (def -> getIdentifier().size() > 1000) alloca_name = def -> getIdentifier().substr(0, 1000);
             if (def -> isArray()) {
                 auto array_dim = def -> getArrayDim() -> getDim();
                 vector<int>dims, pos;
@@ -594,7 +598,7 @@ void parseDecl(DeclPtr decl, bool is_global) {
                 for (int i=dims.size()-2;i>=0;i--) array_base = make_shared<PointerType>(array_base, dims[i]);
                 
                 if (!is_global) {
-                    auto alloc = builder.createAllocaInst(def->getIdentifier() + to_string(block_cnt++), array_base);
+                    auto alloc = builder.createAllocaInst(alloca_name + "_gimc" + to_string(block_cnt++), array_base);
                     int array_tot_size = 1;
                     for (auto dim: dims) array_tot_size *= dim;
                     // 初始化
@@ -611,7 +615,7 @@ void parseDecl(DeclPtr decl, bool is_global) {
                         cout<<": ";
                         cout<< it.second -> getIntVal() << endl;
                     }
-                    auto alloc = parseGlobalArray(def -> getIdentifier(), dims, pos, 0, arr_val_mp, const_decl -> getType() == B_FLOAT);
+                    auto alloc = parseGlobalArray(alloca_name, dims, pos, 0, arr_val_mp, const_decl -> getType() == B_FLOAT);
                     sym_tb.add_var(def -> getIdentifier(), const_decl -> getType(), def -> isArray(), true, const_decl -> getType() == B_FLOAT, alloc, dims);
                     globals -> push_back(alloc);
                 }
@@ -622,7 +626,7 @@ void parseDecl(DeclPtr decl, bool is_global) {
                 auto init_exp = getConstExpValue(def -> getInitVal() -> getExp());
                 if (!is_global) {
                     
-                    auto alloc = builder.createAllocaInst(def -> getIdentifier() + to_string(block_cnt++), const_type);
+                    auto alloc = builder.createAllocaInst(alloca_name + "_gimc" + to_string(block_cnt++), const_type);
                     // 添加到符号表
                     sym_tb.add_var(def -> getIdentifier(), const_decl -> getType(), def -> isArray(), true, const_decl -> getType() == B_FLOAT, alloc, init_exp -> getIntVal(), init_exp -> getFloatVal());
                     if (const_type == int32PointerType) builder.createStoreInst(new ConstIntValue(init_exp -> getIntVal()), alloc);
@@ -632,13 +636,13 @@ void parseDecl(DeclPtr decl, bool is_global) {
 
                 else {
                     if (const_type == int32PointerType){
-                        auto alloc = builder.createGlobalVar<Value*>(def -> getIdentifier(), const_type, new ConstIntValue(init_exp -> getIntVal()));
+                        auto alloc = builder.createGlobalVar<Value*>(alloca_name, const_type, new ConstIntValue(init_exp -> getIntVal()));
                         sym_tb.add_var(def -> getIdentifier(), const_decl -> getType(), def -> isArray(), true, const_decl -> getType() == B_FLOAT, alloc, init_exp -> getIntVal(), init_exp -> getFloatVal());
                         globals -> push_back(alloc);
                     }
                     else {
                         
-                        auto alloc = builder.createGlobalVar<Value*>(def -> getIdentifier(), const_type, new ConstFloatValue(init_exp -> getFloatVal()));
+                        auto alloc = builder.createGlobalVar<Value*>(alloca_name, const_type, new ConstFloatValue(init_exp -> getFloatVal()));
                         sym_tb.add_var(def -> getIdentifier(), const_decl -> getType(), def -> isArray(), true, const_decl -> getType() == B_FLOAT, alloc, init_exp -> getIntVal(), init_exp -> getFloatVal());
                         globals -> push_back(alloc);
                     }
@@ -655,6 +659,8 @@ void parseDecl(DeclPtr decl, bool is_global) {
                 error_msg = "redeclared identifier: " + def -> getIdentifier();
                 error_handle();
             }
+            string alloca_name = def -> getIdentifier();
+            if (def -> getIdentifier().size() > 1000) alloca_name = def -> getIdentifier().substr(0, 1000);
                 // TODO: 处理数组
             if (def -> isArray()) {
                 auto array_dim = def -> getArrayDim() -> getDim();
@@ -668,7 +674,7 @@ void parseDecl(DeclPtr decl, bool is_global) {
                     array_base = make_shared<PointerType>(array_base, dims[i]);
                 }
                 if (!is_global) {
-                    auto alloc = builder.createAllocaInst(def->getIdentifier()+ to_string(block_cnt++), array_base);
+                    auto alloc = builder.createAllocaInst(alloca_name + "_gimc" + to_string(block_cnt++), array_base);
                     if (def -> isInit()){
                         int array_tot_size = 1;
                         for (auto dim: dims) array_tot_size *= dim;
@@ -681,7 +687,7 @@ void parseDecl(DeclPtr decl, bool is_global) {
                 else {
                     map<vector<int>, NumberPtr> arr_val_mp;
                     GlobalVar* alloc = nullptr;
-                    if (!def -> isInit()) alloc = parseGlobalArray(def -> getIdentifier(), dims, pos, 0, arr_val_mp, var_decl -> getType() == B_FLOAT);
+                    if (!def -> isInit()) alloc = parseGlobalArray(alloca_name, dims, pos, 0, arr_val_mp, var_decl -> getType() == B_FLOAT);
                     else {
                         parseArrayInitVal(def -> getArrayInitVal(), pos, dims, 0, var_decl -> getType() == B_FLOAT, arr_val_mp);
                         for (auto it: arr_val_mp) {
@@ -689,7 +695,7 @@ void parseDecl(DeclPtr decl, bool is_global) {
                             cout<<": ";
                             cout<< it.second -> getIntVal() << endl;
                         }
-                        alloc = parseGlobalArray(def -> getIdentifier(), dims, pos, 0, arr_val_mp, var_decl -> getType() == B_FLOAT);
+                        alloc = parseGlobalArray(alloca_name, dims, pos, 0, arr_val_mp, var_decl -> getType() == B_FLOAT);
                     }
                     sym_tb.add_var(def -> getIdentifier(), var_decl -> getType(), def -> isArray(), true, var_decl -> getType() == B_FLOAT, alloc, dims);
                     globals -> push_back(alloc);
@@ -707,8 +713,8 @@ void parseDecl(DeclPtr decl, bool is_global) {
                     else init_exp = getConstExpValue(def -> getInitVal());
 
                     GlobalVar* alloc = nullptr;
-                    if (var_type == int32PointerType) alloc = builder.createGlobalVar<Value*>(def -> getIdentifier(), var_type,  new ConstIntValue(init_exp -> getIntVal()));
-                    else alloc = builder.createGlobalVar<Value*>(def -> getIdentifier(), var_type,  new ConstFloatValue(init_exp -> getFloatVal()));
+                    if (var_type == int32PointerType) alloc = builder.createGlobalVar<Value*>(alloca_name, var_type,  new ConstIntValue(init_exp -> getIntVal()));
+                    else alloc = builder.createGlobalVar<Value*>(alloca_name, var_type,  new ConstFloatValue(init_exp -> getFloatVal()));
                     globals -> push_back(alloc);
                     sym_tb.add_var(def -> getIdentifier(), var_decl -> getType(), false, false, var_decl -> getType() == B_FLOAT, alloc);
                 }
@@ -720,7 +726,7 @@ void parseDecl(DeclPtr decl, bool is_global) {
                         if (def -> getInitVal() -> getResType() == BaseType::B_FLOAT && var_decl -> getType() == B_INT) init_exp = builder.createFp2IntInst(init_exp);
                     }
 
-                    auto alloc = builder.createAllocaInst(def -> getIdentifier()+ to_string(block_cnt++), var_type);
+                    auto alloc = builder.createAllocaInst(alloca_name + "_gimc" + to_string(block_cnt++), var_type);
                     sym_tb.add_var(def -> getIdentifier(), var_decl -> getType(), false, false, var_decl -> getType() == B_FLOAT, alloc);
                     if (init_exp != nullptr) builder.createStoreInst(init_exp, alloc);
                 }
@@ -733,6 +739,8 @@ void parseDecl(DeclPtr decl, bool is_global) {
 void parseAssign(AssignStmtPtr stmt){
     auto lval_inst = parseVarLval(stmt -> getLVal());
     auto exp_inst = parseExp(stmt -> getExp(), false, true, false);
+    if (stmt -> getLVal() -> getResType() == B_INT && stmt -> getExp() -> getResType() == B_FLOAT) exp_inst.first = builder.createFp2IntInst(exp_inst.first);
+    if (stmt -> getLVal() -> getResType() == B_FLOAT && stmt -> getExp() -> getResType() == B_INT) exp_inst.first = builder.createInt2FpInst(exp_inst.first);
     builder.createStoreInst(exp_inst.first, lval_inst);
 }
 
@@ -1020,6 +1028,7 @@ Module* initialize(IRBuilder &builder) {
 
 void checkPosValid(vector<int> &pos, vector<int> dims) {
     bool flg = true;
+
     while (flg) {
         flg = false;
         for (int i = 1; i < pos.size(); i++) {
@@ -1031,10 +1040,11 @@ void checkPosValid(vector<int> &pos, vector<int> dims) {
             }
         }
     }
+
 }
 
-void parseArrayInitVal(ArrayInitValPtr arr_init, vector<int> &pos, vector<int> dims, int depth, Instruction* array_base, bool is_float, bool is_const) {
-    if (depth >= pos.size()) {
+void parseArrayInitVal(ArrayInitValPtr arr_init, vector<int> &poss, vector<int> dims, int depth, Instruction* array_base, bool is_float, bool is_const) {
+    if (depth >= poss.size()) {
         error_msg = "数组初始化错误";
         error_handle();
         return;
@@ -1043,16 +1053,19 @@ void parseArrayInitVal(ArrayInitValPtr arr_init, vector<int> &pos, vector<int> d
         cout<< "初始化为0"  << endl;
         return;
     }
+
     // 是否解析完了所有表达式
     bool fin_flg=false;
     for (int i=0; i< arr_init -> getDimVal() -> getInitVal().size();) {
         auto dim = arr_init -> getDimVal() -> getInitVal()[i];
         auto cur_ty = dim -> getType();
+        int last_pos = -1;
         while (dim -> getType() == cur_ty) {
             if (cur_ty != ExpType::ET_DIM) {
-                checkPosValid(pos, dims);
+                if (last_pos != -1) poss[poss.size()-1] = last_pos + 1;
+                checkPosValid(poss, dims);
                 Instruction* cur_base = array_base;
-                for (int ii=0;ii<=pos.size()-1;ii++) cur_base = builder.createGEPInst(cur_base, new ConstIntValue(pos[ii]));
+                for (int ii=0;ii<=poss.size()-1;ii++) cur_base = builder.createGEPInst(cur_base, new ConstIntValue(poss[ii]));
                 if (is_const) {
                     if (is_float) builder.createStoreInst( new ConstFloatValue(getConstExpValue(dim) -> getFloatVal()), cur_base);
                     else builder.createStoreInst( new ConstIntValue(getConstExpValue(dim) -> getIntVal()), cur_base);
@@ -1062,15 +1075,16 @@ void parseArrayInitVal(ArrayInitValPtr arr_init, vector<int> &pos, vector<int> d
                     if (is_float && dim -> getResType() == BaseType::B_INT) exp = builder.createInt2FpInst(exp);
                     else if (!is_float && dim -> getResType() == BaseType::B_FLOAT) exp = builder.createFp2IntInst(exp);
                     builder.createStoreInst(exp, cur_base);
+
                 }
-                pos[pos.size()-1]++;
-                
+                last_pos = poss[poss.size()-1];
             }
             else{
-                parseArrayInitVal(dynamic_pointer_cast<ArrayInitVal>(dim), pos, dims, depth + 1, array_base, is_float, is_const);
-                pos[depth]++;
-                for (int j = depth + 1; j < pos.size(); j++) pos[j] = 0;
+                parseArrayInitVal(dynamic_pointer_cast<ArrayInitVal>(dim), poss, dims, depth + 1, array_base, is_float, is_const);
+                poss[depth]++;
+                for (int j = depth + 1; j < poss.size(); j++) poss[j] = 0;
             }
+            
             if (i == arr_init -> getDimVal() -> getInitVal().size() - 1){
                 fin_flg=true;
                 break;
@@ -1079,8 +1093,8 @@ void parseArrayInitVal(ArrayInitValPtr arr_init, vector<int> &pos, vector<int> d
         }
         if (i == arr_init -> getDimVal() -> getInitVal().size() - 1 && fin_flg) break;
         if (cur_ty != ExpType::ET_DIM) {
-            pos[depth]++;
-            for (int j = depth + 1; j < pos.size(); j++) pos[j] = 0;
+            poss[depth]++;
+            for (int j = depth + 1; j < poss.size(); j++) poss[j] = 0;
         }
     }
 }
