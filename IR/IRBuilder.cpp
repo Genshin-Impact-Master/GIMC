@@ -294,10 +294,11 @@ Instruction* IRBuilder::createInitMemInst(baseTypePtr type, Value *ptr, int leng
 /******************************************************************************/
 /*                                生成 LLVM IR                                */
 /*****************************************************************************/
-void IRBuilder::emitIRModule(Module *module) {
+void IRBuilder::emitIRModule(Module *module, char* output_file) {
   irout.close();
   module->correctCheck();
-  irout = std::ofstream(module->getName() + ".ll");
+  if (output_file == nullptr) irout = std::ofstream(module->getName() + ".ll");
+  else irout = std::ofstream(std::string(output_file) + ".ll");
   std::vector<GlobalVar*> &globalVars = module->globalVars_;
   std::vector<Function*> &defs = module->funcDefs_;
   std::vector<Function*> &declares = module->funcDeclares_;

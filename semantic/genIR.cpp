@@ -1,29 +1,13 @@
-#include "../include/IR/IRBuilder.h"
-#include "../include/SymbolTable.hpp"
 #include "genIR.hpp"
-#include "errors.hpp"
-
-
-void parseDecl(DeclPtr decl, bool is_global = false);
-void parseAssign(AssignStmtPtr stmt);
-void parseIfElse(IfElseStmtPtr stmt, BBlock* loop_st = nullptr, BBlock* loop_ed = nullptr);
-void parseWhile(WhileStmtPtr stmt);
-void parseReturn(ReturnStmtPtr stmt);
-void parseBreak(StmtPtr stmt, BBlock* bBlock);
-void parseContinue(StmtPtr stmt, BBlock* bBlock);
-void parseBlock(BlockPtr block, vector<VarNode *> *va_list = nullptr, BBlock* loop_st = nullptr, BBlock* loop_ed = nullptr);
-pair<Value*,bool> parseExp(ExpPtr exp, bool is_cond, bool is_exp, bool is_func_param, BBlock* cond_true=nullptr, BBlock* cond_false=nullptr);
-void parseArrayInitVal(ArrayInitValPtr arr_init, vector<int> &pos, vector<int> dims, int depth, Instruction* array_base, bool is_float, bool is_const=false);
-void parseArrayInitVal(ArrayInitValPtr arr_init, vector<int> &pos, vector<int> dims, int depth, bool is_float, map<vector<int>, NumberPtr>& arr_val_mp);
 // 每个 example 必须包含
-std::vector<Function*> *defs;                          // 函数定义容器
-std::vector<Function*> *declares;                      // 函数声明容器
-std::vector<GlobalVar*> *globals;                      // 全局变量容器
-SymbolTable sym_tb = SymbolTable();
-string error_msg = "";
+extern std::vector<Function*> *defs;                          // 函数定义容器
+extern std::vector<Function*> *declares;                      // 函数声明容器
+extern std::vector<GlobalVar*> *globals;                      // 全局变量容器
+extern SymbolTable sym_tb;
+extern string error_msg;
 
-IRBuilder builder;
-Module* module;
+extern IRBuilder builder;
+extern Module* module;
 
 void error_handle(){
     cout << error_msg << endl;
@@ -31,8 +15,6 @@ void error_handle(){
 }
 
 
-
-// TODO: 传递数组形参后面的维度置为0
 // 表达式解析数组
 Value* parseArrayLval(LValPtr lval, VarNode* var_node, bool is_number, bool ptr=false){
     auto array_entry = var_node -> _inst;
@@ -432,7 +414,6 @@ pair<Value*,bool> parseExp(ExpPtr exp, bool is_cond, bool is_exp, bool is_func_p
     }
 }
 
-// TODO: add compare expression and parse it 
 void parseStmt(StmtPtr _stmt, BBlock* loop_st = nullptr, BBlock* loop_ed = nullptr) {
     if (_stmt -> getType() == StmtType::ST_ASSIGN) {
         parseAssign(dynamic_pointer_cast<AssignStmt>(_stmt));
@@ -789,7 +770,6 @@ void parseIfElse(IfElseStmtPtr stmt, BBlock* loop_st, BBlock* loop_ed){
     auto last = builder.getChosedBBlk();
 }
 
-//TODO: 解析循环
 // 基本思路：用三个基本块实现
 int loop_cnt = 1;
 void parseWhile(WhileStmtPtr stmt){
@@ -815,7 +795,7 @@ void parseWhile(WhileStmtPtr stmt){
     builder.createBrInst(nullptr, loop_ck, nullptr);
     builder.setChosedBBlock(loop_ed);
 }
-// TODO: return void
+
 void parseReturn(ReturnStmtPtr stmt){
     auto func = builder.getChosedFunc();
     auto type = func -> getType();
@@ -875,7 +855,7 @@ void parseBlock(BlockPtr block, vector<VarNode*> *va_list, BBlock* loop_st, BBlo
 
 
 
-// TODO:形参加入符号表
+
 void parseFuncDefine(FuncDefPtr func_def) {
     // 获取形参类型
     Function* func;
@@ -933,7 +913,6 @@ void parseFuncDefine(FuncDefPtr func_def) {
                 }
             }
             
-            // TODO: 处理形参数组
         }
         sym_tb.add_func(func_def -> getIdentifier(), func_def -> getReturnType(), func_def -> getFuncFParams(), func);
     }
@@ -975,16 +954,6 @@ void parseCompUnit(CompUnitPtr rt){
 
 
 Module* initialize(IRBuilder &builder) {
-//   putch = builder.createFunction("putch", voidType, putch_arguTypes);
-//   putint = builder.createFunction("putint", voidType, putint_arguTypes);
-//   getch = builder.createFunction("getch", i32Type, Zero_Argu_Type_List);
-//   getint = builder.createFunction("getint", i32Type, Zero_Argu_Type_List);              // getint 为零参函数，使用全局零参空向量，见 Config.cpp
-//   memset_ = builder.createFunction("myMemset", voidType, memset_arguTypes);
-//   putch_arguTypes.push_back(i32Type);
-//   putint_arguTypes.push_back(i32Type);
-//   memset_arguTypes.push_back(std::make_shared<PointerType>(i32Type));  
-//   memset_arguTypes.push_back(i32Type);  
-//   memset_arguTypes.push_back(i32Type); 
 
     auto void_f = nullptr;
     auto int_f = FuncFParamsPtr(new FuncFParams());
@@ -1175,20 +1144,10 @@ void arrayDebug(DeclPtr decl,int offset =0 ) {
     }
 }
 
-int main(int argc, char* argv[]){
-    ++ argv;
-    if (argc > 0) {
-        module = initialize(builder);
-        auto rt = parse(argv[0]);
-        parseCompUnit(CompUnitPtr(rt));
-        // arrayDebug(dynamic_pointer_cast<Decl>(CompUnitPtr(rt)->getDecl()[0]));
-        // cout<< "解析完毕"  << endl;
-        builder.emitIRModule(module);
-        builder.close();
-        return 0;
-    }
-    else {
-        printf("No input file\n");
-        return 0;
-    }
+
+void genIRModule(char *filename) {
+    module = initialize(builder);
+    auto rt = parse(filename);
+    parseCompUnit(CompUnitPtr(rt));
+
 }

@@ -210,7 +210,8 @@ public:
   void close() {irout.close();}
 
   // 生成 llvm IR 格式 Module
-  void emitIRModule(Module *module);
+  void emitIRModule(Module *module, char* output_file=nullptr);
+
 
   // 生成 llvm IR 格式 Function 的定义 define
   void emitIRFuncDef(Function *func);
