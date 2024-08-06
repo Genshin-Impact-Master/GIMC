@@ -3,6 +3,6 @@
 USING_GIMC_NAMESPACE
 
 LirInstMove::LirInstMove(LirBlock *parent, LirOperand *dst, LirOperand *src) : LirInst(LirInstKind::Move, parent) {
-  lirOpds.push_back(dst);
-  lirOpds.push_back(src);
+  opd1 = dst;
+  opd2 = src;
 }

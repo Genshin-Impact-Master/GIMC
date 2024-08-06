@@ -13,7 +13,7 @@ class Addr : public LirOperand {
     public:
         Addr(std::string label);
 
-        std::string toString();
+        std::string toString() override;
 
 };
 

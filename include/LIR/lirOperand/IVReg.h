@@ -17,7 +17,7 @@ class IVReg : public Reg {
 
         IVReg(int id) : Reg(LirOperandKind::IVirtual), id(id){};
 
-        std::string toString();
+        std::string toString() override;
 
 
 };

@@ -21,9 +21,9 @@ class FImm : public Imm {
             return imm;
         }
 
-        std::string toString();
+        std::string toString() override;
 
-        std::string toHexString();
+        std::string toHexString() override;
 
 };
 

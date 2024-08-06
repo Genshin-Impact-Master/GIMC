@@ -7,16 +7,17 @@ ToLir::ToLir(Module irModule) : irModule(irModule) {
   lirModule.setName(irModule.getName());
 };
 
-LirModule ToLir::moduleGen() {
+LirModule& ToLir::moduleGen() {
     // 全局变量将 <label> 加入 map
     for(GlobalVar* globalVar : *irModule.getGlobalVars()) {
         lirModule.getGlobalvars()[globalVar->getName()] = globalVar;
-        valMap[globalVar] = &Addr(globalVar->getName());
+        Addr *addr = new Addr(globalVar->getName());
+        bindGlobal(globalVar, addr);
     }
 
     // 将 Function 的 <label> (名字) 加入 map 
     for (Function *func : irModule.getFuncDeclares()) {
-      valMap[func] = &Addr(func->getName());
+      bindGlobal(func, new Addr(func->getName()));
     }
 
     for(Function* func : *(irModule.getFuncDefs())) {
@@ -28,7 +29,7 @@ LirModule ToLir::moduleGen() {
         int intcnt = 0;
         int floatcnt = 0;
 
-        LirFunction lirFunc = LirFunction(func->getName(), paramsCnt);
+        LirFunction *lirFunc = new LirFunction(func->getName(), paramsCnt);
         std::set<int> idx = std::set<int>();
         
         //  处理 Function 参数
@@ -67,17 +68,26 @@ LirModule ToLir::moduleGen() {
         lirFunc.setIParamsCnt(intcnt);
         lirFunc.setFParamsCnt(floatcnt);
         lirFunc.setReturnType(func->getType());
-        lirModule.getFunctions().push_back(&lirFunc);
-        funcMap[func] = &lirFunc;
+        lirModule.getFunctions().push_back(lirFunc);
+        funcMap[func] = lirFunc;
 
-        // 先为 BBLock 分配标签
+        // 先为 BBLock 分配标签，生成 LirBlock 并加入 LirFunction 中
         if(func->getBBlockList().getSize() > 0) {
             INode<BBlock> *blockNode = func->getBBlockList().getHeadPtr();
+            // 由于 IR 中的 correctCheck 每个函数一定有 entry 块
+            func->setEntry(blockNode->getNext()->getOwner());
             while(!blockNode->isEnd()) {
                 blockNode = blockNode->getNext();
                 BBlock *block = blockNode->getOwner();
-                LirBlock lirBlock = LirBlock(&lirFunc, block->getName() + "_" + func->getName());
-                blockMap[block] = &lirBlock;
+                std::string lirBlkName = block->getName() + "_" + func->getName();
+                LirBlock *lirBlock = new LirBlock(&lirFunc, lirBlkName);
+
+                // 将 LIR 基本块加入 LIRFunction
+                lirFunc->appendBlk(lirBlock);
+                // 构建 IR 基本块到 LIR 基本块映射
+                blockMap[block] = lirBlock;
+                // 为 LIR 基本块分配全局标签
+                bindGlobal(block, new Addr(lirBlkName));
             }
         }
 
@@ -108,19 +118,22 @@ LirModule ToLir::moduleGen() {
         INode<BBlock> *blockNode = func->getBBlockList().getHeadPtr();
         while(!blockNode->isEnd()) {
             blockNode = blockNode->getNext();
-            LirBlock* lirBlock = blockMap[blockNode->getOwner()];
+            BBlock *bBLk = blockNode->getOwner();
+
             // globalMap 无优化阶段用不到，对于每个 BBlock，每次需要清空 valMap 中的局部变量
             // globalMap.clear();
-            
-            
+
+            instResolve(bBLk);   
         }
     }
-
-    
+    return lirModule;
 }
 
-void ToLir::instResolve(Function *func, BBlock *block) {
-    LirFunction* lirFunc = funcMap[func];
+void ToLir::instResolve(BBlock *block) {
+    // 清除局部变量
+    clearLocal();
+
+    LirFunction* lirFunc = funcMap[block->getParent()];
     LirBlock* lirBlock = blockMap[block];
     INode<Instruction> *instNode = block->getInstList().getHeadPtr();
     while(!instNode->isEnd()) {

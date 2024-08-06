@@ -19,7 +19,10 @@ class LirFunction {
         int fparamsCnt; //浮点参数数量
         int iparamsCnt; //整型参数数量
         baseTypePtr returnType;
-        LirBlock prologue;    // 即开始的基本块 entry
+
+        LirBlock *prologue;    // 即开始的基本块 entry
+        IList<LirFunction, LirBlock> blkList;
+
         std::vector<Value> paramter;
         int stackSize = 0;
 
@@ -42,10 +45,19 @@ class LirFunction {
         std::map<LirOperand, LirInstMove>& getImmMap();
         std::map<Value*, IImm>& getStackOffsetMap() {return stackOffsetMap;}
         int getStackSize() {return stackSize;}
+
+        void appendBlk(LirBlock *blk) {
+          blkList.append(blk->getNode());
+        }
+        
         // 将 IR 中 alloca 指令生成的变量分配到函数栈空间
         IImm putLocalVar(Value *alloca);
 
+        // 获取函数名
+        std::string &getFuncName() {return lirFuncName();}
 
+        // 获取 entry 基本块
+        LirBlock* getEntry() {return prologue;}
         
 
 

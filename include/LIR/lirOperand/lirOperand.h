@@ -18,7 +18,7 @@ enum class LirOperandKind {
 
 class LirOperand {
     private:
-        LirOperandKind OperandKind ;
+        LirOperandKind OperandKind;
 
     public:
         LirOperand() {}
@@ -34,11 +34,14 @@ class LirOperand {
         bool isVirtual();
         
         bool isPhy();
+
+        bool isAddr() {return kind == LirOperandKind::Addr;}
         
         LirOperandKind getKind();
 
         std::string print();
 
+        virtual std::string toString() {return "";}
 
 
 

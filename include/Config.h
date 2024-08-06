@@ -40,6 +40,8 @@ extern std::vector<Value*> Zero_Argu_List;
 // 定义一个空参数类型向量，在零参函数 declare 时使用
 extern std::vector<baseTypePtr> Zero_Argu_Type_List;
 
+// 定义 arm 汇编中用到的寄存器
+extern std::vector<std::string> ARM_REGS;
 GIMC_NAMESPACE_END
 
 #endif // CONFIG_H_
