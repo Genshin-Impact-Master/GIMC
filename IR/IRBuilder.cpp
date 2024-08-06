@@ -297,7 +297,7 @@ Instruction* IRBuilder::createInitMemInst(baseTypePtr type, Value *ptr, int leng
 void IRBuilder::emitIRModule(Module *module, char* output_file) {
   irout.close();
   module->correctCheck();
-  if (output_file == nullptr) irout = std::ofstream(module->getName() + ".ll");
+  if (output_file == nullptr) irout = std::ofstream(module->getName());
   else irout = std::ofstream(std::string(output_file) + ".ll");
   std::vector<GlobalVar*> &globalVars = module->globalVars_;
   std::vector<Function*> &defs = module->funcDefs_;

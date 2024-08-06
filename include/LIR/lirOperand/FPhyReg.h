@@ -26,7 +26,7 @@ class FPhyReg : public Reg {
         bool isCallerSave();
         bool isCalleeSave();
 
-        std::string toString();
+        std::string toString() override;
 
 
 };

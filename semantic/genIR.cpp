@@ -535,20 +535,32 @@ GlobalVar* parseGlobalArray(string name, vector<int> dims, vector<int> pos, int 
     auto array_ty = is_float? floatType: i32Type;
     baseTypePtr array_base = make_shared<PointerType>(array_ty, dims[dims.size()-1]);
     for (int i=dims.size()-2;i>=dep;i--) array_base = make_shared<PointerType>(array_base, dims[i]);
+    bool all_zero = true;
     for (int i = 0; i < dims[dep]; i++) {
         pos[dep] = i;
         if (dep == static_cast<int>(dims.size())-1) {
             if (arr_val_mp.find(pos) != arr_val_mp.end()) {
-                if (is_float) ret.push_back(new ConstFloatValue(arr_val_mp[pos] -> getFloatVal()));
-                else ret.push_back(new ConstIntValue(arr_val_mp[pos] -> getIntVal()));
+
+                if (is_float) {
+                    ret.push_back(new ConstFloatValue(arr_val_mp[pos] -> getFloatVal()));
+                    if (arr_val_mp[pos] -> getFloatVal() != 0.0) all_zero = false;
+                }
+                else {
+                    ret.push_back(new ConstIntValue(arr_val_mp[pos] -> getIntVal()));
+                    if (arr_val_mp[pos] -> getIntVal() != 0) all_zero = false;
+                }
             }
             else {
                 if (is_float) ret.push_back(new ConstFloatValue(0.0));
                 else ret.push_back(new ConstIntValue(0));
             }
         }
-        else ret.push_back(parseGlobalArray(name, dims, pos, dep+1, arr_val_mp, is_float));
+        else {
+            auto var = parseGlobalArray(name, dims, pos, dep+1, arr_val_mp, is_float);
+            if (var != nullptr) ret.push_back(var);
+        }
     }
+    if (all_zero && dep == static_cast<int>(dims.size())-1 && dep != 0) return nullptr;
     return builder.createGlobalVar<vector<Value*>>(name, array_base, ret);
 };
 
@@ -1144,6 +1156,21 @@ void arrayDebug(DeclPtr decl,int offset =0 ) {
     }
 }
 
+
+int main(int argc, char *argv[]) {
+    ++ argv;
+    if (argc > 0) {
+        module = initialize(builder);
+        auto rt = parse(argv[0]);
+        parseCompUnit(CompUnitPtr(rt));
+        builder.emitIRModule(module);
+        builder.close();
+    }
+    else {
+        cout<< "no input file" << endl;
+    }
+    return 0;
+}
 
 void genIRModule(char *filename) {
     module = initialize(builder);

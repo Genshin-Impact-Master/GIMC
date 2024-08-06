@@ -30,7 +30,7 @@ class IPhyReg : public Reg {
         bool isSpecial();
         bool isCalleeSave();
 
-        std::string toString();
+        std::string toString() override;
 
 
 };

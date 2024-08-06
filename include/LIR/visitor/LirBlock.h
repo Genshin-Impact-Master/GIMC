@@ -18,6 +18,7 @@ class LirBlock {
         LirBlock* trueLirSucc;
         LirBlock* falseLirSucc;
         IList<LirBlock, LirInst> lirInstLists;
+        INode<LirBlock> node;
 
     public:
         // 修改 1 LirBlock 的无参初始化是不允许的
@@ -27,6 +28,8 @@ class LirBlock {
         void setFalseLirSucc(LirBlock* falseLirSucc);
         void addInst(LirInst* inst);
         
+        INode<LirBlock>& getNode() {return node;}
+        std::string &getLabel() {return label;}
         
 
 };

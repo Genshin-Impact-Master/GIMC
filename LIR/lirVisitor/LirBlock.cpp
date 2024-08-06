@@ -3,7 +3,11 @@
 
 USING_GIMC_NAMESPACE
 
-LirBlock::LirBlock(LirFunction* lirFunction, const std::string &label) : lirFunction(lirFunction), label(label) {};
+LirBlock::LirBlock(LirFunction* lirFunction, const std::string &label) : 
+                  lirFunction(lirFunction), 
+                  label(label),
+                  node(nullptr, nullptr, this),
+                  lirInstLists(this) {};
 
 void LirBlock::addPres(LirBlock* lirPre) {
     lirPres.insert(lirPre);

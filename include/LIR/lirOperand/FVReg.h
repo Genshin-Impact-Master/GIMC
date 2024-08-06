@@ -17,7 +17,7 @@ class FVReg : public Reg {
 
         FVReg(int id) : Reg(LirOperandKind::FVirtual), id(id){};
 
-        std::string toString();
+        std::string toString() override;
 };
 
 GIMC_NAMESPACE_END

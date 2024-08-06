@@ -6,3 +6,4 @@ tmp*
 # cmake build 文件夹
 build
 testout.out
+a.out

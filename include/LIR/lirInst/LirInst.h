@@ -2,6 +2,12 @@
 #define LIR_INST_H
 #include "../../Config.h"
 #include "../lirOperand/lirOperand.h"
+#include "../lirOperand/IImm.h"
+#include "../lirOperand/Imm.h"
+#include "../lirOperand/FImm.h"
+#include "../lirOperand/Addr.h"
+#include "../../Utils/IList.h"
+#include <map>
 
 GIMC_NAMESPACE_BEGIN
 USING_GIMC_NAMESPACE
@@ -43,47 +49,82 @@ class LirInst {
         LirInstKind lirKind;
         LirBlock* parent;
         INode<LirInst> lirInstNode;
+        /**
+         * @note 寄存器分配后得到的映射 
+         * LirOperand -> int
+         * int 表示为寄存器的编号，而 int 编号又对应于相应寄存器
+         * @see Config.h
+         */
+        std::map<LirOperand*, int> regAllocMap;
     protected:
-        std::vector<LirOperand*> lirOpds;
+        // 三元式最多三个操作寄存器
+        LirOperand *opd1;
+        LirOperand *opd2;
+        LirOperand *opd3;
         LirArmStatus status;
 
     public:
-        LirInst(LirInstKind kind, LirBlock *parent_) {}
+        LirInst(LirInstKind kind, LirBlock *parent_);
         LirInstKind getKind() {return lirKind;}
         LirBlock* getParent() {return parent;}
         INode<LirInst> &getNode() {return lirInstNode;}
         void setParent(LirBlock* parent) {this->parent = parent;}
         void setKind(LirInstKind kind) {this->lirKind = kind;}
 
+        LirOperand* getOpd1() {return opd1;}
+        LirOperand* getOpd2() {return opd2;}
+        LirOperand* getOpd3() {return opd3;}
+
+        /**
+         * 为无限寄存器分配实际寄存器
+         * @param opd 选择分配的寄存器
+         * @param armRegNum arm 寄存器的编号，其中通用寄存器为 0 ~ 15，浮点寄存器为 16 ~ ? todo
+         */
+        void allocaReg(LirOperand *opd, int armRegNum) {regAllocMap[opd] = armRegNum;}
+
+        // LIR 到 arm 汇编 codegen 时调用
+        std::string& getOperandName(LirOperand *opd) {
+          if (opd->isVirtual()) {
+            // 若为分配的寄存器  
+            return ARM_REGS[regAllocMap[opd]];
+          }
+          // 注意：到这一步时必须保证超过 arm 指令限定长度的立即数需要转换为 Addr? 是否是这样处理？todo
+          else if (opd->isImm() || opd->isAddr()) {
+            return opd->toString();
+          }
+          else {
+            error("暂时不支持其他种类的寄存器"); 
+          }
+        }
 };
 
 class LirStore : public LirInst {
 public:
   LirStore(LirBlock *parent, LirOperand *offset, LirOperand *input) : LirInst(LirInstKind::Store, parent) {
-    lirOpds.push_back(offset); 
-    lirOpds.push_back(input);
+    opd1 = offset;
+    opd2 = input;
   }
 };
 
 class LirLoad : public LirInst {
 public:
   LirLoad(LirBlock *parent, LirOperand *dst, LirOperand *ptr) : LirInst(LirInstKind::Load, parent) {
-    lirOpds.push_back(dst);
-    lirOpds.push_back(ptr);
+    opd1 = dst;
+    opd2 = ptr;
   }
 };
 
 class LirRet : public LirInst {
 public:
   LirRet(LirBlock *parent, LirOperand *retVal) : LirInst(LirInstKind::Ret,  parent) {
-    lirOpds.push_back(retVal);
+    opd1 = retVal;
   }
 };
 
 class LirBr : public LirInst {
 public:
   LirBr(LirBlock *parent, LirOperand *addr, LirArmStatus status_) : LirInst(LirInstKind::Br, parent) {
-    lirOpds.push_back(addr);
+    opd1 = addr;
     status = status_;
   }
 };
@@ -91,8 +132,8 @@ public:
 class LirCmp : public LirInst {
 public:
   LirCmp(LirBlock *parent, LirOperand *opd1, LirOperand *opd2) : LirInst(LirInstKind::cmp, parent) {
-    lirOpds.push_back(opd1);
-    lirOpds.push_back(opd2);
+    this->opd1 = opd1;
+    this->opd2 = opd2;
   }
 }
 
