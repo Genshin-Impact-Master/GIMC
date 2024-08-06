@@ -4,17 +4,13 @@
 #include "../lirOperand/lirOperand.h"
 #include "../../IR/Inst.h"
 #include "../visitor/LirBlock.h"
+#include "LirInst.h"
 GIMC_NAMESPACE_BEGIN
 USING_GIMC_NAMESPACE
 
-class LirInstMove {
-    private:
-        LirBlock lirBlock;
-        LirOperand dst;
-        LirOperand src;
-
+class LirInstMove : public LirInst {
     public:
-        LirInstMove(LirBlock &lirBlock, LirOperand &dst, LirOperand &src);
+        LirInstMove(LirBlock *parent, LirOperand *dst, LirOperand *src);
 
 };
 

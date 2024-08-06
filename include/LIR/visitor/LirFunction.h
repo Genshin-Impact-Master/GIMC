@@ -2,7 +2,10 @@
 #define LIR_FUNC_H
 #include "../../Config.h"
 #include "../lirOperand/lirOperand.h"
+#include "../lirOperand/IImm.h"
 #include "../lirInst/LirInstMove.h"
+#include "../../IR/Type.h"
+#include "../../IR/Inst.h"
 #include <map>
 
 
@@ -24,7 +27,7 @@ class LirFunction {
          标准库容器（例如 std::map、std::vector 等）不能直接包含引用类型，
          因为它们要求元素类型必须是可复制的，而引用本身不是一个对象，它只是一个别名。
         */
-        std::map<LirOperand, LirInstMove> immMap;
+        std::map<LirOperand*, LirInstMove*> immMap;
 
         /*******************中间变量，即为了辅助 Lir 的生成****************/
         // 中端 alloca 出的局部变量到 IImm 的映射表
@@ -37,8 +40,10 @@ class LirFunction {
         void setFParamsCnt(int floatcnt);
         void setReturnType(baseTypePtr returnType);
         std::map<LirOperand, LirInstMove>& getImmMap();
-
+        std::map<Value*, IImm>& getStackOffsetMap() {return stackOffsetMap;}
         int getStackSize() {return stackSize;}
+        // 将 IR 中 alloca 指令生成的变量分配到函数栈空间
+        IImm putLocalVar(Value *alloca);
 
 
         

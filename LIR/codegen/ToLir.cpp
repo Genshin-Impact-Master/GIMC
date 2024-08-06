@@ -8,9 +8,15 @@ ToLir::ToLir(Module irModule) : irModule(irModule) {
 };
 
 LirModule ToLir::moduleGen() {
+    // 全局变量将 <label> 加入 map
     for(GlobalVar* globalVar : *irModule.getGlobalVars()) {
-        lirModule.getGlobalvars()[globalVar->getFullName()] = globalVar;
-        valMap[globalVar] = &Addr(globalVar->getFullName());
+        lirModule.getGlobalvars()[globalVar->getName()] = globalVar;
+        valMap[globalVar] = &Addr(globalVar->getName());
+    }
+
+    // 将 Function 的 <label> (名字) 加入 map 
+    for (Function *func : irModule.getFuncDeclares()) {
+      valMap[func] = &Addr(func->getName());
     }
 
     for(Function* func : *(irModule.getFuncDefs())) {
@@ -64,6 +70,7 @@ LirModule ToLir::moduleGen() {
         lirModule.getFunctions().push_back(&lirFunc);
         funcMap[func] = &lirFunc;
 
+        // 先为 BBLock 分配标签
         if(func->getBBlockList().getSize() > 0) {
             INode<BBlock> *blockNode = func->getBBlockList().getHeadPtr();
             while(!blockNode->isEnd()) {
@@ -102,7 +109,9 @@ LirModule ToLir::moduleGen() {
         while(!blockNode->isEnd()) {
             blockNode = blockNode->getNext();
             LirBlock* lirBlock = blockMap[blockNode->getOwner()];
-            globalMap.clear();
+            // globalMap 无优化阶段用不到，对于每个 BBlock，每次需要清空 valMap 中的局部变量
+            // globalMap.clear();
+            
             
         }
     }
@@ -124,7 +133,7 @@ void ToLir::instResolve(Function *func, BBlock *block) {
             BinaryInst* i = dynamic_cast<BinaryInst*>(inst);
             Value *lhs = i->getLhs();
             Value *rhs = i->getRhs();
-            LirOperand lhsReg, rhsReg, dstReg;
+            LirOperand *lhsReg, *rhsReg, *dstReg;
             LirInstKind lirInstKind;
             switch (i->getKind())
             {
@@ -140,8 +149,8 @@ void ToLir::instResolve(Function *func, BBlock *block) {
                 }
                 dstReg = ToLir::operandResolve(i, lirFunc, lirBlock);
                 lirInstKind = LirInstKind::Add;
-                LirBinary lirBin = LirBinary(lirInstKind, lirBlock, lhsReg, rhsReg, dstReg);
-                lirBlock->addInst(dynamic_cast<LirInst*>(&lirBin));
+                LirBinary *lirBin = new LirBinary(lirInstKind, lirBlock, lhsReg, rhsReg, dstReg);
+                lirBlock->addInst(lirBin);
                 break;
 
             case InstKind::Sub:
@@ -155,8 +164,8 @@ void ToLir::instResolve(Function *func, BBlock *block) {
                     lirInstKind =LirInstKind::Sub;
                 }
                 dstReg = ToLir::operandResolve(i, lirFunc, lirBlock);
-                LirBinary lirBin = LirBinary(lirInstKind, lirBlock, lhsReg, rhsReg, dstReg);
-                lirBlock->addInst(dynamic_cast<LirInst*>(&lirBin));
+                LirBinary *lirBin = new LirBinary(lirInstKind, lirBlock, lhsReg, rhsReg, dstReg);
+                lirBlock->addInst(lirBin);
                 break;
 
             case InstKind::Mul:
@@ -170,8 +179,8 @@ void ToLir::instResolve(Function *func, BBlock *block) {
                 }
                 dstReg = ToLir::operandResolve(i, lirFunc, lirBlock);
                 lirInstKind = LirInstKind::Mul;
-                LirBinary lirBin = LirBinary(lirInstKind, lirBlock, lhsReg, rhsReg, dstReg);
-                lirBlock->addInst(dynamic_cast<LirInst*>(&lirBin));
+                LirBinary *lirBin = new LirBinary(lirInstKind, lirBlock, lhsReg, rhsReg, dstReg);
+                lirBlock->addInst(lirBin);
                 break;
 
             case InstKind::Div:
@@ -180,8 +189,8 @@ void ToLir::instResolve(Function *func, BBlock *block) {
                 rhsReg = ToLir::operandResolve(rhs, lirFunc, lirBlock);
                 dstReg = ToLir::operandResolve(i, lirFunc, lirBlock);
                 lirInstKind = LirInstKind::Div;
-                LirBinary lirBin = LirBinary(lirInstKind, lirBlock, lhsReg, rhsReg, dstReg);
-                lirBlock->addInst(dynamic_cast<LirInst*>(&lirBin));
+                LirBinary *lirBin = new LirBinary(lirInstKind, lirBlock, lhsReg, rhsReg, dstReg);
+                lirBlock->addInst(lirBin);
                 break;
             
             case InstKind::Addf:     
@@ -195,8 +204,8 @@ void ToLir::instResolve(Function *func, BBlock *block) {
                 }
                 dstReg = ToLir::operandResolve(i, lirFunc, lirBlock);
                 lirInstKind = LirInstKind::Addf;
-                LirBinary lirBin = LirBinary(lirInstKind, lirBlock, lhsReg, rhsReg, dstReg);
-                lirBlock->addInst(dynamic_cast<LirInst*>(&lirBin));
+                LirBinary *lirBin = new LirBinary(lirInstKind, lirBlock, lhsReg, rhsReg, dstReg);
+                lirBlock->addInst(lirBin);
                 break;
             
             case InstKind::Subf:
@@ -210,8 +219,8 @@ void ToLir::instResolve(Function *func, BBlock *block) {
                     lirInstKind =LirInstKind::Subf;
                 }
                 dstReg = ToLir::operandResolve(i, lirFunc, lirBlock);
-                LirBinary lirBin = LirBinary(lirInstKind, lirBlock, lhsReg, rhsReg, dstReg);
-                lirBlock->addInst(dynamic_cast<LirInst*>(&lirBin));
+                LirBinary *lirBin = new LirBinary(lirInstKind, lirBlock, lhsReg, rhsReg, dstReg);
+                lirBlock->addInst(lirBin);
                 break;
             
             case InstKind::Mulf:
@@ -225,8 +234,8 @@ void ToLir::instResolve(Function *func, BBlock *block) {
                 }
                 dstReg = ToLir::operandResolve(i, lirFunc, lirBlock);
                 lirInstKind = LirInstKind::Mulf;
-                LirBinary lirBin = LirBinary(lirInstKind, lirBlock, lhsReg, rhsReg, dstReg);
-                lirBlock->addInst(dynamic_cast<LirInst*>(&lirBin));
+                LirBinary *lirBin = new LirBinary(lirInstKind, lirBlock, lhsReg, rhsReg, dstReg);
+                lirBlock->addInst(lirBin);
                 break;
             
             case InstKind::Divf:
@@ -234,8 +243,8 @@ void ToLir::instResolve(Function *func, BBlock *block) {
                 rhsReg = ToLir::operandResolve(rhs, lirFunc, lirBlock);
                 dstReg = ToLir::operandResolve(i, lirFunc, lirBlock);
                 lirInstKind = LirInstKind::Divf;
-                LirBinary lirBin = LirBinary(lirInstKind, lirBlock, lhsReg, rhsReg, dstReg);
-                lirBlock->addInst(dynamic_cast<LirInst*>(&lirBin));
+                LirBinary *lirBin = new LirBinary(lirInstKind, lirBlock, lhsReg, rhsReg, dstReg);
+                lirBlock->addInst(lirBin);
                 break;
             
             // @todo 通过除法乘法减法来做 
@@ -244,41 +253,164 @@ void ToLir::instResolve(Function *func, BBlock *block) {
                 rhsReg = ToLir::operandResolve(rhs, lirFunc, lirBlock);
                 dstReg = ToLir::operandResolve(i, lirFunc, lirBlock);
                 lirInstKind = LirInstKind::Divf;
-                LirBinary lirBin = LirBinary(lirInstKind, lirBlock, lhsReg, rhsReg, dstReg);
-                lirBlock->addInst(dynamic_cast<LirInst*>(&lirBin));
+                LirBinary *lirBin = new LirBinary(lirInstKind, lirBlock, lhsReg, rhsReg, dstReg);
+                lirBlock->addInst(lirBin);
                 break;
             default:
                 break;
             }
+
+            // 接下来将解析出的三个 reg 放入 <Value*, LirOperand*> map 中
+
         }
 
         else if(kind == InstKind::Alloca) {
-
+          // 本身就是 ptr，放入 stackOffsetMap 中
+          lirFunc->putLocalVar(inst);
         }
 
         else if (kind == InstKind::Store) {
-          // 考虑为添加一条 move 指令
+          Store *i = dynamic_cast<Store*>(inst);
+          Value *input = i->getInput();
+          Value *ptr = i->getPtr();       // 注意这个 ptr 可能是形参，全局变量，局部变量
+          LirOperand *data = getBindOperand(input);    // 获取输入的 operand
+          LirOperand *offset = getBindOperand(ptr);
+          LirStore *lirStore = new LirStore(lirBlock, offset, data);
+          lirBlock->addInst(lirStore);
+        }
 
+        else if (kind == InstKind::Load) {
+          Load *i = dynamic_cast<Load*>(inst);
+          Value *ptr = i->getPtr();
+          LirOperand *dst = operandResolve(inst, lirFunc, lirBlock);  // load 进的寄存器
+          LirOperand *from = getBindOperand(ptr);
+          LirLoad *lirLoad = new LirLoad(lirBlock, dst, from);
+          lirBlock->addInst(lirLoad);
+        }
+
+        else if (kind == InstKind::Call) {
+          
+        }
+
+        else if (kind == InstKind::Ret) {
+          Ret *i = dynamic_cast<Ret*>(inst);
+          Value *ret = i->getRetValue();
+          LirOperand *retVal = getBindOperand(ret);
+          LirRet *lirRet = new LirRet(lirBlock, retVal);
+          lirBlock->addInst(lirRet);
+        }
+
+        else if (kind == InstKind::Icmp) {
+          Icmp *i = dynamic_cast<Icmp*>(inst);
+          Value *first = i->getFirst();
+          Value *second = i->getSecond();
+          LirOperand *opd1 = getBindOperand(first);
+          LirOperand *opd2 = getBindOperand(second);
+          LirCmp lirCmp = new LirCmp(lirBlock, opd1, opd2);
+          lirBlock->addInst(lirCmp);
+        }
+
+        else if (kind == InstKind::Fcmp) {
+          Fcmp *i = dynamic_cast<Fcmp*>(inst);
+          Value *first = i->getFirst();
+          Value *second = i->getSecond();
+          LirOperand *opd1 = getBindOperand(first);
+          LirOperand *opd2 = getBindOperand(second);
+          LirCmp lirCmp = new LirCmp(lirBlock, opd1, opd2);
+          lirBlock->addInst(lirCmp);
+        }
+
+        else if (kind == InstKind::Br) {
+          // 根据是否是无条件跳转
+          Br *i = dynamic_cast<Br*>(inst);
+          Value *bBlkTrue = i->getTrueBBlk();
+          LirOperand *addr = getBindOperand(bBlkTrue);
+          if (i->isUnconditional()) {
+            LirBr lirBr = new LirBr(lirBlock, addr, LirArmStatus::NO_Cond);
+            lirBlock->addInst(lirBr);
+          }
+          else {
+            // 加入两条 LirBr 指令
+            Value *bBlkFalse = i->getFalseBBlk();
+            Instruction *cond = dynamic_cast<Instruction*>(i->getCond());
+            CondKind ckind = cond->getCondKind();
+            LirOperand *falseAddr = getBindOperand(bBlkTrue);
+            LirArmStatus status;
+            if (cond->getKind() == InstKind::Fcmp) {
+              switch (ckind.fCond) {
+                case FCondKind::Oeq:
+                  status = LirArmStatus::EQ;
+                  break;
+                case FCondKind::Oge:
+                  status = LirArmStatus::GE;
+                  break;
+                case FCondKind::Ogt:
+                  status = LirArmStatus::GT;
+                  break;
+                case FCondKind::Ole:
+                  status = LirArmStatus::LE;
+                  break;
+                case FCondKind::Olt:
+                  status = LirArmStatus::LT;
+                  break;
+                case FCondKind::One:
+                  status = LirArmStatus::NE;
+                  break;
+                default:
+                  break;
+              }
+            }
+            else {
+              switch (ckind.iCond) {
+                case ICondKind::Eq:
+                  status = LirArmStatus::EQ;
+                  break;
+                case ICondKind::Sge:
+                  status = LirArmStatus::GE;
+                  break;
+                case ICondKind::Sgt:
+                  status = LirArmStatus::GT;
+                  break;
+                case ICondKind::Sle:
+                  status = LirArmStatus::LE;
+                  break;
+                case ICondKind::Slt:
+                  status = LirArmStatus::LT;
+                  break;
+                case ICondKind::Ne:
+                  status = LirArmStatus::NE;
+                  break;
+                default:
+                  break;
+              }
+            }
+            LirBr trueBr = new LirBr(lirBlock, addr, status);
+            LirBr falseBr = new LirBr(lirBlock, falseAddr, LirArmStatus::NO_Cond);
+          }
+        }
+
+        else if (kind == InstKind::GEP) {
+          
         }
     }
 }
 
-
-LirOperand ToLir::operandResolve(Value* val, LirFunction* lirFunc, LirBlock* lirBlock) {
+// OperandResolve 即为申请一个 Operand
+LirOperand* ToLir::operandResolve(Value* val, LirFunction* lirFunc, LirBlock* lirBlock) {
     if(dynamic_cast<ConstValue*>(val)) {
         return immResolve(val, lirFunc, lirBlock);
     }
     else {
         //  这里 TypeBase 的检验需要用 isFloat，因为指针类型也在通用寄存器中
         if(TypeBase::isFloat(val->getType())) {
-            return FVReg();
+            return new FVReg();
         }
         else 
-            return IVReg();
+            return new IVReg();
     }
 }
 
-LirOperand ToLir::immResolve(Value* val, LirFunction* lirFunc, LirBlock* lirBlock) {
+LirOperand* ToLir::immResolve(Value* val, LirFunction* lirFunc, LirBlock* lirBlock) {
     if(dynamic_cast<ConstFloatValue*>(val)) {
         return loadImmToFVReg(dynamic_cast<ConstFloatValue*>(val)->getFloat(), lirFunc, lirBlock);
     } else {
@@ -286,18 +418,21 @@ LirOperand ToLir::immResolve(Value* val, LirFunction* lirFunc, LirBlock* lirBloc
     }
 }
 
-FVReg& ToLir::loadImmToFVReg(float val, LirFunction* lirFunc, LirBlock* lirBlock) {
-    FVReg reg = FVReg();
+// 此处如果传递的是引用，那么局部变量会被销毁
+// 将立即数移入 Float Reg
+FVReg* ToLir::loadImmToFVReg(float val, LirFunction* lirFunc, LirBlock* lirBlock) {
+    FVReg *reg = new FVReg();
     FImm fImm = FImm(val);
-    LirInstMove move = LirInstMove(*lirBlock, reg, fImm);
+    LirInstMove *move = new LirInstMove(*lirBlock, reg, fImm);
     lirFunc->getImmMap().emplace(reg, move);
     return reg;
 }
 
-IVReg& ToLir::loadImmToIVReg(int val, LirFunction* lirFunc, LirBlock* lirBlock) {
-    IVReg reg = IVReg();
+// 将立即数移入 Integer Reg
+IVReg* ToLir::loadImmToIVReg(int val, LirFunction* lirFunc, LirBlock* lirBlock) {
+    IVReg *reg = new IVReg();
     IImm iImm = IImm(val);
-    LirInstMove move = LirInstMove(*lirBlock, reg, iImm);
+    LirInstMove move = new LirInstMove(*lirBlock, reg, iImm);
     lirFunc->getImmMap().emplace(reg, move);
     return reg;
 }
