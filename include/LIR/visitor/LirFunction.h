@@ -42,7 +42,7 @@ class LirFunction {
         void setIParamsCnt(int intcnt);
         void setFParamsCnt(int floatcnt);
         void setReturnType(baseTypePtr returnType);
-        std::map<LirOperand, LirInstMove>& getImmMap();
+        std::map<LirOperand*, LirInstMove*>& getImmMap();
         std::map<Value*, IImm>& getStackOffsetMap() {return stackOffsetMap;}
         int getStackSize() {return stackSize;}
 
@@ -54,7 +54,7 @@ class LirFunction {
         IImm putLocalVar(Value *alloca);
 
         // 获取函数名
-        std::string &getFuncName() {return lirFuncName();}
+        std::string &getFuncName() {return lirFuncName;}
 
         // 获取 entry 基本块
         LirBlock* getEntry() {return prologue;}

@@ -490,7 +490,7 @@ public:
 class Zext final : public Instruction {
 public:
   /**
-   * @param proto 需要改变的 Value 类型
+   * @param proto 需要改变的 Value
    * @param type 最终的数据类型
    */
   Zext(const std::string &name,
@@ -503,6 +503,12 @@ public:
   void correctCheck() override {
     if (!TypeBase::isInteger(ops_[0]->getType())) {
       error("Zext 转换的数据类型必须为 int");
+    }
+    // Zext 前一个指令必须为 CMP 指令
+    Instruction *i = getNode().getPre()->getOwner();
+    InstKind kind = i->getKind();
+    if (kind != InstKind::Icmp && kind != InstKind::Fcmp) {
+      error("Zext 前一个指令必须为 ICMP 或 FCMP");
     }
   }
 };

@@ -1,36 +1,36 @@
-#ifndef LIR_FPHYREG_H
-#define LIR_FPHYREG_H
-#include "../../Config.h"
-#include "lirOperand.h"
-#include "Reg.h"
-#include <map>
-#include <set>
+// #ifndef LIR_FPHYREG_H
+// #define LIR_FPHYREG_H
+// #include "../../Config.h"
+// #include "lirOperand.h"
+// #include "Reg.h"
+// #include <map>
+// #include <set>
 
-GIMC_NAMESPACE_BEGIN
-USING_GIMC_NAMESPACE
+// GIMC_NAMESPACE_BEGIN
+// USING_GIMC_NAMESPACE
 
-class FPhyReg : public Reg {
-    private:
-        int id;  
+// class FPhyReg : public Reg {
+//     private:
+//         int id;  
 
-    public:
-        FPhyReg(int id);
+//     public:
+//         FPhyReg(int id);
 
-        static std::map<int, FPhyReg*>* FPhyRegs;
-        static std::set<FPhyReg*>* allocatableFPhyRegs;
+//         static std::map<int, FPhyReg*>* FPhyRegs;
+//         static std::set<FPhyReg*>* allocatableFPhyRegs;
 
-        static std::map<int, FPhyReg*>* generateFPhyRegs();
-        static FPhyReg* RegS(int id);
-        static std::set<FPhyReg*>* getAllocatableFPhyRegs();
+//         static std::map<int, FPhyReg*>* generateFPhyRegs();
+//         static FPhyReg* RegS(int id);
+//         static std::set<FPhyReg*>* getAllocatableFPhyRegs();
 
-        bool isCallerSave();
-        bool isCalleeSave();
+//         bool isCallerSave();
+//         bool isCalleeSave();
 
-        std::string toString() override;
+//         std::string toString() override;
 
 
-};
+// };
 
-GIMC_NAMESPACE_END
+// GIMC_NAMESPACE_END
 
-#endif
+// #endif

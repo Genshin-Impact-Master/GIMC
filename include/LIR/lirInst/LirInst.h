@@ -83,7 +83,7 @@ class LirInst {
         void allocaReg(LirOperand *opd, int armRegNum) {regAllocMap[opd] = armRegNum;}
 
         // LIR 到 arm 汇编 codegen 时调用
-        std::string& getOperandName(LirOperand *opd) {
+        std::string getOperandName(LirOperand *opd) {
           if (opd->isVirtual()) {
             // 若为分配的寄存器  
             return ARM_REGS[regAllocMap[opd]];
@@ -95,6 +95,7 @@ class LirInst {
           else {
             error("暂时不支持其他种类的寄存器"); 
           }
+          return "null";
         }
 };
 
@@ -104,11 +105,7 @@ public:
    * @param addr 存取的位置
    * @param input 需要存入的 Operand
    */
-  LirStore(LirBlock *parent, LirOperand *addr, LirOperand *input) : LirInst(LirInstKind::Store, parent) {
-    opd1 = addr;
-    opd2 = input;
-    parent->addInst(this);
-  }
+  LirStore(LirBlock *parent, LirOperand *addr, LirOperand *input);
 };
 
 class LirLoad : public LirInst {
@@ -117,11 +114,7 @@ public:
    * @param dst 加载的寄存器
    * @param ptr 需要加载的寄存器位置
    */
-  LirLoad(LirBlock *parent, LirOperand *dst, LirOperand *ptr) : LirInst(LirInstKind::Load, parent) {
-    opd1 = dst;
-    opd2 = ptr;
-    parent->addInst(this);
-  }
+  LirLoad(LirBlock *parent, LirOperand *dst, LirOperand *ptr);
 };
 
 class LirRet : public LirInst {
@@ -129,10 +122,7 @@ public:
   /**
    * @param retVal 存有返回值的寄存器
    */
-  LirRet(LirBlock *parent, LirOperand *retVal) : LirInst(LirInstKind::Ret,  parent) {
-    opd1 = retVal;
-    parent->addInst(this);
-  }
+  LirRet(LirBlock *parent, LirOperand *retVal);
 };
 
 class LirBr : public LirInst {
@@ -141,11 +131,7 @@ public:
    * @param addr 跳转的标签地址
    * @param status_ ARM 状态码即跳转条件判断种类
    */
-  LirBr(LirBlock *parent, LirOperand *addr, LirArmStatus status_) : LirInst(LirInstKind::Br, parent) {
-    opd1 = addr;
-    status = status_;
-    parent->addInst(this);
-  }
+  LirBr(LirBlock *parent, LirOperand *addr, LirArmStatus status_);
 };
 
 class LirCmp : public LirInst {
@@ -154,13 +140,21 @@ public:
    * @param opd1 reg1
    * @param opd2 reg2
    */
-  LirCmp(LirBlock *parent, LirOperand *opd1, LirOperand *opd2) : LirInst(LirInstKind::cmp, parent) {
-    this->opd1 = opd1;
-    this->opd2 = opd2;
-    parent->addInst(this);
-  }
+  LirCmp(LirBlock *parent, LirOperand *opd1, LirOperand *opd2);
 };
 
+class LirFp2Int : public LirInst {
+public:
+  /**
+   * @param proto 需要改变的 Value
+   */
+  LirFp2Int(LirBlock *parent, LirOperand *dst, LirOperand *proto);
+};
+
+class LirInt2Fp : public LirInst {
+public:
+  LirInt2Fp(LirBlock *parent, LirOperand *dst, LirOperand *proto);
+};
 GIMC_NAMESPACE_END
 
 

@@ -3,7 +3,7 @@
 SCC="arm-none-eabi-gcc-14"
 QEMU="/home/zerosister/arm_v3/qemu/cwq_build/qemu-arm"
 ARM_FLAGS="-cpu cortex-a7"
-COMPILE_FLAGS="-march=armv7 -mfpu=vfpv3"
+COMPILE_FLAGS="-march=armv7 -mfpu=vfpv3 -mfloat-abi=hard"
 LLVM_LINK="llvm-link"
 
 # 函数用法说明
