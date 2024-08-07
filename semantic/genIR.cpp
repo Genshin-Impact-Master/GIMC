@@ -530,26 +530,42 @@ NumberPtr getConstExpValue(ExpPtr exp, bool array_dim = false) {
     }
     return ret;
 }
-GlobalVar* parseGlobalArray(string name, vector<int> dims, vector<int> pos, int dep, map<vector<int>, NumberPtr> arr_val_mp, bool is_float=false) {
+pair<GlobalVar*, bool> parseGlobalArray(string name, vector<int> dims, vector<int> pos, int dep, map<vector<int>, NumberPtr> arr_val_mp, bool is_float=false) {
     vector<Value*> ret;
     auto array_ty = is_float? floatType: i32Type;
     baseTypePtr array_base = make_shared<PointerType>(array_ty, dims[dims.size()-1]);
     for (int i=dims.size()-2;i>=dep;i--) array_base = make_shared<PointerType>(array_base, dims[i]);
+    bool all_zero = true;
     for (int i = 0; i < dims[dep]; i++) {
         pos[dep] = i;
         if (dep == static_cast<int>(dims.size())-1) {
             if (arr_val_mp.find(pos) != arr_val_mp.end()) {
-                if (is_float) ret.push_back(new ConstFloatValue(arr_val_mp[pos] -> getFloatVal()));
-                else ret.push_back(new ConstIntValue(arr_val_mp[pos] -> getIntVal()));
+
+                if (is_float) {
+                    ret.push_back(new ConstFloatValue(arr_val_mp[pos] -> getFloatVal()));
+                    if (arr_val_mp[pos] -> getFloatVal() != 0.0) all_zero = false;
+                }
+                else {
+                    ret.push_back(new ConstIntValue(arr_val_mp[pos] -> getIntVal()));
+                    if (arr_val_mp[pos] -> getIntVal() != 0) all_zero = false;
+                }
             }
             else {
                 if (is_float) ret.push_back(new ConstFloatValue(0.0));
                 else ret.push_back(new ConstIntValue(0));
             }
         }
-        else ret.push_back(parseGlobalArray(name, dims, pos, dep+1, arr_val_mp, is_float));
+        else {
+            auto var = parseGlobalArray(name, dims, pos, dep+1, arr_val_mp, is_float);
+            ret.push_back(var.first);
+            if (!var.second) all_zero = false; 
+        }
     }
-    return builder.createGlobalVar<vector<Value*>>(name, array_base, ret);
+    if (all_zero) {
+        ret.clear();
+        return make_pair(builder.createGlobalVar<vector<Value*>>(name, array_base, ret), all_zero);
+    }
+    return make_pair(builder.createGlobalVar<vector<Value*>>(name, array_base, ret), all_zero);
 };
 
 
@@ -596,7 +612,7 @@ void parseDecl(DeclPtr decl, bool is_global) {
                         cout<<": ";
                         cout<< it.second -> getIntVal() << endl;
                     }
-                    auto alloc = parseGlobalArray(alloca_name, dims, pos, 0, arr_val_mp, const_decl -> getType() == B_FLOAT);
+                    auto alloc = parseGlobalArray(alloca_name, dims, pos, 0, arr_val_mp, const_decl -> getType() == B_FLOAT).first;
                     sym_tb.add_var(def -> getIdentifier(), const_decl -> getType(), def -> isArray(), true, const_decl -> getType() == B_FLOAT, alloc, dims);
                     globals -> push_back(alloc);
                 }
@@ -668,7 +684,7 @@ void parseDecl(DeclPtr decl, bool is_global) {
                 else {
                     map<vector<int>, NumberPtr> arr_val_mp;
                     GlobalVar* alloc = nullptr;
-                    if (!def -> isInit()) alloc = parseGlobalArray(alloca_name, dims, pos, 0, arr_val_mp, var_decl -> getType() == B_FLOAT);
+                    if (!def -> isInit()) alloc = parseGlobalArray(alloca_name, dims, pos, 0, arr_val_mp, var_decl -> getType() == B_FLOAT).first;
                     else {
                         parseArrayInitVal(def -> getArrayInitVal(), pos, dims, 0, var_decl -> getType() == B_FLOAT, arr_val_mp);
                         for (auto it: arr_val_mp) {
@@ -676,7 +692,7 @@ void parseDecl(DeclPtr decl, bool is_global) {
                             cout<<": ";
                             cout<< it.second -> getIntVal() << endl;
                         }
-                        alloc = parseGlobalArray(alloca_name, dims, pos, 0, arr_val_mp, var_decl -> getType() == B_FLOAT);
+                        alloc = parseGlobalArray(alloca_name, dims, pos, 0, arr_val_mp, var_decl -> getType() == B_FLOAT).first;
                     }
                     sym_tb.add_var(def -> getIdentifier(), var_decl -> getType(), def -> isArray(), true, var_decl -> getType() == B_FLOAT, alloc, dims);
                     globals -> push_back(alloc);
@@ -1144,6 +1160,21 @@ void arrayDebug(DeclPtr decl,int offset =0 ) {
     }
 }
 
+
+// int main(int argc, char *argv[]) {
+//     ++ argv;
+//     if (argc > 0) {
+//         module = initialize(builder);
+//         auto rt = parse(argv[0]);
+//         parseCompUnit(CompUnitPtr(rt));
+//         builder.emitIRModule(module);
+//         builder.close();
+//     }
+//     else {
+//         cout<< "no input file" << endl;
+//     }
+//     return 0;
+// }
 
 void genIRModule(char *filename) {
     module = initialize(builder);

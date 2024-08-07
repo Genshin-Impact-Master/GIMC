@@ -5,4 +5,5 @@ tmp*
 # 编译器默认输出文件
 # cmake build 文件夹
 build
+testout.out
 a.out

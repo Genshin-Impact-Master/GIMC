@@ -2,6 +2,15 @@
 #include "../include/IR/IRBuilder.h"
 #include "../include/SymbolTable.hpp"
 
+// std::vector<Function*> *defs;                          // 函数定义容器
+// std::vector<Function*> *declares;                      // 函数声明容器
+// std::vector<GlobalVar*> *globals;                      // 全局变量容器
+// SymbolTable sym_tb = SymbolTable();
+// string error_msg = "";
+// IRBuilder builder;
+// Module* module;
+
+
 CompUnit* parse(char *filename);
 Module* initialize(IRBuilder &builder);
 void parseCompUnit(CompUnitPtr rt);
