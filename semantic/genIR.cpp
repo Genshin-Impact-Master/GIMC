@@ -98,8 +98,8 @@ Instruction* parseFuncCall(ExpPtr exp){
         auto F_param_i = F_param[i];
         auto arg_exp = parseExp(R_param_i, false, false, true);
         // 判断函数参数类型是否正确，注意类型转换！以及数组的处理！
-        // TODO: 函数形参数组的处理，为expResType多添加一个array_ptr
-        // TODO: 类型不匹配时进行类型转换
+        // 函数形参数组的处理，为expResType多添加一个array_ptr
+        // 类型不匹配时进行类型转换
         // 类型转换
         if (R_param_i -> getResType() == BaseType::B_FLOAT && F_param_i -> getType() == BaseType::B_INT) arg_exp.first = builder.createFp2IntInst(arg_exp.first);
         if (R_param_i -> getResType() == BaseType::B_INT && F_param_i -> getType() == BaseType::B_FLOAT) arg_exp.first = builder.createInt2FpInst(arg_exp.first);
@@ -307,7 +307,7 @@ pair<Value*,bool> parseExp(ExpPtr exp, bool is_cond, bool is_exp, bool is_func_p
 
 
             // 如果左右值也是一个比较表达式，是否需要类型提升? 不需要 
-            // TODO:可能需要
+            // 可能需要
             if (tmp -> getExp1() -> getResType() == BaseType::B_BOOL) 
                 left.first = builder.createZextInst(i32Type, left.first), tmp -> getExp1() -> addResType(BaseType::B_INT);
             if (tmp -> getExp2() -> getResType() == BaseType::B_BOOL) 
@@ -658,7 +658,7 @@ void parseDecl(DeclPtr decl, bool is_global) {
             }
             string alloca_name = def -> getIdentifier();
             if (def -> getIdentifier().size() > 1000) alloca_name = def -> getIdentifier().substr(0, 1000);
-                // TODO: 处理数组
+                // 处理数组
             if (def -> isArray()) {
                 auto array_dim = def -> getArrayDim() -> getDim();
                 vector<int>dims, pos;
