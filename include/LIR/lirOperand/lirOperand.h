@@ -35,7 +35,7 @@ class LirOperand {
         
         bool isPhy();
 
-        bool isAddr() {return kind == LirOperandKind::Addr;}
+        bool isAddr() {return OperandKind == LirOperandKind::Addr;}
         
         LirOperandKind getKind();
 

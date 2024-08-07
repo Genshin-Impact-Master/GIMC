@@ -1,11 +1,17 @@
 *说明：文档中没有加 LIR 前缀的均为中端数据结构*
 
 #### LirModule
+
+---
+
 [LirModule](../include/LIR/visitor/LirModule.h)
 `LirModule` 类，为中端 IR 的简单映射，同样包含 `GlobalVars`,`FunctionDefs`, 但是没有 `FunctionDeclares` ？其函数的定义与声明在汇编层面为何有此区别？
 > 汇编中 Call 某个函数直接使用 bl + \<label\> 即可，即只需要 FunctionDeclares 的函数名，不需要带有其他信息（但其他信息在构建 LIR 中的 `LIRCall` 会用到）。
 
 #### LirFunction
+
+---
+
 [LirFunction](../include/LIR/visitor/LirFunction.h)
 `LirFunction` 类，包含参数（但是这里会考虑到实际的寄存器数量的限制）,局部变量的栈空间大小 `stackSize`。
 
@@ -20,6 +26,9 @@
 
 
 #### LirInst
+
+---
+
 Lir 中的指令，与中端 IR 类似，包含有：
   * 所属基本块： `LirBlock *parent`
   * 指令的类型： `LirInstKind lirKind`
@@ -28,6 +37,9 @@ Lir 中的指令，与中端 IR 类似，包含有：
 **LirBinary**
 
 #### LirOperand
+
+---
+
 Lir 中的操作数，有如下的几种类型
 
 **Addr**
@@ -52,6 +64,9 @@ float 立即数与 int 立即数
     float 立即数
 
 #### ToLir
+
+---
+
 实现了从 SSA IR 到 LIR 的转换。
 
 以下变量为 ToLir 转换所需的工具
@@ -126,20 +141,27 @@ arm 汇编中为函数的退出操作，考虑到可能有多个 Ret 的情况�
 **GEP**
 中端 IR 中的 GEP 指令就是将数组降低维数，放在 arm 汇编中就是 `offset * 该维度 length`. llvm 中的 GEP 指令让人摸不着头脑。现在考察我们的 GEP 指令。
 * `is_param` 参数表示是否为形参。
-  * `true`: GEP 指令对应的 `baseTypePtr` 是其所取数组，// todo
+  * `true`: GEP 指令对应的 `baseTypePtr` 是其所取数组本身。
   * `false`: GEP 指令对应的 `baseTypePtr` 是其所取数组的基类，在 [example.cpp](../IR/example.cpp) 中的 eg.6 中，局部变量 eg6_c_ptr 是指向 4 * 2 个 int 区域大小的指针。（则它 getType().getSize() 返回的大小为 8 * 4 B）
 实践中出真知，等开始测验时再 debug 看看到底如何偏移。
 
+感谢前端，实现了 GEP 指令的类型正确，对于数组只需要进行 `type.getSize() * offset + baseAddr` 就可计算出偏移量了。
+
 在 LIR 中，假设我们在 GEP 指令中得到了
   1. **形参** 的指针 `ptr` 及其偏移量 `offset`
-    * 容易得知此 `ptr` 由于其指向的内存不是在本函数内生成的（区别于局部变量），所以便没有一个映射表，而是要将此 `ptr` 的实际值存入 `Reg` 中，将其与 `offset` 相加，则又得到一个最终的 `Reg`
+    容易得知此 `ptr` 由于其指向的内存不是在本函数内生成的（区别于局部变量），所以便没有一个映射表，而是要将此 `ptr` 的实际值存入 `Reg` 中，将其与 `offset` 相加，则又得到一个最终的 `Reg`
   2. **局部变量** 的指针 `ptr` 及其偏移量 `offset`
-    * 根据 `LirFunction` 中的 `stackOffsetMap` 获得变量在函数中的栈偏移值 `varOffset`，存入 `Reg`，并与 `offset` 值相加存入最终 `Reg`。
+    根据 `LirFunction` 中的 `stackOffsetMap` 获得变量在函数中的栈偏移值 `varOffset`，存入 `Reg`，并与 `offset` 值相加存入最终 `Reg`。
   3. **全局变量** 的指针 `ptr` 及其偏移量 `offset`
-    * 首先将标签值 `ptr` 存入 `Reg`,将其与 `offset` 相加得到最终的 `Reg`
+    首先将标签值 `ptr` 存入 `Reg`,将其与 `offset` 相加得到最终的 `Reg`
 
 **Fp2Int** 与 **Int2Fp** 与 **Zext**
-// todo
+以 `Fp2Int` 为例子
+很简单，只需要将装 fp 的 freg 换成 vreg 就行了。一个 src 和 dst
+对 `Zext` 采用 `Move` 指令，因为在 arm 汇编中，cmp 结果保留在状态寄存器中。（根据此要求，中端 IR 和 LIR 需要保证 `Zext` 前一定是一条 `Icmp` 或 `Fcmp` 指令）
+
+**LirMove**
+此条指令为转移寄存器的值或将立即数转移到寄存器中，需要 `dst` 和 `src`
 
 **InitMem**
 此条是为了方便转换使用的将数组置为零的指令，

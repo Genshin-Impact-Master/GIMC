@@ -1,4 +1,5 @@
 #include "../semantic/genIR.hpp"
+#include "iostream"
 std::vector<Function*> *defs;                          // 函数定义容器
 std::vector<Function*> *declares;                      // 函数声明容器
 std::vector<GlobalVar*> *globals;                      // 全局变量容器

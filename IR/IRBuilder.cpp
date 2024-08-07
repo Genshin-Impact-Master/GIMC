@@ -297,8 +297,8 @@ Instruction* IRBuilder::createInitMemInst(baseTypePtr type, Value *ptr, int leng
 void IRBuilder::emitIRModule(Module *module, char* output_file) {
   irout.close();
   module->correctCheck();
-  if (output_file == nullptr) irout = std::ofstream(module->getName());
-  else irout = std::ofstream(std::string(output_file) + ".ll");
+  if (output_file == nullptr) irout = std::ofstream(module->getName() + ".ll");
+  else irout = std::ofstream(std::string(output_file));
   std::vector<GlobalVar*> &globalVars = module->globalVars_;
   std::vector<Function*> &defs = module->funcDefs_;
   std::vector<Function*> &declares = module->funcDeclares_;
@@ -448,6 +448,8 @@ void IRBuilder::emitIRInst(Instruction *inst) {
   else if (inst->kind_ == InstKind::GEP) {
     GEP *i = dynamic_cast<GEP*>(inst);
     Value *ptr = i->getPtr();
+    std::cout << "GEP's size of " << i->getFullName() << " is " << i->getType()->getSize() << std::endl; 
+    std::cout << "GEP's ptr's size of " << ptr->getFullName() << " is " << ptr->getType()->getSize() << std::endl; 
     irout << '\t' << inst->getFullName() << " = getelementptr inbounds " << ptr->getType()->getDetailName()
           << ", ptr " << ptr->getFullName() << ", ";
     if (!i->getIsParam()) {

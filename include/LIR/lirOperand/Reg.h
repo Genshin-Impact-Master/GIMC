@@ -9,8 +9,8 @@ USING_GIMC_NAMESPACE
 class Reg : public LirOperand {
     public:
         Reg(LirOperandKind RegKind);
-        static std::set<Reg*>* getAllocatableRegs();
-        static int getAllocatableRegsCnt(bool isinteger);
+        // static std::set<Reg*>* getAllocatableRegs();
+        // static int getAllocatableRegsCnt(bool isinteger);
 };
 
 GIMC_NAMESPACE_END

@@ -10,7 +10,7 @@ USING_GIMC_NAMESPACE
 
 class LirInstMove : public LirInst {
     public:
-        LirInstMove(LirBlock *parent, LirOperand *dst, LirOperand *src);
+        LirInstMove(LirBlock *parent, LirOperand *dst, LirOperand *src, LirArmStatus status_);
 
 };
 

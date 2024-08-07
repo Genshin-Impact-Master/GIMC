@@ -2,7 +2,7 @@
 
 USING_GIMC_NAMESPACE
 
-LirFunction::LirFunction(std::string name, int paramsCnt) : lirFuncName(name), paramsCnt(paramsCnt) {};
+LirFunction::LirFunction(std::string name, int paramsCnt) : lirFuncName(name), paramsCnt(paramsCnt), blkList(this) {};
 
 void LirFunction::setLirFuncParams(std::vector<Value> &lirFuncParams) {this->paramter = lirFuncParams;} 
 

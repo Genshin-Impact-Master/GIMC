@@ -1,5 +1,5 @@
 #include "../../include/LIR/visitor/LirBlock.h"
-#include "LirFunction.h"
+#include "../../include/LIR/visitor/LirFunction.h"
 
 USING_GIMC_NAMESPACE
 

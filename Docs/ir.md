@@ -53,6 +53,13 @@ Function Declare 函数声明不必检验。
 **GlobalVar**
   * GlobalVar 类型只能是 i32,float，或 ptr
   * 对于数组类型的 GlobalVar 需要 vector 中 value 类型一致
+### GlobalVar 类的初始化
+[GlobalVar.cpp](../IR/GlobalVar.cpp)
+IR 中实现了对全局变量的 0 初始化。
+不妨假设当前有一个全局变量 `gimc_a` 对于数组与非数组有如下区别：
+  * 数组：假设 `gimc_a` 的类型为 `int [2][3]` 的二维数组，那么 `gimc_a` 理解为一个指向了 `int [3]` 数组的指针。`GlobalVar` 采用递归的方式初始化。即需要放置一个类型为 `int [3]` 的 `GlovalVar` `gimc_b` 和 `gimc_c` 到 `gimc_a` 的成员变量 `values_` 中。
+    * 对于零初始化的情况，`zeroinitializer` 此时起作用。使用方法为，假设 `gimc_b` 为 `{1,2,3}`，而 `gimc_c` 为 `{0,0,0}`，那么不需要向 `values_` 中放入 `gimc_c`，（即，`values_` 的长度为 1）中端 IR 即可根据 `gimc_a` 类型自动调用 `zeroinitializer`。即，中端会从一个不带有初始值的位置开始，后续的所有值置为 0.
+  * 非数组：零初始化与数组同理，`values_` 中若不含初始值则将其置为零。 
 ## LLVM IR
 ### LLVM IR Type 
 [LLVM IR Type 参考链接](https://llvm.org/docs/LangRef.html#type-system)
