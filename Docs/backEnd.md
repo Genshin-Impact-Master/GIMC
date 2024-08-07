@@ -132,11 +132,11 @@ arm 汇编中为函数的退出操作，考虑到可能有多个 Ret 的情况�
 
 在 LIR 中，假设我们在 GEP 指令中得到了
   1. **形参** 的指针 `ptr` 及其偏移量 `offset`
-    * 容易得知此 `ptr` 由于其指向的内存不是在本函数内生成的（区别于局部变量），所以便没有一个映射表，而是要将此 `ptr` 的实际值存入 `Reg` 中，将其与 `offset` 相加，则又得到一个最终的 `Reg`
+    容易得知此 `ptr` 由于其指向的内存不是在本函数内生成的（区别于局部变量），所以便没有一个映射表，而是要将此 `ptr` 的实际值存入 `Reg` 中，将其与 `offset` 相加，则又得到一个最终的 `Reg`
   2. **局部变量** 的指针 `ptr` 及其偏移量 `offset`
-    * 根据 `LirFunction` 中的 `stackOffsetMap` 获得变量在函数中的栈偏移值 `varOffset`，存入 `Reg`，并与 `offset` 值相加存入最终 `Reg`。
+    根据 `LirFunction` 中的 `stackOffsetMap` 获得变量在函数中的栈偏移值 `varOffset`，存入 `Reg`，并与 `offset` 值相加存入最终 `Reg`。
   3. **全局变量** 的指针 `ptr` 及其偏移量 `offset`
-    * 首先将标签值 `ptr` 存入 `Reg`,将其与 `offset` 相加得到最终的 `Reg`
+    首先将标签值 `ptr` 存入 `Reg`,将其与 `offset` 相加得到最终的 `Reg`
 
 **Fp2Int** 与 **Int2Fp** 与 **Zext**
 // todo

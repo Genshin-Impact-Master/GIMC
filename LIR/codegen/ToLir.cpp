@@ -163,7 +163,6 @@ void ToLir::instResolve(BBlock *block) {
                 dstReg = ToLir::operandResolve(i, lirFunc, lirBlock);
                 lirInstKind = LirInstKind::Add;
                 LirBinary *lirBin = new LirBinary(lirInstKind, lirBlock, lhsReg, rhsReg, dstReg);
-                lirBlock->addInst(lirBin);
                 break;
 
             case InstKind::Sub:
@@ -178,7 +177,6 @@ void ToLir::instResolve(BBlock *block) {
                 }
                 dstReg = ToLir::operandResolve(i, lirFunc, lirBlock);
                 LirBinary *lirBin = new LirBinary(lirInstKind, lirBlock, lhsReg, rhsReg, dstReg);
-                lirBlock->addInst(lirBin);
                 break;
 
             case InstKind::Mul:
@@ -193,7 +191,6 @@ void ToLir::instResolve(BBlock *block) {
                 dstReg = ToLir::operandResolve(i, lirFunc, lirBlock);
                 lirInstKind = LirInstKind::Mul;
                 LirBinary *lirBin = new LirBinary(lirInstKind, lirBlock, lhsReg, rhsReg, dstReg);
-                lirBlock->addInst(lirBin);
                 break;
 
             case InstKind::Div:
@@ -203,7 +200,6 @@ void ToLir::instResolve(BBlock *block) {
                 dstReg = ToLir::operandResolve(i, lirFunc, lirBlock);
                 lirInstKind = LirInstKind::Div;
                 LirBinary *lirBin = new LirBinary(lirInstKind, lirBlock, lhsReg, rhsReg, dstReg);
-                lirBlock->addInst(lirBin);
                 break;
             
             case InstKind::Addf:     
@@ -218,7 +214,6 @@ void ToLir::instResolve(BBlock *block) {
                 dstReg = ToLir::operandResolve(i, lirFunc, lirBlock);
                 lirInstKind = LirInstKind::Addf;
                 LirBinary *lirBin = new LirBinary(lirInstKind, lirBlock, lhsReg, rhsReg, dstReg);
-                lirBlock->addInst(lirBin);
                 break;
             
             case InstKind::Subf:
@@ -233,7 +228,6 @@ void ToLir::instResolve(BBlock *block) {
                 }
                 dstReg = ToLir::operandResolve(i, lirFunc, lirBlock);
                 LirBinary *lirBin = new LirBinary(lirInstKind, lirBlock, lhsReg, rhsReg, dstReg);
-                lirBlock->addInst(lirBin);
                 break;
             
             case InstKind::Mulf:
@@ -248,7 +242,6 @@ void ToLir::instResolve(BBlock *block) {
                 dstReg = ToLir::operandResolve(i, lirFunc, lirBlock);
                 lirInstKind = LirInstKind::Mulf;
                 LirBinary *lirBin = new LirBinary(lirInstKind, lirBlock, lhsReg, rhsReg, dstReg);
-                lirBlock->addInst(lirBin);
                 break;
             
             case InstKind::Divf:
@@ -257,7 +250,6 @@ void ToLir::instResolve(BBlock *block) {
                 dstReg = ToLir::operandResolve(i, lirFunc, lirBlock);
                 lirInstKind = LirInstKind::Divf;
                 LirBinary *lirBin = new LirBinary(lirInstKind, lirBlock, lhsReg, rhsReg, dstReg);
-                lirBlock->addInst(lirBin);
                 break;
             
             // @todo 通过除法乘法减法来做 
@@ -267,7 +259,6 @@ void ToLir::instResolve(BBlock *block) {
                 dstReg = ToLir::operandResolve(i, lirFunc, lirBlock);
                 lirInstKind = LirInstKind::Divf;
                 LirBinary *lirBin = new LirBinary(lirInstKind, lirBlock, lhsReg, rhsReg, dstReg);
-                lirBlock->addInst(lirBin);
                 break;
             default:
                 break;
@@ -289,7 +280,6 @@ void ToLir::instResolve(BBlock *block) {
           LirOperand *data = getBindOperand(input);    // 获取输入的 operand
           LirOperand *offset = getBindOperand(ptr);
           LirStore *lirStore = new LirStore(lirBlock, offset, data);
-          lirBlock->addInst(lirStore);
         }
 
         else if (kind == InstKind::Load) {
@@ -298,7 +288,6 @@ void ToLir::instResolve(BBlock *block) {
           LirOperand *dst = operandResolve(inst, lirFunc, lirBlock);  // load 进的寄存器
           LirOperand *from = getBindOperand(ptr);
           LirLoad *lirLoad = new LirLoad(lirBlock, dst, from);
-          lirBlock->addInst(lirLoad);
         }
 
         else if (kind == InstKind::Call) {
@@ -310,7 +299,6 @@ void ToLir::instResolve(BBlock *block) {
           Value *ret = i->getRetValue();
           LirOperand *retVal = getBindOperand(ret);
           LirRet *lirRet = new LirRet(lirBlock, retVal);
-          lirBlock->addInst(lirRet);
         }
 
         else if (kind == InstKind::Icmp) {
@@ -320,7 +308,6 @@ void ToLir::instResolve(BBlock *block) {
           LirOperand *opd1 = getBindOperand(first);
           LirOperand *opd2 = getBindOperand(second);
           LirCmp lirCmp = new LirCmp(lirBlock, opd1, opd2);
-          lirBlock->addInst(lirCmp);
         }
 
         else if (kind == InstKind::Fcmp) {
@@ -330,7 +317,6 @@ void ToLir::instResolve(BBlock *block) {
           LirOperand *opd1 = getBindOperand(first);
           LirOperand *opd2 = getBindOperand(second);
           LirCmp lirCmp = new LirCmp(lirBlock, opd1, opd2);
-          lirBlock->addInst(lirCmp);
         }
 
         else if (kind == InstKind::Br) {
@@ -340,7 +326,6 @@ void ToLir::instResolve(BBlock *block) {
           LirOperand *addr = getBindOperand(bBlkTrue);
           if (i->isUnconditional()) {
             LirBr lirBr = new LirBr(lirBlock, addr, LirArmStatus::NO_Cond);
-            lirBlock->addInst(lirBr);
           }
           else {
             // 加入两条 LirBr 指令
@@ -403,7 +388,15 @@ void ToLir::instResolve(BBlock *block) {
         }
 
         else if (kind == InstKind::GEP) {
-          
+          GEP *i = dynamic_cast<GEP*>(inst);
+          Value *ptr = i->getPtr();
+          Value *offset = i->getOffsetValue();
+          bool isParam = i->getIsParam();
+          if (!isParam) {
+            LirOperand *addr = getBindOperand(ptr);
+            LirOperand *shift = getBindOperand(offset);            
+            baseTypePtr ty = i->getType();
+          }
         }
     }
 }

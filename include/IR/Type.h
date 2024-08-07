@@ -65,10 +65,13 @@ public:
         break;
       case 16:
         size_ = 2;
+        break;
       case 32:
         size_ = 4;
+        break;
       case 64:
         size_ = 8;
+        break;
       default:
         break;
     }
@@ -153,7 +156,7 @@ public:
   }
 
   int getSize() override {
-    if (size_ == 0) {
+    if (cnt_ == 0) {
       // 说明为非数组变量，pointer 所指向的大小即为 baseType 的大小
       return base_->getSize();
     }

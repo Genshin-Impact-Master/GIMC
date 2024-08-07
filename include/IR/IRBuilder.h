@@ -32,7 +32,7 @@ public:
   IRBuilder(const std::string outFileName, Function* chosedFunc, BBlock* chosedBBlock) : 
             irout(outFileName), chosedFunc_(chosedFunc), chosedBBlock_(chosedBBlock) {}
 
-  IRBuilder() : IRBuilder("tmp_outputIR.ll", nullptr, nullptr) {}
+  IRBuilder() {}
 
 /******************************************************************************/
 /*                                创建 IR 数据结构                             */

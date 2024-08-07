@@ -100,42 +100,66 @@ class LirInst {
 
 class LirStore : public LirInst {
 public:
-  LirStore(LirBlock *parent, LirOperand *offset, LirOperand *input) : LirInst(LirInstKind::Store, parent) {
-    opd1 = offset;
+  /**
+   * @param addr 存取的位置
+   * @param input 需要存入的 Operand
+   */
+  LirStore(LirBlock *parent, LirOperand *addr, LirOperand *input) : LirInst(LirInstKind::Store, parent) {
+    opd1 = addr;
     opd2 = input;
+    parent->addInst(this);
   }
 };
 
 class LirLoad : public LirInst {
 public:
+  /**
+   * @param dst 加载的寄存器
+   * @param ptr 需要加载的寄存器位置
+   */
   LirLoad(LirBlock *parent, LirOperand *dst, LirOperand *ptr) : LirInst(LirInstKind::Load, parent) {
     opd1 = dst;
     opd2 = ptr;
+    parent->addInst(this);
   }
 };
 
 class LirRet : public LirInst {
 public:
+  /**
+   * @param retVal 存有返回值的寄存器
+   */
   LirRet(LirBlock *parent, LirOperand *retVal) : LirInst(LirInstKind::Ret,  parent) {
     opd1 = retVal;
+    parent->addInst(this);
   }
 };
 
 class LirBr : public LirInst {
 public:
+  /**
+   * @param addr 跳转的标签地址
+   * @param status_ ARM 状态码即跳转条件判断种类
+   */
   LirBr(LirBlock *parent, LirOperand *addr, LirArmStatus status_) : LirInst(LirInstKind::Br, parent) {
     opd1 = addr;
     status = status_;
+    parent->addInst(this);
   }
 };
 
 class LirCmp : public LirInst {
 public:
+  /**
+   * @param opd1 reg1
+   * @param opd2 reg2
+   */
   LirCmp(LirBlock *parent, LirOperand *opd1, LirOperand *opd2) : LirInst(LirInstKind::cmp, parent) {
     this->opd1 = opd1;
     this->opd2 = opd2;
+    parent->addInst(this);
   }
-}
+};
 
 GIMC_NAMESPACE_END
 
