@@ -7,5 +7,4 @@ LirBinary::LirBinary(LirInstKind kind, LirBlock* parent, LirOperand *lhs, LirOpe
     opd1 = dst;
     opd2 = lhs;
     opd3 = rhs;
-    parent->addInst(this);
 }

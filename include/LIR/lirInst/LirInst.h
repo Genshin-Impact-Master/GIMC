@@ -13,6 +13,7 @@ GIMC_NAMESPACE_BEGIN
 USING_GIMC_NAMESPACE
 class LirBlock;
 enum class LirInstKind {
+    BinaryBegin,
     Add,
     Sub,
     Rsb, //这个是逆向指令
@@ -23,6 +24,7 @@ enum class LirInstKind {
     Subf,
     Mulf,
     Divf,
+    BinaryEnd,
     Store,
     Load,
     Call,
@@ -31,7 +33,9 @@ enum class LirInstKind {
     Br,
     Fp2Int,
     Int2Fp,
-    Move      // Move 指令，转移寄存器的值
+    Move,      // Move 指令，转移寄存器的值
+    Push,
+    Pop
 };
 
 enum class LirArmStatus {
@@ -58,11 +62,8 @@ class LirInst {
         std::map<LirOperand*, int> regAllocMap;
     protected:
         // 三元式最多三个操作寄存器
-        LirOperand *opd1;
-        LirOperand *opd2;
-        LirOperand *opd3;
+        std::vector<LirOperand*> opds[3];
         LirArmStatus status;
-
     public:
         LirInst(LirInstKind kind, LirBlock *parent_);
         LirInstKind getKind() {return lirKind;}
@@ -70,10 +71,15 @@ class LirInst {
         INode<LirInst> &getNode() {return lirInstNode;}
         void setParent(LirBlock* parent) {this->parent = parent;}
         void setKind(LirInstKind kind) {this->lirKind = kind;}
+        LirOperand* getOpd1() {return opds[0];}
+        LirOperand* getOpd2() {return opds[1];}
+        LirOperand* getOpd3() {return opds[2];}
+        std::vector<LirOperand*> &getOpds() {return opds;}
 
-        LirOperand* getOpd1() {return opd1;}
-        LirOperand* getOpd2() {return opd2;}
-        LirOperand* getOpd3() {return opd3;}
+        bool isBinary() {return lirKind > LirInstKind::BinaryBegin && lirKind < LirInstKind::BinaryEnd;}
+
+        // 是否为 Fp2Int 或 Int2Fp
+        bool isIFChange() {return lirKind == Fp2Int || lirKind == Int2Fp;}
 
         /**
          * 为无限寄存器分配实际寄存器
@@ -154,6 +160,24 @@ public:
 class LirInt2Fp : public LirInst {
 public:
   LirInt2Fp(LirBlock *parent, LirOperand *dst, LirOperand *proto);
+};
+
+class LirCall : public LirInst{
+public:
+  /**
+   * @param func 被调用的函数，显然一定为一个 Addr （全局符号，汇编为： bl <label>）
+   */
+  LirCall(LirBlock *parent, LirOperand *func);
+};
+
+class LirPush : public LirInst {
+public:
+  LirPush(LirBlock *parent, LirOperand *reg);
+};
+
+class LirPop : public LirInst {
+public:
+  LirPop(LirBlock *parent, LirOperand *reg);
 };
 GIMC_NAMESPACE_END
 

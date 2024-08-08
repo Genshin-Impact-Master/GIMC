@@ -14,6 +14,8 @@
 #include "../lirOperand/Addr.h"
 #include "../../IR/Inst.h"
 #include "../lirOperand/FVReg.h"
+#include "../lirOperand/FPhyReg.h"
+#include "../lirOperand/IPhyReg.h"
 #include "../lirOperand/IVReg.h"
 #include "../lirOperand/Reg.h"
 #include "../lirOperand/Imm.h"
@@ -28,10 +30,9 @@ USING_GIMC_NAMESPACE
 
 class ToLir {
 private:
-  std::map<Value*, LirOperand*> valMap;           // 局部变量（包括形参）map
+  std::map<Value*, LirOperand*> valMap;             // 局部变量（包括形参）map
   std::map<Function*, LirFunction*> funcMap;
   std::map<BBlock*, LirBlock*> blockMap;
-  std::map<Value*, Addr*> globalMap;              // 全局的 map，包括全局变量，函数以及所有基本块
 
   Module irModule;
   LirModule lirModule;
@@ -40,7 +41,11 @@ public:
   ToLir(Module irModule);
   LirModule& moduleGen();
   void instResolve(BBlock *block);
+  
+  // 解析 alloca，构建栈空间 
+  void dealAlloca(BBlock *block);
   LirOperand* operandResolve(Value* val, LirFunction* lirFunc, LirBlock* lirBlock);
+
   LirOperand* immResolve(Value* val, LirFunction* lirFunc, LirBlock* lirBlock) ;
   FVReg* loadImmToFVReg(float val, LirFunction* lirFunc, LirBlock* lirBlock);
   IVReg* loadImmToIVReg(int val, LirFunction* lirFunc, LirBlock* lirBlock);
@@ -53,7 +58,7 @@ public:
 
   // 对于全局变量，一定为 <label> 标签，即 addr
   void bindGlobal(Value *val, Addr *addr) {
-    globalMap[val] = addr;
+    lirModule.getGlobalMap()[val] = addr;
   }
 
   // 遍历基本块时，需要将 valMap 中的局部变量清空（因为不知道从其他基本块跳转过来时的寄存器状态）
@@ -66,11 +71,14 @@ public:
   LirOperand *getBindOperand(Value *val) {
     if (valMap.find(val) != valMap.end())
       return valMap[val];
-    if (globalMap.find(val) != globalMap.end())
-      return globalMap[val];
+    if (lirModule.getGlobalMap().find(val) != lirModule.getGlobalMap().end())
+      return lirModule.getGlobalMap()[val];
     error("getBindOperand: val 还未与 LirOperand 绑定");
     return nullptr;
   }
+
+  // 将仅仅在汇编中调用的，前端未声明，但 gcc 会自动链接的函数加入全局符号
+  void addArmFunc();
 
   // switch case CMP 指令，构建 cmp 指令与 LirArmStatus 的映射
   void SWCMP(InstKind kind, CondKind ckind, LirArmStatus *status);

@@ -11,7 +11,10 @@
 
 /*********************************************** 后端宏定义 **********************************************/
 #define STACK_ALIGN 8                                 // arm 栈对齐大小
-#define FP_REG "r7"                                   // 默认 r7 为 fp 寄存器
+#define FP_REG 7                                      // 默认 r7 为 fp 寄存器
+#define FLOAT_REG_START 16                            // 浮点寄存器在 ARM_REGS 中编号
+#define APSR_REG_NUM 80
+#define FPSCR_REG_NUM 81
 
 #include <string>
 #include <vector>

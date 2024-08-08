@@ -6,5 +6,4 @@ LirInstMove::LirInstMove(LirBlock *parent, LirOperand *dst, LirOperand *src, Lir
   opd1 = dst;
   opd2 = src;
   status = status_;
-  parent->addInst(this);
 }

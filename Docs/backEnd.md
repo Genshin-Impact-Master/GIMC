@@ -15,14 +15,22 @@
 [LirFunction](../include/LIR/visitor/LirFunction.h)
 `LirFunction` 类，包含参数（但是这里会考虑到实际的寄存器数量的限制）,局部变量的栈空间大小 `stackSize`。
 
+##### 栈帧结构图
+如图为栈空间结构：
+
+> ![栈空间结构](image-1.png)
+> * 溢出形参： `LirFunction` 的形参数目超过预设的形参寄存器时，溢出到栈空间的形参（注意，Arm 汇编输出时，`LirFunction` 的默认 `codeGen` 模式为首先 `push {r7, lr}`，将本 `LirFunction` 记为 `Callee`，调用本 `LirFunction` 的 `LirFunction` 记为 `Caller`，则溢出形参在 `Caller` 中压栈）
+> * 局部变量：即本 `LirFunction` 中的局部变量
+> * 溢出寄存器：经过寄存器分配后，溢出的虚拟寄存器存储在栈空间中
+
 ##### LirFunction 重要变量
 `stackSize`：函数的栈变量空间大小，只可能为 一部分 或 三部分 组成。（在没有溢出形参时只需考虑局部变量）
   1. 溢出到栈中的形参（超过了预留的形参寄存器上限）
   2. 局部变量
   3. 为 push {r7, lr} 预留的空间（其中，如果本 LirFunction 没有调用 call 指令，不必 push lr，但迫于时间，先统一 push）
 
-`immMap<LirOperand, LirInstMove>` : todo
-`stackOffsetMap<Value*, >`：临时变量，`alloca` 产生的局部变量对应的栈上偏移。
+`immMap<LirOperand, LirInstMove>` : 对于 `Imm` 而言，一个 `Imm` 即意味着两条 `mov` 语句 (`movw` 与 `movt`)，将立即数值拷贝到 `reg` 中。
+`stackOffsetMap<Value*, IImm>`：临时变量，`alloca` 产生的局部变量对应的栈上偏移。
 
 
 #### LirInst
@@ -167,4 +175,23 @@ arm 汇编中为函数的退出操作，考虑到可能有多个 Ret 的情况�
 此条是为了方便转换使用的将数组置为零的指令，
 
 ### Arm 汇编
+
+---
+
 `vldr` 指令，从文本池中加载任何 64 位整数、单精度或双精度浮点值。
+
+### 优化
+
+---
+
+#### 寄存器分配——栈分配（baseline）
+首先考虑基础的栈分配：对于 `alloca`,`load`,`store` 和 `gep` 指令，对应于栈上偏移即可。对于其他的所有运算指令，为每次产生的新的 `dst reg` 分配一个栈空间。跳转指令和 `cmp` 指令等不产生新寄存器的指令不分配栈空间。
+* 或许可以有第二种做法，即 LIR 均按照无限寄存器进行构造，但是，可分配的寄存器只有两个，且采用栈分配的方式，将每一个 `reg` 放入 `stack`.
+
+~~一想到用 SSA 做栈分配，比用 AST 的性能可能还差，心里接受不了......~~
+
+从进入 `LirFunction` 开始：
+* 考虑栈初始化后，即现在栈中拥有如 [栈帧结构图](#栈帧结构图) 所示，但 `sp` 与 `fp` 指向同一个栈地址，即溢出寄存器数目为 0.
+* 将 LIR 中的二元运算指令，`Fp2Int` 指令，`Int2Fp` 指令产生的 `dst` 寄存器，当作一个变量来处理。类似于 LIR 搭建时为 `alloca` 出的变量绑定栈偏移值，同样的这里也为他们设置栈偏移值。
+* 二元指令中的 `IVReg` （虚拟寄存器），替换为 `r4` 或 `r5`，结果存到 `r4`.再压栈；`RVReg`，替换为 `s16`, `s17`，结果存到 `s16`，再将其压栈
+* `Fp2Int` 将 `s16` 值转换到 `r4`，压栈；`Int2Fp` 将 `r4` 值转换到 `s16`，再压栈，即可。
