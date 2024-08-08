@@ -58,7 +58,7 @@ class LirFunction {
 
         /**
          * 将 IR 中的溢出的形参分配到函数栈空间
-         * 注意这里传入的 *param 需要是 IR 中的 param*，而非 LirFunction 中的形参拷贝 param 中 Value 地址
+         * 注意这里传入的 *param 需要是 IR 中的 param*
          */
         IImm putParam(Value *param);
 

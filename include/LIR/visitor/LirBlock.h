@@ -31,6 +31,7 @@ class LirBlock {
         INode<LirBlock>& getNode() {return node;}
         std::string &getLabel() {return label;}
         IList<LirBlock, LirInst> &getInst(){return lirInstLists;}
+        LirFunction* getParent() {return lirFunction;}
 };
 
 

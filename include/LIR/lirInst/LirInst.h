@@ -71,6 +71,8 @@ class LirInst {
         INode<LirInst> &getNode() {return lirInstNode;}
         void setParent(LirBlock* parent) {this->parent = parent;}
         void setKind(LirInstKind kind) {this->lirKind = kind;}
+
+        // opd1 只能存放 destination，适用于 binary，load，Fp2Int，Int2Fp，move 
         LirOperand* getOpd1() {return opds[0];}
         LirOperand* getOpd2() {return opds[1];}
         LirOperand* getOpd3() {return opds[2];}
@@ -103,6 +105,12 @@ class LirInst {
           }
           return "null";
         }
+
+        // 加入 inst 指令前
+        void addBefore(LirInst *inst) {
+          INode<LirInst> *node = inst->getNode();
+          lirInstNode.addBefore(node);
+        }
 };
 
 class LirStore : public LirInst {
@@ -118,23 +126,20 @@ class LirLoad : public LirInst {
 public:
   /**
    * @param dst 加载的寄存器
-   * @param ptr 需要加载的寄存器位置
+   * @param ptr 需要加载的寄存器在栈中的位置
    */
   LirLoad(LirBlock *parent, LirOperand *dst, LirOperand *ptr);
 };
 
 class LirRet : public LirInst {
 public:
-  /**
-   * @param retVal 存有返回值的寄存器
-   */
-  LirRet(LirBlock *parent, LirOperand *retVal);
+  LirRet(LirBlock *parent);
 };
 
 class LirBr : public LirInst {
 public:
   /**
-   * @param addr 跳转的标签地址
+   * @param addr 跳转的标签地址，在 opd2
    * @param status_ ARM 状态码即跳转条件判断种类
    */
   LirBr(LirBlock *parent, LirOperand *addr, LirArmStatus status_);
@@ -143,10 +148,10 @@ public:
 class LirCmp : public LirInst {
 public:
   /**
-   * @param opd1 reg1
-   * @param opd2 reg2
+   * @param opd2 reg1
+   * @param opd3 reg2
    */
-  LirCmp(LirBlock *parent, LirOperand *opd1, LirOperand *opd2);
+  LirCmp(LirBlock *parent, LirOperand *opd2, LirOperand *opd3);
 };
 
 class LirFp2Int : public LirInst {
@@ -165,7 +170,7 @@ public:
 class LirCall : public LirInst{
 public:
   /**
-   * @param func 被调用的函数，显然一定为一个 Addr （全局符号，汇编为： bl <label>）
+   * @param func 被调用的函数，显然一定为一个 Addr （全局符号，汇编为： bl <label>），存在 opd2
    */
   LirCall(LirBlock *parent, LirOperand *func);
 };

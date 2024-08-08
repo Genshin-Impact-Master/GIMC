@@ -37,6 +37,12 @@ private:
   Module irModule;
   LirModule lirModule;
 
+  // 表示当前正在生成的 LirFunction
+  LirFunction *checkingFunc;
+
+  // 表示当前正在生成的 LirBlock
+  LirBlock *checkingBlock;
+
 public:
   ToLir(Module irModule);
   LirModule& moduleGen();
@@ -47,8 +53,8 @@ public:
   LirOperand* operandResolve(Value* val, LirFunction* lirFunc, LirBlock* lirBlock);
 
   LirOperand* immResolve(Value* val, LirFunction* lirFunc, LirBlock* lirBlock) ;
-  FVReg* loadImmToFVReg(float val, LirFunction* lirFunc, LirBlock* lirBlock);
-  IVReg* loadImmToIVReg(int val, LirFunction* lirFunc, LirBlock* lirBlock);
+  static FVReg* loadImmToFVReg(float val, LirFunction* lirFunc, LirBlock* lirBlock);
+  static IVReg* loadImmToIVReg(int val, LirFunction* lirFunc, LirBlock* lirBlock);
 
   // 将 Value* 和 LirOperand* 映射建立起来
   void bindValue(Value *val, LirOperand *reg) {
@@ -68,20 +74,19 @@ public:
    * 根据 Value 获取 LirOperand
    * 若为全局符号则从 globalMap 中获得标签
    **/ 
-  LirOperand *getBindOperand(Value *val) {
-    if (valMap.find(val) != valMap.end())
-      return valMap[val];
-    if (lirModule.getGlobalMap().find(val) != lirModule.getGlobalMap().end())
-      return lirModule.getGlobalMap()[val];
-    error("getBindOperand: val 还未与 LirOperand 绑定");
-    return nullptr;
-  }
+  LirOperand *getBindOperand(Value *val);
 
   // 将仅仅在汇编中调用的，前端未声明，但 gcc 会自动链接的函数加入全局符号
   void addArmFunc();
 
   // switch case CMP 指令，构建 cmp 指令与 LirArmStatus 的映射
   void SWCMP(InstKind kind, CondKind ckind, LirArmStatus *status);
+
+  // 设置当前正在生成的 lirFunc
+  void setCheckingLirFunc(LirFunction *func) {checkingFunc = func;}
+
+  // 设置当前正在生成的 lirBlock
+  void setCheckingLirBlock(LirBlock *block) {checkingBlock = block;}
 };
 
 GIMC_NAMESPACE_END

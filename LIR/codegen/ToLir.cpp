@@ -65,6 +65,7 @@ LirModule &ToLir::moduleGen() {
         intcnt++;
         idx.insert(i);
         lirFuncParams.push_back(&funcParams[i]);
+        bindValue(&param, IPhyReg::getRegR(i));
       }
       if (intcnt >= 4) {
         break;
@@ -77,6 +78,7 @@ LirModule &ToLir::moduleGen() {
         floatcnt++;
         idx.insert(i);
         lirFuncParams.push_back(&funcParams[i]);
+        bindValue(&param, FPhyReg::getRegS(i));
       }
       if (floatcnt >= 16) {
         break;
@@ -140,6 +142,7 @@ LirModule &ToLir::moduleGen() {
 
   for (Function *func : *(irModule.getFuncDefs())) {
     LirFunction *lirFunc = funcMap[func];
+    setCheckingLirFunc(lirFunc);
     INode<BBlock> *blockNode = func->getBBlockList().getHeadPtr();
 
     // 首先遍历一遍所有基本块，将 alloca 指令全找出来
@@ -311,6 +314,7 @@ void ToLir::instResolve(BBlock *block) {
       // 接下来将解析出的三个 reg 放入 <Value*, LirOperand*> map 中
       LirBinary *bin = new LirBinary(lirInstKind, lirBlock, lhsReg, rhsReg, dstReg);
       lirBlock->addInst(bin);
+      bindValue(inst, dstReg);
     }
 
     // else if (kind == InstKind::Alloca) {
@@ -336,6 +340,7 @@ void ToLir::instResolve(BBlock *block) {
       LirOperand *from = getBindOperand(ptr);
       LirLoad *lirLoad = new LirLoad(lirBlock, dst, from);
       lirBlock->addInst(lirLoad);
+      bindValue(inst, dst);
     }
 
     else if (kind == InstKind::Call) {
@@ -373,14 +378,22 @@ void ToLir::instResolve(BBlock *block) {
         // sdr param,[dst] 
         LirStore *store = new LirStore(lirBlock, dst, param);
       }
-      LirCall *call =  new LirCall(lirBlock, getBindOperand(callee));
+      LirCall *call = new LirCall(lirBlock, getBindOperand(callee));
       lirBlock->addInst(call);
+      // 需要使用 InstMove 指令，将 r0 中返回值写入 dst 寄存器
+      LirOperand *dst = operandResolve(inst, lirFunc, lirBlock);
+      LirInstMove *move = new LirInstMove(lirBlock, dst, IPhyReg::getRegR(0), LirArmStatus::NO_Cond);
+      lirBlock->addInst(move);
+      bindValue(call, dst);
     }
 
     else if (kind == InstKind::Ret) {
       Ret *i = dynamic_cast<Ret *>(inst);
       Value *ret = i->getRetValue();
       LirOperand *retVal = getBindOperand(ret);
+      // 返回值放在 r0
+      LirInstMove *move = new LirInstMove(lirBlock, IPhyReg::getRegR(0), retVal, LirArmStatus::NO_Cond);
+      lirBlock->addInst(move);
       LirRet *lirRet = new LirRet(lirBlock, retVal);
       lirBlock->addInst(lirRet);
     }
@@ -442,7 +455,9 @@ void ToLir::instResolve(BBlock *block) {
       LirOperand *finalOffset = new IVReg();
       LirBinary *bin1 = new LirBinary(LirInstKind::Mul, lirBlock, shift, base, finalOffset);
       // create 一条加法指令，实现 finalOffset + addr
-      LirBinary *bin2 = new LirBinary(LirInstKind::Add, lirBlock, addr, finalOffset, new IVReg());
+      LirOperand *dst = new IVReg();
+      LirBinary *bin2 = new LirBinary(LirInstKind::Add, lirBlock, addr, finalOffset, dst);
+      bindValue(inst, dst);
       lirBlock->addInst(bin1);
       lirBlock->addInst(bin2);
     }
@@ -454,6 +469,7 @@ void ToLir::instResolve(BBlock *block) {
       LirOperand *fp = getBindOperand(proto);
       LirFp2Int *fp2int = new LirFp2Int(lirBlock, dst, fp);
       lirBlock->addInst(fp2int);
+      bindValue(inst, dst);
     }
 
     else if (kind == InstKind::Int2Fp) {
@@ -463,6 +479,7 @@ void ToLir::instResolve(BBlock *block) {
       LirOperand *integer = getBindOperand(proto);
       LirInt2Fp *int2fp = new LirInt2Fp(lirBlock, dst, integer);
       lirBlock->addInst(int2fp);
+      bindValue(inst, dst);
     }
 
     else if (kind == InstKind::Zext) {
@@ -479,10 +496,12 @@ void ToLir::instResolve(BBlock *block) {
       LirOperand *opd1 = operandResolve(new ConstIntValue(1), lirFunc, lirBlock);
       // movw 不会修改状态寄存器，故可以插入两条 mov 一条为 movw，一条为 mov<Cond>
       // 这里移动的是立即数 (movw)0 或 (mov<Cond>)1，即满足 <Cond> 条件时才为 1
+      // !!! 注意这里用到了条件执行，且两个 Move 指令可能使用了同一个 Vitual Reg，寄存器分配时应当注意这些信息。
       LirInstMove *move1 = new LirInstMove(lirBlock, dst, opd0, LirArmStatus::NO_Cond);
       LirInstMove *move2 = new LirInstMove(lirBlock, dst, opd1, status);
       lirBlock->addInst(move1);
       lirBlock->addInst(move2);
+      bindValue(inst, dst);
     }
 
     else if (kind == InstKind::InitMem) {
@@ -601,4 +620,38 @@ void ToLir::SWCMP(InstKind kind, CondKind ckind, LirArmStatus * status) {
       break;
     }
   }
+}
+
+LirOperand *ToLir::getBindOperand(Value *val) {
+  // 可能为 IR 中的中间结果
+  if (valMap.find(val) != valMap.end())
+    return valMap[val];
+  // 可能为 IR 中的 GlobalVar，Function，BBlock
+  if (lirModule.getGlobalMap().find(val) != lirModule.getGlobalMap().end())
+    return lirModule.getGlobalMap()[val];
+  // 可能为 IR 中的局部变量或形参，存在栈空间中
+  std::map<Value*, IImm>& map = checkingFunc->getStackOffsetMap();
+  if (map.find(val) != map.end()) {
+    // 确实存在栈空间
+    int offset = map.at(val).getImm();
+    LirOperand *off = operandResolve(new ConstIntValue(offset), checkingFunc, checkingBlock);
+    // 生成的 add 指令的目的虚拟寄存器，todo：应该有一个统一的 Value*，有助于生成一个虚拟寄存器
+    LirOperand *addDst = operandResolve(val, checkingFunc, checkingBlock);
+    LirBinary *realAddr = new LirBinary(LirInstKind::Add, checkingBlock, IPhyReg::getRegR(FP_REG), off, addDst);
+    checkingBlock->addInst(realAddr);
+
+    // 根据 OperandResolve 的要求，需要构建一个局部变量或形参基类的 Value*
+    std::shared_ptr<PointerType> ptrTy = std::make_shared<PointerType>(val->getType());
+    if (!ptrTy) {
+      error("getBindOperand: 在栈空间中绑定了非指针类型的中端 Value");
+    }
+    Value *base = new Value("base", ptrTy->getBaseType());
+    // load 到一个虚拟寄存器中
+    LirOperand *loadDst = operandResolve(base, checkingFunc, checkingBlock);
+    LirLoad *getVar = new LirLoad(checkingBlock, loadDst, addDst);
+    checkingBlock->addInst(getVar);
+    return loadDst;
+  }
+  error("getBindOperand: val 还未与 LirOperand 绑定");
+  return nullptr;
 }
