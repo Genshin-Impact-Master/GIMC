@@ -55,9 +55,45 @@ void LirToArm::genFunction(LirFunction *func) {
   }  
 }
 
-void LirToArm::genBlock(LirBlock *blk) {
-  
+void LirToArm::genInst(LirInst *lir_inst)
+{
+    switch(lir_inst->getKind())
+    {
+      case LirInstKind::Add:
+      {
+        add(lir_inst->getOperandName(lir_inst->getOpd1()),lir_inst->getOperandName(lir_inst->getOpd2()),lir_inst->getOperandName(lir_inst->getOpd3()));
+        break;
+      }
+      
+      case LirInstKind::Addf:
+      {
+        addf(lir_inst->getOperandName(lir_inst->getOpd1()),lir_inst->getOperandName(lir_inst->getOpd2()),lir_inst->getOperandName(lir_inst->getOpd3()));
+      }
+
+      case LirInstKind::Fp2Int:
+      {
+        
+      }
+    }
 }
+
+void LirToArm::genBlock(LirBlock *blk) {
+
+  armOut<<blk->getLabel()
+        <<":"
+        <<"\n";   //输出 Block 的标签
+
+  IList<LirBlock, LirInst> &Inst_List = blk->getInst();
+  INode<LirInst> *node = Inst_List.getHeadPtr();
+
+  while (!node->isEnd())
+  {
+    node=node->getNext();
+    genInst(node->getOwner()); 
+  }
+}
+
+
 
 void LirToArm::Output_Arm_global() {
   for (auto iter : lirModule_.getGlobalOperands()) // iter 迭代所有的全局变量

@@ -30,14 +30,18 @@ public:
   // 输出 Arm 指令的全局变量部分
   void Output_Arm_global();
 
+  void genInst(LirInst *lir_inst);
 
+  
 
   /********************************** 通用函数（之后也可复用）*******************************/
 
   /**
    * 通用寄存器压栈
    */
-  void push(std::string reg) { smartOut("push", "{" + reg + "}"); }
+  void push(std::string reg) { 
+    smartOut("push", "{" + reg + "}"); 
+  }
 
   /**
    * 整数 dst <- lhs - rhs
@@ -66,6 +70,57 @@ public:
   void div(std::string dst, std::string lhs, std::string rhs) {
     smartOut("sdiv", dst, lhs, rhs + "\t@ " + dst + " <- " + lhs + " / " + rhs);
   }
+
+  /**
+   * 整数 dst <- rhs - lhs
+   */
+  void rsb(std::string dst, std::string lhs, std::string rhs) {
+    smartOut("rsb", dst, lhs, rhs + "\t@ " + dst + " <- " + rhs + " - " + lhs);
+  }
+
+  /**
+   * 浮点数 dst <- lhs + rhs
+   */
+  void addf(std::string dst, std::string lhs, std::string rhs) {
+    smartOut("vadd.f32", dst, lhs, rhs + "\t@ " + dst + " <- " + lhs + " + " + rhs);
+  }
+
+  /**
+   * 浮点数 dst <- lhs - rhs
+   */
+  void subf(std::string dst, std::string lhs, std::string rhs) {
+    smartOut("vsub.f32", dst, lhs, rhs + "\t@ " + dst + " <- " + lhs + " - " + rhs);
+  }
+
+  /**
+   * 浮点数 dst <- lhs * rhs
+   */
+  void mulf(std::string dst, std::string lhs, std::string rhs) {
+    smartOut("vmul.f32", dst, lhs, rhs + "\t@ " + dst + " <- " + lhs + " * " + rhs);
+  }
+
+  /**
+   * 浮点数 dst <- lhs / rhs
+   */
+  void divf(std::string dst, std::string lhs, std::string rhs) {
+    smartOut("vdiv.f32", dst, lhs, rhs + "\t@ " + dst + " <- " + lhs + " / " + rhs);
+  }
+
+  /**
+   * 整形转浮点 dst <- lhs
+   */
+  void int2fp(std::string dst, std::string lhs) {
+    smartOut("vcvt.f32.s32", dst, lhs+ "\t@int to float " + dst + " <- " + lhs);
+  }
+
+  /**
+   * 浮点转整形 dst <- lhs
+   */
+  void fp2int(std::string dst, std::string lhs) {
+    smartOut("vcvt.s32.f32", dst, lhs+ "\t@float to int " + dst + " <- " + lhs);
+  }
+
+  
 
   // @C++_Learn 变长参数模板，实现类似 printf 的功能 (采用递归的方法解析)
   template <typename... Args>
