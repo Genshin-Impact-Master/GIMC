@@ -60,6 +60,9 @@ fi
 
 # set -x
 
+# 设置最大栈空间为 4g
+ulimit -s 4096000
+
 # 遍历文件并运行测试
 for syfile in $FILES; do
     base=$(basename "$syfile" .sy)
@@ -76,6 +79,7 @@ for syfile in $FILES; do
             tmpOUT="$CLANGEXE/${base}.out"
         fi
         $GIMC "$syfile" -emit-llvm -o $outllfile
+        echo "export $outllfile"
         $LLVM_LINK $outllfile ../lib/newlib.ll -S -o "$tmpDir/tmp_.ll"
         clang "$tmpDir/tmp_.ll" -fstack-usage -o "$tmpDir/tmp"
         if [ -f "$infile" ]; then

@@ -13,9 +13,7 @@ class IImm : public Imm {
         int imm;
 
     public:
-        IImm(int imm) : Imm(LirOperandKind::IImm) {
-            this->imm = imm;
-        }
+        IImm(int imm_) : Imm(LirOperandKind::IImm), imm(imm_) {}
 
         int getImm() {
             return imm;

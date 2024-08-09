@@ -51,6 +51,14 @@ public:
   Owner *getOwner() {
     return owner_;
   }
+
+  // 添加在 node 前
+  void addBefore(INode<Owner> *node) {
+    pre_ = node->getPre();
+    next_ = node;
+    pre_->setNext(this);
+    node->setPre(this);
+  }
 };
 
 /**

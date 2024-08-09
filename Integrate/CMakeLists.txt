@@ -39,6 +39,8 @@ add_executable(compiler
   ../include/LIR/visitor/LirFunction.h
   ../include/LIR/visitor/LirModule.h
   ../include/LIR/LirHearders.h
+  ../include/LirPass/RegAllocStack.h
+  ../include/LirToArm/LirToArm.h
   ../Config.cpp
   ../IR/GlobalVar.cpp
   ../IR/Module.cpp
@@ -69,5 +71,7 @@ add_executable(compiler
   ../LIR/lirOperand/lirOperand.cpp
   ../LIR/lirVisitor/LirBlock.cpp
   ../LIR/lirVisitor/LirFunction.cpp
+  ../LirPass/RegAllocStack.cpp
+  ../LirToArm/LirToArm.cpp
   main.cpp
 )

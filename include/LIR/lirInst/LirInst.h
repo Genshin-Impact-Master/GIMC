@@ -13,6 +13,7 @@ GIMC_NAMESPACE_BEGIN
 USING_GIMC_NAMESPACE
 class LirBlock;
 enum class LirInstKind {
+    BinaryBegin,
     Add,
     Sub,
     Rsb, //这个是逆向指令
@@ -23,6 +24,7 @@ enum class LirInstKind {
     Subf,
     Mulf,
     Divf,
+    BinaryEnd,
     Store,
     Load,
     Call,
@@ -31,7 +33,9 @@ enum class LirInstKind {
     Br,
     Fp2Int,
     Int2Fp,
-    Move      // Move 指令，转移寄存器的值
+    Move,      // Move 指令，转移寄存器的值
+    Push,
+    Pop
 };
 
 enum class LirArmStatus {
@@ -49,20 +53,10 @@ class LirInst {
         LirInstKind lirKind;
         LirBlock* parent;
         INode<LirInst> lirInstNode;
-        /**
-         * @note 寄存器分配后得到的映射 
-         * LirOperand -> int
-         * int 表示为寄存器的编号，而 int 编号又对应于相应寄存器
-         * @see Config.h
-         */
-        std::map<LirOperand*, int> regAllocMap;
     protected:
         // 三元式最多三个操作寄存器
-        LirOperand *opd1;
-        LirOperand *opd2;
-        LirOperand *opd3;
+        std::vector<LirOperand*> opds;
         LirArmStatus status;
-
     public:
         LirInst(LirInstKind kind, LirBlock *parent_);
         LirInstKind getKind() {return lirKind;}
@@ -71,32 +65,45 @@ class LirInst {
         void setParent(LirBlock* parent) {this->parent = parent;}
         void setKind(LirInstKind kind) {this->lirKind = kind;}
 
-        LirOperand* getOpd1() {return opd1;}
-        LirOperand* getOpd2() {return opd2;}
-        LirOperand* getOpd3() {return opd3;}
+        // opd1 只能存放 destination，适用于 binary，load，Fp2Int，Int2Fp，move 
+        LirOperand* getOpd1() {return opds[0];}
+        LirOperand* getOpd2() {return opds[1];}
+        LirOperand* getOpd3() {return opds[2];}
 
-        /**
-         * 为无限寄存器分配实际寄存器
-         * @param opd 选择分配的寄存器
-         * @param armRegNum arm 寄存器的编号，其中通用寄存器为 0 ~ 15，浮点寄存器为 16 ~ ? todo
-         */
-        void allocaReg(LirOperand *opd, int armRegNum) {regAllocMap[opd] = armRegNum;}
+        // 设置寄存器
+        void setOpd1(LirOperand *opd) {opds[0] = opd;}
+        void setOpd2(LirOperand *opd) {opds[1] = opd;}
+        void setOpd3(LirOperand *opd) {opds[2] = opd;}
+
+        std::vector<LirOperand*> &getOpds() {return opds;}
+
+        bool isBinary() {return lirKind > LirInstKind::BinaryBegin && lirKind < LirInstKind::BinaryEnd;}
+
+        // 是否为 Fp2Int 或 Int2Fp
+        bool isIFChange() {return lirKind == LirInstKind::Fp2Int || lirKind == LirInstKind::Int2Fp;}
 
         // LIR 到 arm 汇编 codegen 时调用
         std::string getOperandName(LirOperand *opd) {
           if (opd->isVirtual()) {
             // 若为分配的寄存器  
-            return ARM_REGS[regAllocMap[opd]];
+            error("getOperandName: 还存在虚拟寄存器，请保证进行寄存器分配且正确");
           }
           // 注意：到这一步时必须保证超过 arm 指令限定长度的立即数需要转换为 Addr? 是否是这样处理？todo
-          else if (opd->isImm() || opd->isAddr()) {
-            return opd->toString();
-          }
-          else {
-            error("暂时不支持其他种类的寄存器"); 
-          }
-          return "null";
+          return opd->toString();
         }
+
+        // 加入 inst 指令前
+        void addBefore(LirInst *inst) {
+          INode<LirInst> &node = inst->getNode();
+          lirInstNode.addBefore(&node);
+        }
+
+        // 获取下一条指令
+        LirInst* getNextInst() {
+          return lirInstNode.getNext()->getOwner();
+        }
+
+        LirArmStatus getStatus() {return status;}
 };
 
 class LirStore : public LirInst {
@@ -112,23 +119,20 @@ class LirLoad : public LirInst {
 public:
   /**
    * @param dst 加载的寄存器
-   * @param ptr 需要加载的寄存器位置
+   * @param ptr 需要加载的寄存器在栈中的位置
    */
   LirLoad(LirBlock *parent, LirOperand *dst, LirOperand *ptr);
 };
 
 class LirRet : public LirInst {
 public:
-  /**
-   * @param retVal 存有返回值的寄存器
-   */
-  LirRet(LirBlock *parent, LirOperand *retVal);
+  LirRet(LirBlock *parent);
 };
 
 class LirBr : public LirInst {
 public:
   /**
-   * @param addr 跳转的标签地址
+   * @param addr 跳转的标签地址，在 opd2
    * @param status_ ARM 状态码即跳转条件判断种类
    */
   LirBr(LirBlock *parent, LirOperand *addr, LirArmStatus status_);
@@ -137,10 +141,10 @@ public:
 class LirCmp : public LirInst {
 public:
   /**
-   * @param opd1 reg1
-   * @param opd2 reg2
+   * @param opd2 reg1
+   * @param opd3 reg2
    */
-  LirCmp(LirBlock *parent, LirOperand *opd1, LirOperand *opd2);
+  LirCmp(LirBlock *parent, LirOperand *opd2, LirOperand *opd3);
 };
 
 class LirFp2Int : public LirInst {
@@ -154,6 +158,24 @@ public:
 class LirInt2Fp : public LirInst {
 public:
   LirInt2Fp(LirBlock *parent, LirOperand *dst, LirOperand *proto);
+};
+
+class LirCall : public LirInst{
+public:
+  /**
+   * @param func 被调用的函数，显然一定为一个 Addr （全局符号，汇编为： bl <label>），存在 opd2
+   */
+  LirCall(LirBlock *parent, LirOperand *func);
+};
+
+class LirPush : public LirInst {
+public:
+  LirPush(LirBlock *parent, LirOperand *reg);
+};
+
+class LirPop : public LirInst {
+public:
+  LirPop(LirBlock *parent, LirOperand *reg);
 };
 GIMC_NAMESPACE_END
 

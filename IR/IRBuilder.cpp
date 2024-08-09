@@ -448,8 +448,8 @@ void IRBuilder::emitIRInst(Instruction *inst) {
   else if (inst->kind_ == InstKind::GEP) {
     GEP *i = dynamic_cast<GEP*>(inst);
     Value *ptr = i->getPtr();
-    std::cout << "GEP's size of " << i->getFullName() << " is " << i->getType()->getSize() << std::endl; 
-    std::cout << "GEP's ptr's size of " << ptr->getFullName() << " is " << ptr->getType()->getSize() << std::endl; 
+    // std::cout << "GEP's size of " << i->getFullName() << " is " << i->getType()->getSize() << std::endl; 
+    // std::cout << "GEP's ptr's size of " << ptr->getFullName() << " is " << ptr->getType()->getSize() << std::endl; 
     irout << '\t' << inst->getFullName() << " = getelementptr inbounds " << ptr->getType()->getDetailName()
           << ", ptr " << ptr->getFullName() << ", ";
     if (!i->getIsParam()) {

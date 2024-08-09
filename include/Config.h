@@ -11,7 +11,10 @@
 
 /*********************************************** 后端宏定义 **********************************************/
 #define STACK_ALIGN 8                                 // arm 栈对齐大小
-#define FP_REG "r7"                                   // 默认 r7 为 fp 寄存器
+#define FP_REG 7                                      // 默认 r7 为 fp 寄存器
+#define FLOAT_REG_START 16                            // 浮点寄存器在 ARM_REGS 中编号
+#define APSR_REG_NUM 80
+#define FPSCR_REG_NUM 81
 
 #include <string>
 #include <vector>
@@ -33,6 +36,7 @@ typedef std::shared_ptr<TypeBase> baseTypePtr;          // 数据类型基类指
 extern std::vector<std::string> ST_Insts;
 extern std::vector<std::string> ST_IConds;
 extern std::vector<std::string> ST_FConds;
+extern std::vector<std::string> ST_ARM_STATUS;
 
 // 定义一个空参数列表，所有零参函数在 call 时均使用此列表
 extern std::vector<Value*> Zero_Argu_List;
