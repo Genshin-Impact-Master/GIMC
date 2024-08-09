@@ -567,16 +567,16 @@ static const yytype_int8 yytranslate[] =
 /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_int16 yyrline[] =
 {
-       0,   124,   124,   128,   132,   137,   143,   148,   155,   161,
-     165,   170,   173,   176,   182,   188,   196,   200,   251,   257,
-     261,   268,   275,   282,   289,   307,   311,   315,   320,   326,
-     331,   338,   347,   360,   364,   370,   376,   384,   388,   394,
-     398,   403,   407,   411,   415,   419,   431,   439,   446,   451,
-     458,   467,   476,   484,   489,   494,   501,   510,   517,   523,
-     533,   540,   551,   554,   557,   560,   568,   575,   578,   583,
-     603,   607,   613,   616,   624,   632,   642,   645,   653,   663,
-     666,   674,   682,   690,   700,   703,   711,   721,   724,   734,
-     737,   747
+       0,   124,   124,   128,   132,   137,   143,   149,   158,   166,
+     172,   178,   181,   184,   190,   198,   208,   214,   267,   275,
+     281,   290,   299,   308,   317,   337,   343,   349,   355,   363,
+     370,   379,   390,   405,   411,   419,   427,   437,   443,   451,
+     457,   464,   470,   476,   482,   488,   502,   512,   521,   528,
+     537,   548,   559,   569,   576,   583,   592,   603,   612,   620,
+     632,   641,   653,   658,   663,   668,   677,   686,   691,   697,
+     719,   725,   733,   738,   748,   758,   770,   775,   785,   797,
+     802,   812,   822,   832,   844,   849,   859,   871,   876,   888,
+     893,   905
 };
 #endif
 
@@ -1301,182 +1301,210 @@ yyreduce:
 #line 143 "parser.y"
                {
         (yyval.decl) = new Decl();
+        (yyval.decl) -> setInfo(yylloc.first_line, yylloc.first_column);
         (yyval.decl) -> _node_type = NodeType::NT_DECL;
         (yyval.decl) -> addConstDecl(ConstDeclPtr((yyvsp[0].constDecl)));
     }
-#line 1308 "parser.cpp"
+#line 1309 "parser.cpp"
     break;
 
   case 7: /* Decl: VarDecl  */
-#line 148 "parser.y"
+#line 149 "parser.y"
               {
         (yyval.decl) = new Decl();
+        (yyval.decl) -> setInfo(yylloc.first_line, yylloc.first_column);
         (yyval.decl) -> _node_type = NodeType::NT_DECL;
         (yyval.decl) -> addVarDecl(VarDeclPtr((yyvsp[0].varDecl)));
+
     }
-#line 1318 "parser.cpp"
+#line 1321 "parser.cpp"
     break;
 
   case 8: /* ConstDecl: CONST BaseType ConstDefs SEMICOLON  */
-#line 155 "parser.y"
+#line 158 "parser.y"
                                              {
         (yyval.constDecl) = new ConstDecl();
+        (yyval.constDecl) -> setInfo(yylloc.first_line, yylloc.first_column);
         (yyval.constDecl) -> addType((yyvsp[-2].type));
         (yyval.constDecl) -> addConstDef(ConstDefsPtr((yyvsp[-1].constDefs)));
+
     }
-#line 1328 "parser.cpp"
+#line 1333 "parser.cpp"
     break;
 
   case 9: /* ConstDefs: ConstDef  */
-#line 161 "parser.y"
+#line 166 "parser.y"
                     {
         (yyval.constDefs) = new ConstDefs();
+        (yyval.constDefs) -> setInfo(yylloc.first_line, yylloc.first_column);
         (yyval.constDefs)->addConstDef(ConstDefPtr((yyvsp[0].constDef)));
+
     }
-#line 1337 "parser.cpp"
+#line 1344 "parser.cpp"
     break;
 
   case 10: /* ConstDefs: ConstDefs COMMA ConstDef  */
-#line 165 "parser.y"
+#line 172 "parser.y"
                                {
         (yyval.constDefs) = (yyvsp[-2].constDefs);
+        (yyval.constDefs) -> setInfo(yylloc.first_line, yylloc.first_column);
         (yyvsp[-2].constDefs) -> addConstDef(ConstDefPtr((yyvsp[0].constDef)));
-    }
-#line 1346 "parser.cpp"
-    break;
-
-  case 11: /* BaseType: INT  */
-#line 170 "parser.y"
-             {
-        (yyval.type) = BaseType::B_INT;
     }
 #line 1354 "parser.cpp"
     break;
 
-  case 12: /* BaseType: FLOAT  */
-#line 173 "parser.y"
-           {
-        (yyval.type) = BaseType::B_FLOAT;
+  case 11: /* BaseType: INT  */
+#line 178 "parser.y"
+             {
+        (yyval.type) = BaseType::B_INT;
     }
 #line 1362 "parser.cpp"
     break;
 
+  case 12: /* BaseType: FLOAT  */
+#line 181 "parser.y"
+           {
+        (yyval.type) = BaseType::B_FLOAT;
+    }
+#line 1370 "parser.cpp"
+    break;
+
   case 13: /* BaseType: VOID  */
-#line 176 "parser.y"
+#line 184 "parser.y"
            {
         (yyval.type) = BaseType::B_VOID;
 
     }
-#line 1371 "parser.cpp"
+#line 1379 "parser.cpp"
     break;
 
   case 14: /* ConstDef: IDENTIFIER ASSIGN ConstExp  */
-#line 182 "parser.y"
+#line 190 "parser.y"
                                     {
         (yyval.constDef) = new ConstDef();
         (yyval.constDef) -> addIdentifier((yyvsp[-2].identifier));
         (yyval.constDef) -> addArray(false);
         (yyval.constDef) -> addInitVal(ConstExpPtr((yyvsp[0].constExp)));
+        (yyval.constDef) -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
-#line 1382 "parser.cpp"
+#line 1392 "parser.cpp"
     break;
 
   case 15: /* ConstDef: IDENTIFIER ArrayDim ASSIGN ArrayInitVal  */
-#line 188 "parser.y"
+#line 198 "parser.y"
                                               {
         (yyval.constDef) = new ConstDef();
         (yyval.constDef) -> addIdentifier((yyvsp[-3].identifier));
         (yyval.constDef) -> addArray(true);
         (yyval.constDef) -> addArrayDim(ArrayDimPtr((yyvsp[-2].arrayDim)));
         (yyval.constDef) -> addArrayInitVal(ArrayInitValPtr((yyvsp[0].arrayInitVal)));
+        (yyval.constDef) -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
-#line 1394 "parser.cpp"
+#line 1406 "parser.cpp"
     break;
 
   case 16: /* ArrayDim: LEFT_BRACKETS ConstExp RIGHT_BRACKETS  */
-#line 196 "parser.y"
+#line 208 "parser.y"
                                                 {
         (yyval.arrayDim) = new ArrayDim();
         (yyval.arrayDim) -> addDim (ConstExpPtr((yyvsp[-1].constExp)));
+        (yyval.arrayDim) -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
-#line 1403 "parser.cpp"
+#line 1417 "parser.cpp"
     break;
 
   case 17: /* ArrayDim: ArrayDim LEFT_BRACKETS ConstExp RIGHT_BRACKETS  */
-#line 200 "parser.y"
+#line 214 "parser.y"
                                                      {
         (yyval.arrayDim) = (yyvsp[-3].arrayDim);
         (yyval.arrayDim) -> addDim(ConstExpPtr((yyvsp[-1].constExp)));
+        (yyval.arrayDim) -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
-#line 1412 "parser.cpp"
+#line 1428 "parser.cpp"
     break;
 
   case 18: /* VarDecl: BaseType VarDefs SEMICOLON  */
-#line 251 "parser.y"
+#line 267 "parser.y"
                                    {
          (yyval.varDecl) = new VarDecl();
          (yyval.varDecl) -> addType((yyvsp[-2].type));
          (yyval.varDecl) -> addVarDefs(VarDefsPtr((yyvsp[-1].varDefs)));
-    }
-#line 1422 "parser.cpp"
-    break;
+        (yyval.varDecl) -> setInfo(yylloc.first_line, yylloc.first_column);
 
-  case 19: /* VarDefs: VarDef  */
-#line 257 "parser.y"
-                {
-        (yyval.varDefs) = new VarDefs();
-        (yyval.varDefs) -> addVarDef(VarDefPtr((yyvsp[0].varDef)));
-    }
-#line 1431 "parser.cpp"
-    break;
-
-  case 20: /* VarDefs: VarDefs COMMA VarDef  */
-#line 261 "parser.y"
-                           {
-        (yyval.varDefs) = (yyvsp[-2].varDefs);
-        (yyval.varDefs) -> addVarDef(VarDefPtr((yyvsp[0].varDef))); 
     }
 #line 1440 "parser.cpp"
     break;
 
+  case 19: /* VarDefs: VarDef  */
+#line 275 "parser.y"
+                {
+        (yyval.varDefs) = new VarDefs();
+        (yyval.varDefs) -> addVarDef(VarDefPtr((yyvsp[0].varDef)));
+        (yyval.varDefs) -> setInfo(yylloc.first_line, yylloc.first_column);
+
+    }
+#line 1451 "parser.cpp"
+    break;
+
+  case 20: /* VarDefs: VarDefs COMMA VarDef  */
+#line 281 "parser.y"
+                           {
+        (yyval.varDefs) = (yyvsp[-2].varDefs);
+        (yyval.varDefs) -> addVarDef(VarDefPtr((yyvsp[0].varDef))); 
+        (yyval.varDefs) -> setInfo(yylloc.first_line, yylloc.first_column);
+
+    }
+#line 1462 "parser.cpp"
+    break;
+
   case 21: /* VarDef: IDENTIFIER  */
-#line 268 "parser.y"
+#line 290 "parser.y"
                    {
         // cout<<*($1)<<endl;
         (yyval.varDef) = new VarDef();
         (yyval.varDef) -> addIdentifier((yyvsp[0].identifier));
         (yyval.varDef) -> addInit(false);
         (yyval.varDef) -> addArray(false);
+        (yyval.varDef) -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
-#line 1452 "parser.cpp"
+#line 1476 "parser.cpp"
     break;
 
   case 22: /* VarDef: IDENTIFIER ASSIGN Exp  */
-#line 275 "parser.y"
+#line 299 "parser.y"
                            {
         (yyval.varDef) = new VarDef();
         (yyval.varDef) -> addIdentifier((yyvsp[-2].identifier));
         (yyval.varDef) -> addInit(true);
         (yyval.varDef) -> addInitVal(ExpPtr((yyvsp[0].exp)));
         (yyval.varDef) -> addArray(false);
+        (yyval.varDef) -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
-#line 1464 "parser.cpp"
+#line 1490 "parser.cpp"
     break;
 
   case 23: /* VarDef: IDENTIFIER ArrayDim  */
-#line 282 "parser.y"
+#line 308 "parser.y"
                           {
         (yyval.varDef) = new VarDef();
         (yyval.varDef) -> addIdentifier((yyvsp[-1].identifier));
         (yyval.varDef) -> addArrayDim(ArrayDimPtr((yyvsp[0].arrayDim)));
         (yyval.varDef) -> addInit(false);
         (yyval.varDef) -> addArray(true);
+        (yyval.varDef) -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
-#line 1476 "parser.cpp"
+#line 1504 "parser.cpp"
     break;
 
   case 24: /* VarDef: IDENTIFIER ArrayDim ASSIGN ArrayInitVal  */
-#line 289 "parser.y"
+#line 317 "parser.y"
                                              {
         (yyval.varDef) = new VarDef();
         (yyval.varDef) -> addIdentifier((yyvsp[-3].identifier));
@@ -1484,69 +1512,82 @@ yyreduce:
         (yyval.varDef) -> addArrayInitVal(ArrayInitValPtr((yyvsp[0].arrayInitVal)));
         (yyval.varDef) -> addInit(true);
         (yyval.varDef) -> addArray(true);
+        (yyval.varDef) -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
-#line 1489 "parser.cpp"
+#line 1519 "parser.cpp"
     break;
 
   case 25: /* InitVals: Exp  */
-#line 307 "parser.y"
+#line 337 "parser.y"
               {
         (yyval.initVals) = new InitVals();
         (yyval.initVals) -> addExp(ExpPtr((yyvsp[0].exp)));
+        (yyval.initVals) -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
-#line 1498 "parser.cpp"
+#line 1530 "parser.cpp"
     break;
 
   case 26: /* InitVals: ArrayInitVal  */
-#line 311 "parser.y"
+#line 343 "parser.y"
                    {
         (yyval.initVals) = new InitVals();
         (yyval.initVals) -> addExp(ExpPtr((yyvsp[0].arrayInitVal)));
+        (yyval.initVals) -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
-#line 1507 "parser.cpp"
+#line 1541 "parser.cpp"
     break;
 
   case 27: /* InitVals: InitVals COMMA Exp  */
-#line 315 "parser.y"
+#line 349 "parser.y"
                          {
         (yyval.initVals) = (yyvsp[-2].initVals);
         (yyval.initVals) -> addExp(ExpPtr((yyvsp[0].exp)));
+        (yyval.initVals) -> setInfo(yylloc.first_line, yylloc.first_column);
         
     }
-#line 1517 "parser.cpp"
+#line 1552 "parser.cpp"
     break;
 
   case 28: /* InitVals: InitVals COMMA ArrayInitVal  */
-#line 320 "parser.y"
+#line 355 "parser.y"
                                   {
         (yyval.initVals) = (yyvsp[-2].initVals);
         (yyval.initVals) -> addExp(ExpPtr((yyvsp[0].arrayInitVal)));
+        (yyval.initVals) -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
-#line 1526 "parser.cpp"
+#line 1563 "parser.cpp"
     break;
 
   case 29: /* ArrayInitVal: LEFT_BRACES InitVals RIGHT_BRACES  */
-#line 326 "parser.y"
+#line 363 "parser.y"
                                                 {
         (yyval.arrayInitVal) = new ArrayInitVal();
         (yyval.arrayInitVal) -> addDimVal(InitValsPtr((yyvsp[-1].initVals)));
         (yyval.arrayInitVal) -> addType(ExpType::ET_DIM);
+        (yyval.arrayInitVal) -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
-#line 1536 "parser.cpp"
+#line 1575 "parser.cpp"
     break;
 
   case 30: /* ArrayInitVal: LEFT_BRACES RIGHT_BRACES  */
-#line 331 "parser.y"
+#line 370 "parser.y"
                                {
         (yyval.arrayInitVal) = new ArrayInitVal();
         (yyval.arrayInitVal) -> addDimVal(InitValsPtr(nullptr));
         (yyval.arrayInitVal) -> addType(ExpType::ET_DIM);
+        (yyval.arrayInitVal) -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
-#line 1546 "parser.cpp"
+#line 1587 "parser.cpp"
     break;
 
   case 31: /* FuncDef: BaseType IDENTIFIER LEFT_PARENTHESES FuncFParams RIGHT_PARENTHESES Block  */
-#line 338 "parser.y"
+#line 379 "parser.y"
                                                                                  {
         (yyval.funcDef) = new FuncDef();
         (yyval.funcDef) -> _node_type = NodeType::NT_FUNC;
@@ -1555,12 +1596,14 @@ yyreduce:
         (yyval.funcDef) -> addParam(true);
         (yyval.funcDef) -> addFuncFParams(FuncFParamsPtr((yyvsp[-2].funcFParams)));
         (yyval.funcDef) -> addBlock(BlockPtr((yyvsp[0].block)));
+        (yyval.funcDef) -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
-#line 1560 "parser.cpp"
+#line 1603 "parser.cpp"
     break;
 
   case 32: /* FuncDef: BaseType IDENTIFIER LEFT_PARENTHESES RIGHT_PARENTHESES Block  */
-#line 347 "parser.y"
+#line 390 "parser.y"
                                                                   {
         (yyval.funcDef) = new FuncDef();
         (yyval.funcDef) -> _node_type = NodeType::NT_FUNC;
@@ -1569,133 +1612,161 @@ yyreduce:
         (yyval.funcDef) -> addParam(false);
         (yyval.funcDef) -> addBlock(BlockPtr((yyvsp[0].block)));
         (yyval.funcDef) -> addFuncFParams(nullptr);
+        (yyval.funcDef) -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
-#line 1574 "parser.cpp"
+#line 1619 "parser.cpp"
     break;
 
   case 33: /* FuncFParams: FuncFParam  */
-#line 360 "parser.y"
+#line 405 "parser.y"
                         {
         (yyval.funcFParams) = new FuncFParams();
         (yyval.funcFParams) -> addFuncFParam(FuncFParamPtr((yyvsp[0].funcFParam)));
+        (yyval.funcFParams) -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
-#line 1583 "parser.cpp"
+#line 1630 "parser.cpp"
     break;
 
   case 34: /* FuncFParams: FuncFParams COMMA FuncFParam  */
-#line 364 "parser.y"
+#line 411 "parser.y"
                                   {
         (yyval.funcFParams) = (yyvsp[-2].funcFParams);
         (yyval.funcFParams) -> addFuncFParam(FuncFParamPtr((yyvsp[0].funcFParam)));
+        (yyval.funcFParams) -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
-#line 1592 "parser.cpp"
+#line 1641 "parser.cpp"
     break;
 
   case 35: /* FuncFParam: BaseType IDENTIFIER  */
-#line 370 "parser.y"
+#line 419 "parser.y"
                                 {
         (yyval.funcFParam) = new FuncFParam();
         (yyval.funcFParam) -> addType((yyvsp[-1].type));
         (yyval.funcFParam) -> addIdentifier((yyvsp[0].identifier));
         (yyval.funcFParam) -> addArray(false);
+        (yyval.funcFParam) -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
-#line 1603 "parser.cpp"
+#line 1654 "parser.cpp"
     break;
 
   case 36: /* FuncFParam: BaseType IDENTIFIER ParamArrayDim  */
-#line 376 "parser.y"
+#line 427 "parser.y"
                                         {
         (yyval.funcFParam) = new FuncFParam();
         (yyval.funcFParam) -> addType((yyvsp[-2].type));
         (yyval.funcFParam) -> addIdentifier((yyvsp[-1].identifier));
         (yyval.funcFParam) -> addArray(true);
         (yyval.funcFParam) -> addArrayDim(ParamArrayDimPtr((yyvsp[0].paramArrayDim)));
+        (yyval.funcFParam) -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
-#line 1615 "parser.cpp"
+#line 1668 "parser.cpp"
     break;
 
   case 37: /* ParamArrayDim: LEFT_BRACKETS RIGHT_BRACKETS  */
-#line 384 "parser.y"
+#line 437 "parser.y"
                                             {
         (yyval.paramArrayDim) = new ParamArrayDim();
         (yyval.paramArrayDim) -> addDim(nullptr);
+        (yyval.paramArrayDim) -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
-#line 1624 "parser.cpp"
+#line 1679 "parser.cpp"
     break;
 
   case 38: /* ParamArrayDim: ParamArrayDim LEFT_BRACKETS Exp RIGHT_BRACKETS  */
-#line 388 "parser.y"
+#line 443 "parser.y"
                                                      {
         (yyval.paramArrayDim) = (yyvsp[-3].paramArrayDim);
         (yyval.paramArrayDim) -> addDim(ExpPtr((yyvsp[-1].exp)));
+        (yyval.paramArrayDim) -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
-#line 1633 "parser.cpp"
+#line 1690 "parser.cpp"
     break;
 
   case 39: /* Block: LEFT_BRACES RIGHT_BRACES  */
-#line 394 "parser.y"
+#line 451 "parser.y"
                                 {
         (yyval.block) = new Block();
         (yyval.block) -> addBlockItem(BlockItemsPtr(nullptr));
+        (yyval.block) -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
-#line 1642 "parser.cpp"
+#line 1701 "parser.cpp"
     break;
 
   case 40: /* Block: LEFT_BRACES BlockItems RIGHT_BRACES  */
-#line 398 "parser.y"
+#line 457 "parser.y"
                                          {
         (yyval.block) = new Block();
         (yyval.block) -> addBlockItem(BlockItemsPtr((yyvsp[-1].blockItems)));
+        (yyval.block) -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
-#line 1651 "parser.cpp"
+#line 1712 "parser.cpp"
     break;
 
   case 41: /* BlockItems: Decl  */
-#line 403 "parser.y"
+#line 464 "parser.y"
                  {
         (yyval.blockItems) = new BlockItems();
         (yyval.blockItems) -> addDecl(DeclPtr((yyvsp[0].decl)));
+        (yyval.blockItems) -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
-#line 1660 "parser.cpp"
+#line 1723 "parser.cpp"
     break;
 
   case 42: /* BlockItems: Stmt  */
-#line 407 "parser.y"
+#line 470 "parser.y"
            {
         (yyval.blockItems) = new BlockItems();
         (yyval.blockItems) -> addStmt(StmtPtr((yyvsp[0].stmt)));
+        (yyval.blockItems) -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
-#line 1669 "parser.cpp"
+#line 1734 "parser.cpp"
     break;
 
   case 43: /* BlockItems: BlockItems Decl  */
-#line 411 "parser.y"
+#line 476 "parser.y"
                       {
         (yyval.blockItems) = (yyvsp[-1].blockItems);
         (yyval.blockItems) -> addDecl(DeclPtr((yyvsp[0].decl)));
+        (yyval.blockItems) -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
-#line 1678 "parser.cpp"
+#line 1745 "parser.cpp"
     break;
 
   case 44: /* BlockItems: BlockItems Stmt  */
-#line 415 "parser.y"
+#line 482 "parser.y"
                       {
         (yyval.blockItems) = (yyvsp[-1].blockItems);
         (yyval.blockItems) -> addStmt(StmtPtr((yyvsp[0].stmt)));
+        (yyval.blockItems) -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
-#line 1687 "parser.cpp"
+#line 1756 "parser.cpp"
     break;
 
   case 45: /* BlockItems: BlockItems SEMICOLON  */
-#line 419 "parser.y"
+#line 488 "parser.y"
                            {
         (yyval.blockItems) = (yyvsp[-1].blockItems);
+        (yyval.blockItems) -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
-#line 1695 "parser.cpp"
+#line 1766 "parser.cpp"
     break;
 
   case 46: /* Stmt: LVal ASSIGN Exp SEMICOLON  */
-#line 431 "parser.y"
+#line 502 "parser.y"
                                 {
         AssignStmt* assign = new AssignStmt();
         assign -> addLVal(LValPtr((yyvsp[-3].lVal)));
@@ -1703,46 +1774,54 @@ yyreduce:
         (yyval.stmt) = (Stmt*)(assign);
         (yyval.stmt) -> addType(StmtType::ST_ASSIGN);
         (yyval.stmt) -> _node_type = NodeType::NT_STMT;
+        (yyval.stmt) -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
-#line 1708 "parser.cpp"
+#line 1781 "parser.cpp"
     break;
 
   case 47: /* Stmt: Exp SEMICOLON  */
-#line 439 "parser.y"
+#line 512 "parser.y"
                     {
         ExpStmt* exp = new ExpStmt();
         exp -> addExp(ExpPtr((yyvsp[-1].exp)));
         (yyval.stmt) = (Stmt*)(exp);
         (yyval.stmt) -> addType(StmtType::ST_EXP);
         (yyval.stmt) -> _node_type = NodeType::NT_STMT;
+        (yyval.stmt) -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
-#line 1720 "parser.cpp"
+#line 1795 "parser.cpp"
     break;
 
   case 48: /* Stmt: SEMICOLON  */
-#line 446 "parser.y"
+#line 521 "parser.y"
                 {
         (yyval.stmt) = new Stmt();
         (yyval.stmt) -> addType(StmtType::ST_BLANK);
         (yyval.stmt) -> _node_type = NodeType::NT_STMT;
+        (yyval.stmt) -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
-#line 1730 "parser.cpp"
+#line 1807 "parser.cpp"
     break;
 
   case 49: /* Stmt: Block  */
-#line 451 "parser.y"
+#line 528 "parser.y"
             {
         BlockStmt* block = new BlockStmt();
         block -> addBlock(BlockPtr((yyvsp[0].block)));
         (yyval.stmt) = (Stmt*)(block);
         (yyval.stmt) -> addType(StmtType::ST_BLOCK);
         (yyval.stmt) -> _node_type = NodeType::NT_STMT;
+        (yyval.stmt) -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
-#line 1742 "parser.cpp"
+#line 1821 "parser.cpp"
     break;
 
   case 50: /* Stmt: IF LEFT_PARENTHESES LOrExp RIGHT_PARENTHESES Stmt  */
-#line 458 "parser.y"
+#line 537 "parser.y"
                                                         {
         IfElseStmt* ifelsestmt = new IfElseStmt();
         ifelsestmt -> addCond(ExpPtr((yyvsp[-2].lOrExp)));
@@ -1751,12 +1830,14 @@ yyreduce:
         (yyval.stmt) = (Stmt*)(ifelsestmt);
         (yyval.stmt) -> addType(StmtType::ST_IF);
         (yyval.stmt) -> _node_type = NodeType::NT_STMT;
+        (yyval.stmt) -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
-#line 1756 "parser.cpp"
+#line 1837 "parser.cpp"
     break;
 
   case 51: /* Stmt: IF LEFT_PARENTHESES LOrExp RIGHT_PARENTHESES Stmt ELSE Stmt  */
-#line 467 "parser.y"
+#line 548 "parser.y"
                                                                   {
         IfElseStmt* ifelsestmt = new IfElseStmt();
         ifelsestmt -> addCond(ExpPtr((yyvsp[-4].lOrExp)));
@@ -1765,12 +1846,14 @@ yyreduce:
         (yyval.stmt) = (Stmt*)(ifelsestmt);
         (yyval.stmt) -> addType(StmtType::ST_IF);
         (yyval.stmt) -> _node_type = NodeType::NT_STMT;
+        (yyval.stmt) -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
-#line 1770 "parser.cpp"
+#line 1853 "parser.cpp"
     break;
 
   case 52: /* Stmt: WHILE LEFT_PARENTHESES LOrExp RIGHT_PARENTHESES Stmt  */
-#line 476 "parser.y"
+#line 559 "parser.y"
                                                            {
         WhileStmt* whilestmt = new WhileStmt();
         whilestmt -> addCond(ExpPtr((yyvsp[-2].lOrExp)));
@@ -1778,213 +1861,252 @@ yyreduce:
         (yyval.stmt) = (Stmt*)(whilestmt);
         (yyval.stmt) -> addType(StmtType::ST_WHILE);
         (yyval.stmt) -> _node_type = NodeType::NT_STMT;
+        (yyval.stmt) -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
-#line 1783 "parser.cpp"
+#line 1868 "parser.cpp"
     break;
 
   case 53: /* Stmt: BREAK SEMICOLON  */
-#line 484 "parser.y"
+#line 569 "parser.y"
                      {
         (yyval.stmt) = new Stmt();
         (yyval.stmt) -> addType(StmtType::ST_BREAK);
         (yyval.stmt) -> _node_type = NodeType::NT_STMT;
+        (yyval.stmt) -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
-#line 1793 "parser.cpp"
+#line 1880 "parser.cpp"
     break;
 
   case 54: /* Stmt: CONTINUE SEMICOLON  */
-#line 489 "parser.y"
+#line 576 "parser.y"
                          {
         (yyval.stmt) = new Stmt();
         (yyval.stmt) -> addType(StmtType::ST_CONTINUE);
         (yyval.stmt) -> _node_type = NodeType::NT_STMT;
+        (yyval.stmt) -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
-#line 1803 "parser.cpp"
+#line 1892 "parser.cpp"
     break;
 
   case 55: /* Stmt: RETURN SEMICOLON  */
-#line 494 "parser.y"
+#line 583 "parser.y"
                        {
         ReturnStmt* returnstmt = new ReturnStmt();
         returnstmt -> addExp(nullptr);
         (yyval.stmt) = (Stmt*)(returnstmt);
         (yyval.stmt) -> addType(StmtType::ST_RETURN);
         (yyval.stmt) -> _node_type = NodeType::NT_STMT;
+        (yyval.stmt) -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
-#line 1815 "parser.cpp"
+#line 1906 "parser.cpp"
     break;
 
   case 56: /* Stmt: RETURN Exp SEMICOLON  */
-#line 501 "parser.y"
+#line 592 "parser.y"
                            {
         ReturnStmt* returnstmt = new ReturnStmt();
         returnstmt -> addExp(ExpPtr((yyvsp[-1].exp)));
         (yyval.stmt) = (Stmt*)(returnstmt);
         (yyval.stmt) -> addType(StmtType::ST_RETURN);
         (yyval.stmt) -> _node_type = NodeType::NT_STMT;
+        (yyval.stmt) -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
-#line 1827 "parser.cpp"
+#line 1920 "parser.cpp"
     break;
 
   case 57: /* Exp: AddExp  */
-#line 510 "parser.y"
+#line 603 "parser.y"
             {
         (yyval.exp) = (yyvsp[0].addExp);
+        (yyval.exp) -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
-#line 1835 "parser.cpp"
+#line 1930 "parser.cpp"
     break;
 
   case 58: /* LVal: IDENTIFIER  */
-#line 517 "parser.y"
+#line 612 "parser.y"
                  {
         (yyval.lVal) = new LVal();
         (yyval.lVal) -> addIdentifier((yyvsp[0].identifier));
         (yyval.lVal) -> addIsArray(false);
         (yyval.lVal) -> addType(ExpType::ET_LVAL);
+        (yyval.lVal) -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
-#line 1846 "parser.cpp"
+#line 1943 "parser.cpp"
     break;
 
   case 59: /* LVal: LVal LEFT_BRACKETS Exp RIGHT_BRACKETS  */
-#line 523 "parser.y"
+#line 620 "parser.y"
                                             {
         (yyval.lVal) = (yyvsp[-3].lVal);
         (yyval.lVal) -> addIsArray(true);
         (yyval.lVal) -> addDims(ExpPtr((yyvsp[-1].exp)));
         (yyval.lVal) -> addType(ExpType::ET_LVAL);
+        (yyval.lVal) -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
-#line 1857 "parser.cpp"
+#line 1956 "parser.cpp"
     break;
 
   case 60: /* Number: INTVAL  */
-#line 533 "parser.y"
+#line 632 "parser.y"
                 {
         (yyval.number) = new Number(0, 0, false);
         (yyval.number) -> addIntVal((yyvsp[0].intVal));
         (yyval.number) -> addFloatVal(float((yyvsp[0].intVal)));
         (yyval.number) -> addIsFloat(false);
         (yyval.number) -> addType(ExpType::ET_INT);
+        (yyval.number) -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
-#line 1869 "parser.cpp"
+#line 1970 "parser.cpp"
     break;
 
   case 61: /* Number: FLOATVAL  */
-#line 540 "parser.y"
+#line 641 "parser.y"
                {
         (yyval.number) = new Number(0, 0, false);
         (yyval.number) -> addFloatVal((yyvsp[0].floatVal));
         (yyval.number) -> addIntVal(int((yyvsp[0].floatVal)));
         (yyval.number) -> addIsFloat(true);
         (yyval.number) -> addType(ExpType::ET_FLOAT);
+        (yyval.number) -> setInfo(yylloc.first_line, yylloc.first_column);
         
     }
-#line 1882 "parser.cpp"
+#line 1984 "parser.cpp"
     break;
 
   case 62: /* UnaryExp: LEFT_PARENTHESES Exp RIGHT_PARENTHESES  */
-#line 551 "parser.y"
+#line 653 "parser.y"
                                                  {
         (yyval.unaryExp) = (yyvsp[-1].exp);
+        (yyval.unaryExp) -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
-#line 1890 "parser.cpp"
+#line 1994 "parser.cpp"
     break;
 
   case 63: /* UnaryExp: LVal  */
-#line 554 "parser.y"
+#line 658 "parser.y"
            {
         (yyval.unaryExp) = (Exp*)((yyvsp[0].lVal));
+        (yyval.unaryExp) -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
-#line 1898 "parser.cpp"
+#line 2004 "parser.cpp"
     break;
 
   case 64: /* UnaryExp: Number  */
-#line 557 "parser.y"
+#line 663 "parser.y"
              {
         (yyval.unaryExp) = (Exp*)((yyvsp[0].number));
+        (yyval.unaryExp) -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
-#line 1906 "parser.cpp"
+#line 2014 "parser.cpp"
     break;
 
   case 65: /* UnaryExp: IDENTIFIER LEFT_PARENTHESES RIGHT_PARENTHESES  */
-#line 560 "parser.y"
+#line 668 "parser.y"
                                                     {
         auto tmp = new FuncCall();
         tmp -> addIdentifier((yyvsp[-2].identifier));
         (yyval.unaryExp) = (Exp*)(tmp);
         (yyval.unaryExp) -> addType(ExpType::ET_FUNC); 
 
+        (yyval.unaryExp) -> setInfo(yylloc.first_line, yylloc.first_column);
         
     }
-#line 1919 "parser.cpp"
+#line 2028 "parser.cpp"
     break;
 
   case 66: /* UnaryExp: IDENTIFIER LEFT_PARENTHESES FuncRParams RIGHT_PARENTHESES  */
-#line 568 "parser.y"
+#line 677 "parser.y"
                                                                {
         auto tmp = new FuncCall();
         tmp -> addIdentifier((yyvsp[-3].identifier));
         tmp -> addArgs(FuncRParamsPtr((yyvsp[-1].funcRParams)));
         (yyval.unaryExp) = (Exp*)(tmp); 
         (yyval.unaryExp) -> addType(ExpType::ET_FUNC); 
+        (yyval.unaryExp) -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
-#line 1931 "parser.cpp"
+#line 2042 "parser.cpp"
     break;
 
   case 67: /* UnaryExp: ADD UnaryExp  */
-#line 575 "parser.y"
+#line 686 "parser.y"
                   {
         (yyval.unaryExp) = (yyvsp[0].unaryExp);
+        (yyval.unaryExp) -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
-#line 1939 "parser.cpp"
+#line 2052 "parser.cpp"
     break;
 
   case 68: /* UnaryExp: SUB UnaryExp  */
-#line 578 "parser.y"
+#line 691 "parser.y"
                   {
         (yyval.unaryExp) = (yyvsp[0].unaryExp);
         (yyval.unaryExp) -> addNeg();
+        (yyval.unaryExp) -> setInfo(yylloc.first_line, yylloc.first_column);
         
     }
-#line 1949 "parser.cpp"
+#line 2063 "parser.cpp"
     break;
 
   case 69: /* UnaryExp: NOT UnaryExp  */
-#line 583 "parser.y"
+#line 697 "parser.y"
                   {
         (yyval.unaryExp) = (yyvsp[0].unaryExp);
         (yyval.unaryExp) -> addNot();
+        (yyval.unaryExp) -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
-#line 1958 "parser.cpp"
+#line 2074 "parser.cpp"
     break;
 
   case 70: /* FuncRParams: Exp  */
-#line 603 "parser.y"
+#line 719 "parser.y"
                  {
         (yyval.funcRParams) = new FuncRParams();
         (yyval.funcRParams) -> addArgs(ExpPtr((yyvsp[0].exp)));
+        (yyval.funcRParams) -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
-#line 1967 "parser.cpp"
+#line 2085 "parser.cpp"
     break;
 
   case 71: /* FuncRParams: FuncRParams COMMA Exp  */
-#line 607 "parser.y"
+#line 725 "parser.y"
                             {
         (yyval.funcRParams) = (yyvsp[-2].funcRParams);
         (yyval.funcRParams) -> addArgs(ExpPtr((yyvsp[0].exp)));
+        (yyval.funcRParams) -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
-#line 1976 "parser.cpp"
+#line 2096 "parser.cpp"
     break;
 
   case 72: /* MulExp: UnaryExp  */
-#line 613 "parser.y"
+#line 733 "parser.y"
                  {
         (yyval.mulExp) = (yyvsp[0].unaryExp);
+        (yyval.mulExp) -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
-#line 1984 "parser.cpp"
+#line 2106 "parser.cpp"
     break;
 
   case 73: /* MulExp: MulExp MUL UnaryExp  */
-#line 616 "parser.y"
+#line 738 "parser.y"
                           {
         auto tmp = new BinaryExp();
         tmp -> addExp1(ExpPtr((yyvsp[-2].mulExp)));
@@ -1992,12 +2114,14 @@ yyreduce:
         tmp -> addOp(BinOpType::OP_MUL);
         tmp -> addType(ExpType::ET_BIN);
         (yyval.mulExp) = (Exp*)(tmp);
+        (yyval.mulExp) -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
-#line 1997 "parser.cpp"
+#line 2121 "parser.cpp"
     break;
 
   case 74: /* MulExp: MulExp DIV UnaryExp  */
-#line 624 "parser.y"
+#line 748 "parser.y"
                           {
         auto tmp = new BinaryExp();
         tmp -> addExp1(ExpPtr((yyvsp[-2].mulExp)));
@@ -2005,12 +2129,14 @@ yyreduce:
         tmp -> addOp(BinOpType::OP_DIV);
         (yyval.mulExp) = (Exp*)(tmp);
         (yyval.mulExp) -> addType(ExpType::ET_BIN);
+        (yyval.mulExp) -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
-#line 2010 "parser.cpp"
+#line 2136 "parser.cpp"
     break;
 
   case 75: /* MulExp: MulExp MOD UnaryExp  */
-#line 632 "parser.y"
+#line 758 "parser.y"
                           {
         auto tmp = new BinaryExp();
         tmp -> addExp1(ExpPtr((yyvsp[-2].mulExp)));
@@ -2018,20 +2144,24 @@ yyreduce:
         tmp -> addOp(BinOpType::OP_MOD);
         (yyval.mulExp) = (Exp*)(tmp);
         (yyval.mulExp) -> addType(ExpType::ET_BIN);
+        (yyval.mulExp) -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
-#line 2023 "parser.cpp"
+#line 2151 "parser.cpp"
     break;
 
   case 76: /* AddExp: MulExp  */
-#line 642 "parser.y"
+#line 770 "parser.y"
                {
          (yyval.addExp) = (yyvsp[0].mulExp);
+        (yyval.addExp) -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
-#line 2031 "parser.cpp"
+#line 2161 "parser.cpp"
     break;
 
   case 77: /* AddExp: AddExp ADD MulExp  */
-#line 645 "parser.y"
+#line 775 "parser.y"
                         {
         auto tmp = new BinaryExp();
         tmp -> addExp1(ExpPtr((yyvsp[-2].addExp)));
@@ -2039,12 +2169,14 @@ yyreduce:
         tmp -> addOp(BinOpType::OP_ADD);
         (yyval.addExp) = (Exp*)(tmp);
         (yyval.addExp) -> addType(ExpType::ET_BIN);
+        (yyval.addExp) -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
-#line 2044 "parser.cpp"
+#line 2176 "parser.cpp"
     break;
 
   case 78: /* AddExp: AddExp SUB MulExp  */
-#line 653 "parser.y"
+#line 785 "parser.y"
                         {
         auto tmp = new BinaryExp();
         tmp -> addExp1(ExpPtr((yyvsp[-2].addExp)));
@@ -2052,20 +2184,24 @@ yyreduce:
         tmp -> addOp(BinOpType::OP_SUB);
         (yyval.addExp) = (Exp*)(tmp);
         (yyval.addExp) -> addType(ExpType::ET_BIN);
+        (yyval.addExp) -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
-#line 2057 "parser.cpp"
+#line 2191 "parser.cpp"
     break;
 
   case 79: /* RelExp: AddExp  */
-#line 663 "parser.y"
+#line 797 "parser.y"
                {
         (yyval.relExp) = (yyvsp[0].addExp);
+        (yyval.relExp) -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
-#line 2065 "parser.cpp"
+#line 2201 "parser.cpp"
     break;
 
   case 80: /* RelExp: RelExp LT AddExp  */
-#line 666 "parser.y"
+#line 802 "parser.y"
                        {
         auto tmp = new BinaryExp();
         tmp -> addExp1(ExpPtr((yyvsp[-2].relExp)));
@@ -2073,12 +2209,14 @@ yyreduce:
         tmp -> addOp(BinOpType::OP_LT);
         (yyval.relExp) = (Exp*)(tmp);
         (yyval.relExp) -> addType(ExpType::ET_BIN);
+        (yyval.relExp) -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
-#line 2078 "parser.cpp"
+#line 2216 "parser.cpp"
     break;
 
   case 81: /* RelExp: RelExp GT AddExp  */
-#line 674 "parser.y"
+#line 812 "parser.y"
                        {
         auto tmp = new BinaryExp();
         tmp -> addExp1(ExpPtr((yyvsp[-2].relExp)));
@@ -2086,12 +2224,14 @@ yyreduce:
         tmp -> addOp(BinOpType::OP_GT);
         (yyval.relExp) = (Exp*)(tmp);
         (yyval.relExp) -> addType(ExpType::ET_BIN);
+        (yyval.relExp) -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
-#line 2091 "parser.cpp"
+#line 2231 "parser.cpp"
     break;
 
   case 82: /* RelExp: RelExp LTE AddExp  */
-#line 682 "parser.y"
+#line 822 "parser.y"
                         {
         auto tmp = new BinaryExp();
         tmp -> addExp1(ExpPtr((yyvsp[-2].relExp)));
@@ -2099,12 +2239,14 @@ yyreduce:
         tmp -> addOp(BinOpType::OP_LTE);
         (yyval.relExp) = (Exp*)(tmp);
         (yyval.relExp) -> addType(ExpType::ET_BIN);
+        (yyval.relExp) -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
-#line 2104 "parser.cpp"
+#line 2246 "parser.cpp"
     break;
 
   case 83: /* RelExp: RelExp GTE AddExp  */
-#line 690 "parser.y"
+#line 832 "parser.y"
                         {
         auto tmp = new BinaryExp();
         tmp -> addExp1(ExpPtr((yyvsp[-2].relExp)));
@@ -2112,20 +2254,24 @@ yyreduce:
         tmp -> addOp(BinOpType::OP_GTE);
         (yyval.relExp) = (Exp*)(tmp);
         (yyval.relExp) -> addType(ExpType::ET_BIN);
+        (yyval.relExp) -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
-#line 2117 "parser.cpp"
+#line 2261 "parser.cpp"
     break;
 
   case 84: /* EqExp: RelExp  */
-#line 700 "parser.y"
+#line 844 "parser.y"
               {
         (yyval.eqExp) = (yyvsp[0].relExp);
+        (yyval.eqExp) -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
-#line 2125 "parser.cpp"
+#line 2271 "parser.cpp"
     break;
 
   case 85: /* EqExp: EqExp EQ RelExp  */
-#line 703 "parser.y"
+#line 849 "parser.y"
                       {
         auto tmp = new BinaryExp();
         tmp -> addExp1(ExpPtr((yyvsp[-2].eqExp)));
@@ -2133,12 +2279,14 @@ yyreduce:
         tmp -> addOp(BinOpType::OP_EQ);
         (yyval.eqExp) = (Exp*)(tmp);
         (yyval.eqExp) -> addType(ExpType::ET_BIN);
+        (yyval.eqExp) -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
-#line 2138 "parser.cpp"
+#line 2286 "parser.cpp"
     break;
 
   case 86: /* EqExp: EqExp NEQ RelExp  */
-#line 711 "parser.y"
+#line 859 "parser.y"
                        {
         auto tmp = new BinaryExp();
         tmp -> addExp1(ExpPtr((yyvsp[-2].eqExp)));
@@ -2146,20 +2294,24 @@ yyreduce:
         tmp -> addOp(BinOpType::OP_NEQ);
         (yyval.eqExp) = (Exp*)(tmp);
         (yyval.eqExp) -> addType(ExpType::ET_BIN);
+        (yyval.eqExp) -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
-#line 2151 "parser.cpp"
+#line 2301 "parser.cpp"
     break;
 
   case 87: /* LAndExp: EqExp  */
-#line 721 "parser.y"
+#line 871 "parser.y"
                {
         (yyval.lAndExp) = (yyvsp[0].eqExp);
+        (yyval.lAndExp) -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
-#line 2159 "parser.cpp"
+#line 2311 "parser.cpp"
     break;
 
   case 88: /* LAndExp: LAndExp AND EqExp  */
-#line 724 "parser.y"
+#line 876 "parser.y"
                         {
         auto tmp = new BinaryExp();
         tmp -> addExp1(ExpPtr((yyvsp[-2].lAndExp)));
@@ -2167,20 +2319,24 @@ yyreduce:
         tmp -> addOp(BinOpType::OP_AND);
         (yyval.lAndExp) = (Exp*)(tmp);
         (yyval.lAndExp) -> addType(ExpType::ET_BIN);
+        (yyval.lAndExp) -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
-#line 2172 "parser.cpp"
+#line 2326 "parser.cpp"
     break;
 
   case 89: /* LOrExp: LAndExp  */
-#line 734 "parser.y"
+#line 888 "parser.y"
                 {
         (yyval.lOrExp) = (yyvsp[0].lAndExp);
+        (yyval.lOrExp) -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
-#line 2180 "parser.cpp"
+#line 2336 "parser.cpp"
     break;
 
   case 90: /* LOrExp: LOrExp OR LAndExp  */
-#line 737 "parser.y"
+#line 893 "parser.y"
                         {
         auto tmp = new BinaryExp();
         tmp -> addExp1(ExpPtr((yyvsp[-2].lOrExp)));
@@ -2188,21 +2344,25 @@ yyreduce:
         tmp -> addOp(BinOpType::OP_OR);
         (yyval.lOrExp) = (Exp*)(tmp);
         (yyval.lOrExp) -> addType(ExpType::ET_BIN);
+        (yyval.lOrExp) -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
-#line 2193 "parser.cpp"
+#line 2351 "parser.cpp"
     break;
 
   case 91: /* ConstExp: AddExp  */
-#line 747 "parser.y"
+#line 905 "parser.y"
                  {
         (yyval.constExp) = new ConstExp();
         (yyval.constExp) -> addExp(ExpPtr((yyvsp[0].addExp)));
+        (yyval.constExp) -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
-#line 2202 "parser.cpp"
+#line 2362 "parser.cpp"
     break;
 
 
-#line 2206 "parser.cpp"
+#line 2366 "parser.cpp"
 
       default: break;
     }
@@ -2395,7 +2555,7 @@ yyreturnlab:
   return yyresult;
 }
 
-#line 751 "parser.y"
+#line 911 "parser.y"
 
 
 

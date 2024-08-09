@@ -24,15 +24,17 @@ Value* parseArrayLval(LValPtr lval, VarNode* var_node, bool is_number, bool ptr=
         
         // 表达式解析出来的不是整数
         if (dim -> getResType() != BaseType::B_INT) {
-            error_msg = "array index must be integer";
+            error_msg = "line: " + to_string(dim -> getInfo().first) + ", column: " + to_string(dim -> getInfo().second) + "\n数组下标必须为整数";
             error_handle();
         }
         if (i == 0 && var_node -> _is_param) array_entry = builder.createGEPInst(array_entry, inst, nullptr,true);
         else array_entry = builder.createGEPInst(array_entry, inst);
         i++;
     }
-                        
-
+    vector<int> left_dims;
+    for (;i<var_node ->_dims.size();i++) left_dims.push_back(var_node -> _dims[i]);
+    lval -> addLeftDims(left_dims);
+    // for (int j:left_dims) cout<<j<<" ";cout<<endl;
     if (ptr) return array_entry;
     if (!is_number) return builder.createLoadInst(var_node->_type == BaseType::B_INT? int32PointerType : floatPointerType, array_entry);
     else return builder.createLoadInst(var_node->_type == BaseType::B_INT? i32Type : floatType, array_entry);
@@ -50,7 +52,7 @@ Value* parseVarLval(LValPtr lval){
     auto id = lval -> getIdentifier();
     // 检查变量是否存在
     if (! sym_tb.check_var(id)){
-        error_msg = "variable " + id + " not defined";
+        error_msg = "line: " + to_string(lval -> getInfo().first) + ", column: " + to_string(lval -> getInfo().second) + "\n变量" + id + "未定义";
         error_handle();
     }
     auto var_node = sym_tb.find_var(id);
@@ -58,7 +60,7 @@ Value* parseVarLval(LValPtr lval){
     // 数组
     if (var_node -> _is_array) {
         if (lval -> getDims().size() != var_node->_dims.size()){
-            error_msg = "array " + lval -> getIdentifier() + " expects " + std::to_string(var_node -> _dims.size()) + " dimensions, but " + std::to_string(lval -> getDims().size()) + " given";
+            error_msg ="line: " + to_string(lval -> getInfo().first) + ", column: " + to_string(lval -> getInfo().second) + "\n数组" + lval -> getIdentifier() + "一共有" + std::to_string(var_node -> _dims.size()) + "个维度，但只给了" + std::to_string(lval -> getDims().size()) + "个维度";
             error_handle();
         }
 
@@ -72,7 +74,7 @@ Instruction* parseFuncCall(ExpPtr exp){
     auto func_call_exp = dynamic_pointer_cast<FuncCall>(exp);
     // 函数不存在
     if (! sym_tb.check_func(func_call_exp -> getIdentifier())){
-        error_msg = "function " + func_call_exp -> getIdentifier() + " not defined";
+        error_msg = "line: " + to_string(func_call_exp -> getInfo().first) + ", column: " + to_string(func_call_exp -> getInfo().second) + "\n函数" + func_call_exp -> getIdentifier() + "未定义";
         error_handle();
     }
 
@@ -80,14 +82,14 @@ Instruction* parseFuncCall(ExpPtr exp){
     auto func_node = sym_tb.find_func(func_call_exp -> getIdentifier());
     auto R_param = func_call_exp -> getArgs();
     if (func_node -> _func_params == nullptr && R_param.size() != 0){
-        error_msg = "function " + func_call_exp -> getIdentifier() + " expects zero arguments, but " + std::to_string(R_param.size()) + " given";
+        error_msg = "line: " + to_string(func_call_exp -> getInfo().first) + ", column: " + to_string(func_call_exp -> getInfo().second) + "\n调用函数" + func_call_exp -> getIdentifier() + "时，传递参数太多";
         error_handle();
     }
 
     if (func_node -> _func_params == nullptr) return builder.createCallInst(func_node -> _entry, Zero_Argu_List);
     auto F_param = func_node -> _func_params -> getFuncFParam();
     if (R_param.size() != F_param.size()){
-        error_msg = "function " + func_call_exp -> getIdentifier() + " expects " + std::to_string(F_param.size()) + " arguments, but " + std::to_string(R_param.size()) + " given";
+        error_msg = "line: " + to_string(func_call_exp -> getInfo().first) + ", column: " + to_string(func_call_exp -> getInfo().second) + "\n调用函数" + func_call_exp -> getIdentifier() + "时，传递参数太多";
         error_handle();
     }
 
@@ -106,20 +108,35 @@ Instruction* parseFuncCall(ExpPtr exp){
 
         // 参数类型错误
         if ( (R_param_i -> getResType() == BaseType::B_FARRAY_PTR || R_param_i -> getResType() == BaseType::B_ARRAY_PTR) && !F_param_i -> isArray()) {
-            error_msg = "function " + func_call_exp -> getIdentifier() + " expects array argument, but " + std::to_string(R_param_i -> getResType()) + " given";
+            error_msg = "line: " + to_string(R_param_i  -> getInfo().first) + ", column: " + to_string(R_param_i  -> getInfo().second) + "\n调用函数" + func_call_exp -> getIdentifier() + "时，传递参数错误";
             error_handle();
         }
         else if ( (R_param_i -> getResType() != BaseType::B_ARRAY_PTR && R_param_i -> getResType() != BaseType::B_FARRAY_PTR) && F_param_i -> isArray()) {
-            error_msg = "function " + func_call_exp -> getIdentifier() + " does not expect array argument, but " + std::to_string(R_param_i -> getResType()) + " given";
+            error_msg = "line: " + to_string(R_param_i -> getInfo().first) + ", column: " + to_string(R_param_i  -> getInfo().second) + "\n调用函数" + func_call_exp -> getIdentifier() + "时，传递参数错误";
             error_handle();   
         }
         else if (R_param_i -> getResType() == BaseType::B_FARRAY_PTR && F_param_i -> getType() == BaseType::B_INT && F_param_i -> isArray()) {
-            error_msg = "function " + func_call_exp -> getIdentifier() + " expects float array argument, but " + std::to_string(R_param_i -> getResType()) + " given";
+            error_msg = "line: " + to_string(R_param_i -> getInfo().first) + ", column: " + to_string(R_param_i -> getInfo().second) + "\n调用函数" + func_call_exp -> getIdentifier() + "时，传递参数错误";
             error_handle();
         }
         else if (R_param_i -> getResType() == BaseType::B_ARRAY_PTR && F_param_i -> getType() == BaseType::B_FLOAT && F_param_i -> isArray()) {
-            error_msg = "function " + func_call_exp -> getIdentifier() + " expects int array argument, but " + std::to_string(R_param_i -> getResType()) + " given";
+            error_msg = "line: " + to_string(R_param_i -> getInfo().first) + ", column: " + to_string(R_param_i -> getInfo().second) + "\n调用函数" + func_call_exp -> getIdentifier() + "时，传递参数错误";
             error_handle();
+        }
+
+        // 数组维度是否能对应
+        if (F_param_i -> isArray()) {
+            bool flg = true;
+            if (R_param_i -> getLeftDims().size() != F_param_i -> getArrayDim() -> getDim().size()) flg = false;
+            if (flg) {
+                for (int i = 1; i < R_param_i -> getLeftDims().size(); i++) {
+                    flg = flg && (R_param_i -> getLeftDims()[i] == getConstExpValue(F_param_i -> getArrayDim() -> getDim()[i]) -> getIntVal());
+                }
+            }
+            if (!flg) {
+                error_msg = "line: " + to_string(R_param_i -> getInfo().first) + ", column: " + to_string(R_param_i -> getInfo().second) + "\n调用函数" + func_call_exp -> getIdentifier() + "时，传递参数错误";
+                error_handle();
+            }
         }
         args.push_back(arg_exp.first);
     }
@@ -136,7 +153,7 @@ int or_cnt = 1;
 pair<Value*,bool> parseExp(ExpPtr exp, bool is_cond, bool is_exp, bool is_func_param, BBlock* cond_true, BBlock* cond_false){
     if (exp -> getNotCnt() % 2 != 0) {
         if (!is_cond) {
-            error_msg = "boolean type expression is not supported";
+            error_msg = "line: " + to_string(exp -> getInfo().first) + ", column: " + to_string(exp -> getInfo().second) + "\n布尔值表达式不支持";
             error_handle();
         }
         auto ret = parseExp(exp, is_cond, is_exp, is_func_param);
@@ -173,13 +190,13 @@ pair<Value*,bool> parseExp(ExpPtr exp, bool is_cond, bool is_exp, bool is_func_p
             auto tmp = dynamic_pointer_cast<FuncCall>(exp);
             // 函数不存在
             if (! sym_tb.check_func(tmp -> getIdentifier())){
-                error_msg = "function " + tmp -> getIdentifier() + " not defined";
+                error_msg = "line: " + to_string(tmp -> getInfo().first) + ", column: " + to_string(tmp -> getInfo().second) + "\n函数" + tmp -> getIdentifier() + "未定义";
                 error_handle();
             }
 
             // 函数存在但返回值是void
             else if (sym_tb.find_func(tmp -> getIdentifier()) -> _ret_type == BaseType::B_VOID && (is_exp||is_cond||is_func_param)){
-                error_msg = "function " + tmp -> getIdentifier() + " returns void";
+                error_msg = "line: " + to_string(tmp -> getInfo().first) + ", column: " + to_string(tmp -> getInfo().second) + "\n函数" + tmp -> getIdentifier() + "返回void";
                 error_handle();
             }
             // 函数存在且返回值不是void
@@ -193,7 +210,7 @@ pair<Value*,bool> parseExp(ExpPtr exp, bool is_cond, bool is_exp, bool is_func_p
             auto tmp = dynamic_pointer_cast<LVal>(exp);
             // 变量不存在
             if (!sym_tb.check_var(tmp -> getIdentifier())){
-                error_msg = "variable " + tmp -> getIdentifier() + " not defined";
+                error_msg = "line: " + to_string(tmp -> getInfo().first) + ", column: " + to_string(tmp -> getInfo().second) + "\n变量" + tmp -> getIdentifier() + "未定义";
                 error_handle();
             }
             auto var_node = sym_tb.find_var(tmp -> getIdentifier());
@@ -206,7 +223,7 @@ pair<Value*,bool> parseExp(ExpPtr exp, bool is_cond, bool is_exp, bool is_func_p
                 // 检查数组维数是否正确
                 // 是否取到了数
                 if (tmp -> getDims().size() != var_node->_dims.size()){
-                    error_msg = "array " + tmp -> getIdentifier() + " expects " + std::to_string(var_node->_dims.size()) + " dimensions, but " + std::to_string(tmp -> getDims().size()) + " given";
+                    error_msg ="line: " + to_string(tmp -> getInfo().first) + ", column: " + to_string(tmp -> getInfo().second) + "\n数组" + tmp -> getIdentifier() + "一共有" + std::to_string(var_node -> _dims.size()) + "个维度，但只给了" + std::to_string(tmp -> getDims().size()) + "个维度";
                     error_handle();
                 }
                 return pair<Value*,bool>(parseArrayLval(tmp, var_node, true), false);
@@ -215,7 +232,7 @@ pair<Value*,bool> parseExp(ExpPtr exp, bool is_cond, bool is_exp, bool is_func_p
                 // 作为函数实参时可以是数组指针
                 if (tmp -> getDims().size() == var_node -> _dims.size()) return pair<Value*,bool>(parseArrayLval(tmp, var_node, true), false); 
                 else if (tmp -> getDims().size() > var_node -> _dims.size()){
-                    error_msg = "array " + tmp -> getIdentifier() + " expects " + std::to_string(var_node->_dims.size()) + " dimensions, but " + std::to_string(tmp -> getDims().size()) + " given";
+                    error_msg ="line: " + to_string(tmp -> getInfo().first) + ", column: " + to_string(tmp -> getInfo().second) + "\n数组" + tmp -> getIdentifier() + "一共有" + std::to_string(var_node -> _dims.size()) + "个维度，但只给了" + std::to_string(tmp -> getDims().size()) + "个维度";
                     error_handle();
                 }
                 else {
@@ -229,7 +246,7 @@ pair<Value*,bool> parseExp(ExpPtr exp, bool is_cond, bool is_exp, bool is_func_p
             auto tmp = dynamic_pointer_cast<BinaryExp>(exp);
             if (tmp -> getOp() == BinOpType::OP_AND) {
                 if (!is_cond) {
-                    error_msg = "boolean type expression is not supported";
+                    error_msg = "line: " + to_string(tmp -> getInfo().first) + ", column: " + to_string(tmp -> getInfo().second) + "\n布尔值表达式不支持";
                     error_handle();
                 }
                 exp -> addResType(BaseType::B_JMP);
@@ -267,7 +284,7 @@ pair<Value*,bool> parseExp(ExpPtr exp, bool is_cond, bool is_exp, bool is_func_p
 
             if (tmp -> getOp() == BinOpType::OP_OR) {
                 if (!is_cond) {
-                    error_msg = "boolean type expression is not supported";
+                    error_msg = "line: " + to_string(tmp -> getInfo().first) + ", column: " + to_string(tmp -> getInfo().second) + "\n布尔值表达式不支持";
                     error_handle();
                 }
                 exp -> addResType(BaseType::B_JMP);
@@ -325,7 +342,7 @@ pair<Value*,bool> parseExp(ExpPtr exp, bool is_cond, bool is_exp, bool is_func_p
 
             // 检查是否是浮点数取模操作 
             if (tmp -> getOp() == BinOpType::OP_MOD && is_float){
-                error_msg = "float modulo is not supported";
+                error_msg = "line: " + to_string(tmp -> getInfo().first) + ", column: " + to_string(tmp -> getInfo().second) + "\n浮点数取模操作不支持";
                 error_handle();
             }
             switch (tmp -> getOp()){
@@ -352,7 +369,7 @@ pair<Value*,bool> parseExp(ExpPtr exp, bool is_cond, bool is_exp, bool is_func_p
                 // 条件比较
                 case BinOpType::OP_GTE :{
                     if (!is_cond) {
-                        error_msg = "boolean type expression is not supported";
+                        error_msg = "line: " + to_string(tmp -> getInfo().first) + ", column: " + to_string(tmp -> getInfo().second) + "\n布尔值表达式不支持";
                         error_handle();
                     }
                     exp -> addResType(BaseType::B_BOOL);
@@ -361,7 +378,7 @@ pair<Value*,bool> parseExp(ExpPtr exp, bool is_cond, bool is_exp, bool is_func_p
                 }
                 case BinOpType::OP_EQ :{
                     if (!is_cond) {
-                        error_msg = "boolean type expression is not supported";
+                        error_msg = "line: " + to_string(tmp -> getInfo().first) + ", column: " + to_string(tmp -> getInfo().second) + "\n布尔值表达式不支持";
                         error_handle();
                     }
                     exp -> addResType(BaseType::B_BOOL);
@@ -370,7 +387,7 @@ pair<Value*,bool> parseExp(ExpPtr exp, bool is_cond, bool is_exp, bool is_func_p
                 }
                 case BinOpType::OP_NEQ :{
                     if (!is_cond) {
-                        error_msg = "boolean type expression is not supported";
+                        error_msg = "line: " + to_string(tmp -> getInfo().first) + ", column: " + to_string(tmp -> getInfo().second) + "\n布尔值表达式不支持";
                         error_handle();
                     }
                     exp -> addResType(BaseType::B_BOOL);
@@ -379,7 +396,7 @@ pair<Value*,bool> parseExp(ExpPtr exp, bool is_cond, bool is_exp, bool is_func_p
                 }
                 case BinOpType::OP_GT: {
                     if (!is_cond) {
-                        error_msg = "boolean type expression is not supported";
+                        error_msg = "line: " + to_string(tmp -> getInfo().first) + ", column: " + to_string(tmp -> getInfo().second) + "\n布尔值表达式不支持";
                         error_handle();
                     }
                     exp -> addResType(BaseType::B_BOOL);
@@ -388,7 +405,7 @@ pair<Value*,bool> parseExp(ExpPtr exp, bool is_cond, bool is_exp, bool is_func_p
                 }
                 case BinOpType::OP_LT: {
                     if (!is_cond) {
-                        error_msg = "boolean type expression is not supported";
+                        error_msg = "line: " + to_string(tmp -> getInfo().first) + ", column: " + to_string(tmp -> getInfo().second) + "\n布尔值表达式不支持";
                         error_handle();
                     }
                     exp -> addResType(BaseType::B_BOOL);
@@ -397,7 +414,7 @@ pair<Value*,bool> parseExp(ExpPtr exp, bool is_cond, bool is_exp, bool is_func_p
                 }
                 case BinOpType::OP_LTE: {
                     if (!is_cond) {
-                        error_msg = "boolean type expression is not supported";
+                        error_msg = "line: " + to_string(tmp -> getInfo().first) + ", column: " + to_string(tmp -> getInfo().second) + "\n布尔值表达式不支持";
                         error_handle();
                     }
                     exp -> addResType(BaseType::B_BOOL);
@@ -406,12 +423,17 @@ pair<Value*,bool> parseExp(ExpPtr exp, bool is_cond, bool is_exp, bool is_func_p
                 }
 
                 default: {
-                    error_msg = "unsupported binary operator";
+                    error_msg = "line: " + to_string(tmp -> getInfo().first) + ", column: " + to_string(tmp -> getInfo().second) + "\n表达式不支持的二元运算";
                     error_handle();
                 }   
             }
         }
+        default: {
+            error_msg = "line: " + to_string(exp -> getInfo().first) + ", column: " + to_string(exp -> getInfo().second) + "\n表达式不支持";
+            error_handle();
+        }
     }
+    return make_pair(nullptr, 0);
 }
 
 void parseStmt(StmtPtr _stmt, BBlock* loop_st = nullptr, BBlock* loop_ed = nullptr) {
@@ -441,7 +463,7 @@ void parseStmt(StmtPtr _stmt, BBlock* loop_st = nullptr, BBlock* loop_ed = nullp
     }
 }
 
-NumberPtr getConstExpValue(ExpPtr exp, bool array_dim = false) {
+NumberPtr getConstExpValue(ExpPtr exp, bool array_dim) {
     auto ret = NumberPtr(new Number());
     if (exp -> getNegCnt() % 2 != 0) {
         ret = getConstExpValue(exp, array_dim);
@@ -456,7 +478,7 @@ NumberPtr getConstExpValue(ExpPtr exp, bool array_dim = false) {
         }
         case ExpType::ET_FLOAT: {
             if (array_dim) {
-                error_msg = "array dimension is not a float expression";
+                error_msg = "line: " + to_string(exp -> getInfo().first) + ", column: " + to_string(exp -> getInfo().second) + "\n数组下标必须为整数";
                 error_handle();
             }
             auto num = dynamic_pointer_cast<Number>(exp);
@@ -473,11 +495,11 @@ NumberPtr getConstExpValue(ExpPtr exp, bool array_dim = false) {
         case ExpType::ET_LVAL: {
             auto var_node = sym_tb.find_var(dynamic_pointer_cast<LVal>(exp) -> getIdentifier());
             if (! var_node -> _is_const) {
-                error_msg = "not a constant expression";
+                error_msg = "line: " + to_string(exp -> getInfo().first) + ", column: " + to_string(exp -> getInfo().second) + "\n需要常量表达式";
                 error_handle();
             }
             if (var_node -> _is_float && array_dim) {
-                error_msg = "array dimension is not a float expression";
+                error_msg = "line: " + to_string(exp -> getInfo().first) + ", column: " + to_string(exp -> getInfo().second) + "\n数组下标必须为整数";
                 error_handle();
             }
             if (var_node -> _is_float) {
@@ -524,7 +546,7 @@ NumberPtr getConstExpValue(ExpPtr exp, bool array_dim = false) {
             }
         }
         default: {
-            error_msg = "unsupported constant expression";
+            error_msg = "line: " + to_string(exp -> getInfo().first) + ", column: " + to_string(exp -> getInfo().second) + "\n不支持的常量表达式";
             error_handle();
         }
     }
@@ -579,7 +601,7 @@ void parseDecl(DeclPtr decl, bool is_global) {
         for (auto def: const_defs) {
 
             if (sym_tb.check_var_current_bk(def -> getIdentifier())) {
-                error_msg = "redeclared identifier: " + def -> getIdentifier();
+                error_msg = "line: " + to_string(def -> getInfo().first) + ", column: " + to_string(def -> getInfo().second) + "\n变量" + def -> getIdentifier() + "重复定义";
                 error_handle();
             }
             string alloca_name = def -> getIdentifier();
@@ -593,25 +615,20 @@ void parseDecl(DeclPtr decl, bool is_global) {
                 auto array_ty = const_type == int32PointerType? i32Type: floatType;
                 baseTypePtr array_base = make_shared<PointerType>(array_ty, dims[dims.size()-1]);
                 for (int i=dims.size()-2;i>=0;i--) array_base = make_shared<PointerType>(array_base, dims[i]);
-                
+                int array_tot_size = 1;
+                for (auto dim: dims) array_tot_size *= dim;
                 if (!is_global) {
                     auto alloc = builder.createAllocaInst(alloca_name + "_gimc" + to_string(block_cnt++), array_base);
-                    int array_tot_size = 1;
-                    for (auto dim: dims) array_tot_size *= dim;
+
                     // 初始化
                     auto mem_init = builder.createInitMemInst(array_ty, alloc, array_tot_size<<2);
-                    parseArrayInitVal(def -> getArrayInitVal(), pos, dims, 0, alloc, array_ty == floatType, true);
+                    parseArrayInitVal(def -> getArrayInitVal(), pos, dims, 0, array_tot_size, alloc, array_ty == floatType, true);
                     // 添加到符号表
                     sym_tb.add_var(def -> getIdentifier(), const_decl -> getType(), def -> isArray(), true, const_decl -> getType() == B_FLOAT, alloc, dims);
                 }
                 else {
                     map<vector<int>, NumberPtr> arr_val_mp;
-                    parseArrayInitVal(def -> getArrayInitVal(), pos, dims, 0, const_decl -> getType() == B_FLOAT, arr_val_mp);
-                    for (auto it: arr_val_mp) {
-                        for (int i:it.first) cout<<i<<" ";
-                        cout<<": ";
-                        cout<< it.second -> getIntVal() << endl;
-                    }
+                    parseArrayInitVal(def -> getArrayInitVal(), pos, dims, 0, array_tot_size, const_decl -> getType() == B_FLOAT, arr_val_mp);
                     auto alloc = parseGlobalArray(alloca_name, dims, pos, 0, arr_val_mp, const_decl -> getType() == B_FLOAT).first;
                     sym_tb.add_var(def -> getIdentifier(), const_decl -> getType(), def -> isArray(), true, const_decl -> getType() == B_FLOAT, alloc, dims);
                     globals -> push_back(alloc);
@@ -653,7 +670,7 @@ void parseDecl(DeclPtr decl, bool is_global) {
         auto var_defs = var_decl -> getVarDefs() -> getVarDef();
         for (auto def: var_defs) {
             if (sym_tb.check_var_current_bk(def -> getIdentifier())) {
-                error_msg = "redeclared identifier: " + def -> getIdentifier();
+                error_msg = "line: " + to_string(def -> getInfo().first) + ", column: " + to_string(def -> getInfo().second) + "\n变量" + def -> getIdentifier() + "重复定义";
                 error_handle();
             }
             string alloca_name = def -> getIdentifier();
@@ -670,14 +687,15 @@ void parseDecl(DeclPtr decl, bool is_global) {
                 for (int i=dims.size()-2;i>=0;i--){
                     array_base = make_shared<PointerType>(array_base, dims[i]);
                 }
+                int array_tot_size = 1;
+                for (auto dim: dims) array_tot_size *= dim;
                 if (!is_global) {
                     auto alloc = builder.createAllocaInst(alloca_name + "_gimc" + to_string(block_cnt++), array_base);
                     if (def -> isInit()){
-                        int array_tot_size = 1;
-                        for (auto dim: dims) array_tot_size *= dim;
+
                         // 初始化
                         auto mem_init = builder.createInitMemInst(array_ty, alloc, array_tot_size<<2);
-                        parseArrayInitVal(def -> getArrayInitVal(), pos, dims, 0, alloc, array_ty == floatType, false);
+                        parseArrayInitVal(def -> getArrayInitVal(), pos, dims, 0, array_tot_size, alloc, array_ty == floatType, false);
                     }
                     sym_tb.add_var(def -> getIdentifier(), var_decl -> getType(), def -> isArray(), false, var_decl -> getType() == B_FLOAT, alloc, dims);
                 }
@@ -686,12 +704,12 @@ void parseDecl(DeclPtr decl, bool is_global) {
                     GlobalVar* alloc = nullptr;
                     if (!def -> isInit()) alloc = parseGlobalArray(alloca_name, dims, pos, 0, arr_val_mp, var_decl -> getType() == B_FLOAT).first;
                     else {
-                        parseArrayInitVal(def -> getArrayInitVal(), pos, dims, 0, var_decl -> getType() == B_FLOAT, arr_val_mp);
-                        for (auto it: arr_val_mp) {
-                            for (int i:it.first) cout<<i<<" ";
-                            cout<<": ";
-                            cout<< it.second -> getIntVal() << endl;
-                        }
+                        parseArrayInitVal(def -> getArrayInitVal(), pos, dims, 0, array_tot_size, var_decl -> getType() == B_FLOAT, arr_val_mp);
+                        // for (auto it: arr_val_mp){
+                        //     for (auto i: it.first) cout<<i<<" ";
+                        //     cout<<" : ";
+                        //     cout<<it.second->getIntVal()<<endl;
+                        // }
                         alloc = parseGlobalArray(alloca_name, dims, pos, 0, arr_val_mp, var_decl -> getType() == B_FLOAT).first;
                     }
                     sym_tb.add_var(def -> getIdentifier(), var_decl -> getType(), def -> isArray(), true, var_decl -> getType() == B_FLOAT, alloc, dims);
@@ -816,19 +834,16 @@ void parseReturn(ReturnStmtPtr stmt){
     auto func = builder.getChosedFunc();
     auto type = func -> getType();
     if (stmt -> getExp() == nullptr && type != voidType) {
-        error_msg = "return without value";
+        error_msg =  "line: " + to_string(stmt -> getInfo().first) + ", column: " + to_string(stmt -> getInfo().second) + "\n函数返回值错误";
         error_handle();
     }
     if (stmt -> getExp() != nullptr && type == voidType) {
-        error_msg = "return with value";
+        error_msg =  "line: " + to_string(stmt -> getInfo().first) + ", column: " + to_string(stmt -> getInfo().second) + "\n函数返回值错误";
         error_handle();
     }
     if (stmt -> getExp() == nullptr) builder.createRetInst(&voidValue);
     else {
-
         auto ret_exp = parseExp(stmt -> getExp(), false, true, false).first;
-
-
         if (stmt -> getExp() -> getResType() == B_FLOAT && type == i32Type) ret_exp = builder.createFp2IntInst(ret_exp);
         else if (stmt -> getExp() -> getResType() == B_INT && type == floatType) ret_exp = builder.createInt2FpInst(ret_exp);
         builder.createRetInst(ret_exp);
@@ -1028,17 +1043,18 @@ void checkPosValid(vector<int> &pos, vector<int> dims) {
 
 }
 
-void parseArrayInitVal(ArrayInitValPtr arr_init, vector<int> &poss, vector<int> dims, int depth, Instruction* array_base, bool is_float, bool is_const) {
-    if (depth >= poss.size()) {
-        error_msg = "数组初始化错误";
+void parseArrayInitVal(ArrayInitValPtr arr_init, vector<int> &poss, vector<int> dims, int depth, int limit, Instruction* array_base,  bool is_float, bool is_const) {
+    if (depth > poss.size()) {
+        error_msg = "line: " + to_string(arr_init -> getInfo().first) + ", column: " + to_string(arr_init -> getInfo().second) + "\n数组初始化错误";
         error_handle();
         return;
     }
     if (arr_init -> getDimVal() == nullptr) {
-        cout<< "初始化为0"  << endl;
+        // cout<< "初始化为0"  << endl;
         return;
     }
 
+    int cur_num = 0;
     // 是否解析完了所有表达式
     bool fin_flg=false;
     for (int i=0; i< arr_init -> getDimVal() -> getInitVal().size();) {
@@ -1060,16 +1076,23 @@ void parseArrayInitVal(ArrayInitValPtr arr_init, vector<int> &poss, vector<int> 
                     if (is_float && dim -> getResType() == BaseType::B_INT) exp = builder.createInt2FpInst(exp);
                     else if (!is_float && dim -> getResType() == BaseType::B_FLOAT) exp = builder.createFp2IntInst(exp);
                     builder.createStoreInst(exp, cur_base);
-
                 }
+                cur_num ++ ;
+
                 last_pos = poss[poss.size()-1];
             }
             else{
-                parseArrayInitVal(dynamic_pointer_cast<ArrayInitVal>(dim), poss, dims, depth + 1, array_base, is_float, is_const);
+                int tmp = 1;
+                for (int j = depth + 1; j < poss.size(); j++) tmp *= dims[j];
+                parseArrayInitVal(dynamic_pointer_cast<ArrayInitVal>(dim), poss, dims, depth + 1, tmp, array_base, is_float, is_const);
                 poss[depth]++;
                 for (int j = depth + 1; j < poss.size(); j++) poss[j] = 0;
+                cur_num += tmp;
             }
-            
+            if (cur_num > limit) {
+                error_msg = "line: " + to_string(arr_init -> getInfo().first) + ", column: " + to_string(arr_init -> getInfo().second) + "\n数组初始化数量太多";
+                error_handle();
+            }
             if (i == arr_init -> getDimVal() -> getInitVal().size() - 1){
                 fin_flg=true;
                 break;
@@ -1085,17 +1108,18 @@ void parseArrayInitVal(ArrayInitValPtr arr_init, vector<int> &poss, vector<int> 
 }
 
 
-void parseArrayInitVal(ArrayInitValPtr arr_init, vector<int> &pos, vector<int> dims, int depth, bool is_float, map<vector<int>, NumberPtr>& arr_val_mp) {
-    if (depth >= pos.size()) {
-        error_msg = "数组初始化错误";
+void parseArrayInitVal(ArrayInitValPtr arr_init, vector<int> &pos, vector<int> dims, int depth, int limit, bool is_float,  map<vector<int>, NumberPtr>& arr_val_mp) {
+    if (depth > pos.size()) {
+        error_msg = "line: " + to_string(arr_init -> getInfo().first) + ", column: " + to_string(arr_init -> getInfo().second) + "\n数组初始化错误";
         error_handle();
         return;
     }
     if (arr_init -> getDimVal() == nullptr) {
-        cout<< "初始化为0"  << endl;
+        // cout<< "初始化为0"  << endl;
         return;
     }
     // 是否解析完了所有表达式
+    int cur_num = 0;
     bool fin_flg=false;
     for (int i=0; i< arr_init -> getDimVal() -> getInitVal().size();) {
         auto dim = arr_init -> getDimVal() -> getInitVal()[i];
@@ -1111,12 +1135,20 @@ void parseArrayInitVal(ArrayInitValPtr arr_init, vector<int> &pos, vector<int> d
                     auto num = getConstExpValue(dim);
                     arr_val_mp[pos] = num;
                 }
+                cur_num++;
                 pos[pos.size()-1]++;
             }
             else{
-                parseArrayInitVal(dynamic_pointer_cast<ArrayInitVal>(dim), pos, dims, depth + 1, is_float, arr_val_mp);
+                int tmp = 1;
+                for (int j = depth + 1; j < pos.size(); j++) tmp *= dims[j];
+                parseArrayInitVal(dynamic_pointer_cast<ArrayInitVal>(dim), pos, dims, depth + 1, tmp ,is_float, arr_val_mp);
                 pos[depth]++;
                 for (int j = depth + 1; j < pos.size(); j++) pos[j] = 0;
+                cur_num += tmp;
+            }
+            if (cur_num > limit) {
+                error_msg = "line: " + to_string(arr_init -> getInfo().first) + ", column: " + to_string(arr_init -> getInfo().second) + "\n数组初始化数量太多";
+                error_handle();
             }
             if (i == arr_init -> getDimVal() -> getInitVal().size() - 1){
                 fin_flg=true;
@@ -1149,7 +1181,7 @@ void arrayDebug(DeclPtr decl,int offset =0 ) {
         cout<< endl;
         pos.resize(dims.size());
         map<vector<int>, NumberPtr> arr_val_mp;
-        parseArrayInitVal(var_def -> getArrayInitVal(), pos, dims, 0, var_decl -> getType() == B_FLOAT, arr_val_mp);
+        parseArrayInitVal(var_def -> getArrayInitVal(), pos, dims,0, 0, var_decl -> getType() == B_FLOAT, arr_val_mp);
         for (auto it: arr_val_mp) {
             for (int i:it.first) cout<<i<<" ";
             cout<<": ";
