@@ -72,8 +72,8 @@ class LirInst {
 
         // 设置寄存器
         void setOpd1(LirOperand *opd) {opds[0] = opd;}
-        void setOpd2(LirOperand *opd) {opds[0] = opd;}
-        void setOpd3(LirOperand *opd) {opds[0] = opd;}
+        void setOpd2(LirOperand *opd) {opds[1] = opd;}
+        void setOpd3(LirOperand *opd) {opds[2] = opd;}
 
         std::vector<LirOperand*> &getOpds() {return opds;}
 

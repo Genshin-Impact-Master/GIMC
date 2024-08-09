@@ -50,12 +50,13 @@ public:
   
   // 解析 alloca，构建栈空间 
   void dealAlloca(BBlock *block);
+
   LirOperand* operandResolve(Value* val, LirFunction* lirFunc, LirBlock* lirBlock);
-
   LirOperand* immResolve(Value* val, LirFunction* lirFunc, LirBlock* lirBlock) ;
-  static FVReg* loadImmToFVReg(float val, LirFunction* lirFunc, LirBlock* lirBlock);
-  static IVReg* loadImmToIVReg(int val, LirFunction* lirFunc, LirBlock* lirBlock);
+  FVReg* loadImmToFVReg(float val, LirFunction* lirFunc, LirBlock* lirBlock);
+  IVReg* loadImmToIVReg(int val, LirFunction* lirFunc, LirBlock* lirBlock);
 
+  /*********************************************** 键值绑定相关函数 ******************************************/
   // 将 Value* 和 LirOperand* 映射建立起来
   void bindValue(Value *val, LirOperand *reg) {
     // 因为只有初始化阶段会将 globalMap 中添加，后续 LIR 指令构建时只会构建 valMap
@@ -76,6 +77,7 @@ public:
    **/ 
   LirOperand *getBindOperand(Value *val);
 
+  /******************************************************** 工具人函数（仅为了方便处理） **********************************************/
   // 将仅仅在汇编中调用的，前端未声明，但 gcc 会自动链接的函数加入全局符号
   void addArmFunc();
 

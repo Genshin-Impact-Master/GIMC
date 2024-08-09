@@ -264,16 +264,15 @@ void ToLir::instResolve(BBlock *block) {
         }
 
         case InstKind::Subf: {
-          // todo vfpv3 无 Rsbf
-          if (dynamic_cast<ConstValue *>(lhs)) {
-            rhsReg = ToLir::operandResolve(lhs, lirFunc, lirBlock);
-            lhsReg = ToLir::operandResolve(rhs, lirFunc, lirBlock);
-            // lirInstKind = LirInstKind::Rsbf;//逆向减法
-          } else {
+          // if (dynamic_cast<ConstValue *>(lhs)) {
+          //   rhsReg = ToLir::operandResolve(lhs, lirFunc, lirBlock);
+          //   lhsReg = ToLir::operandResolve(rhs, lirFunc, lirBlock);
+          //   // lirInstKind = LirInstKind::Rsbf;//逆向减法
+          // } else {
             lhsReg = ToLir::operandResolve(lhs, lirFunc, lirBlock);
             rhsReg = ToLir::operandResolve(rhs, lirFunc, lirBlock);
             lirInstKind = LirInstKind::Subf;
-          }
+          // }
           dstReg = ToLir::operandResolve(i, lirFunc, lirBlock);
           break;
         }
@@ -304,7 +303,21 @@ void ToLir::instResolve(BBlock *block) {
           lhsReg = ToLir::operandResolve(lhs, lirFunc, lirBlock);
           rhsReg = ToLir::operandResolve(rhs, lirFunc, lirBlock);
           dstReg = ToLir::operandResolve(i, lirFunc, lirBlock);
-          lirInstKind = LirInstKind::Divf;
+          lirInstKind = LirInstKind::Div;
+          // divident <- lhsReg / rhsReg
+          LirBinary *divident = new LirBinary(lirInstKind, lirBlock, lhsReg, rhsReg, dstReg);
+          lirBlock->addInst(divident);
+          lirInstKind = LirInstKind::Mul;
+          LirOperand *realLhs = lhsReg;
+          lhsReg = dstReg;
+          // 重新生成一个虚拟寄存器存储乘法 dstReg <- divident * rhsReg
+          dstReg = operandResolve(i, lirFunc, lirBlock);
+          LirBinary *multi = new LirBinary(lirInstKind, lirBlock, lhsReg, rhsReg, dstReg);
+          // dstReg <- realLhs - divident * rhsReg
+          lirInstKind = LirInstKind::Sub;
+          lhsReg = realLhs;
+          rhsReg = dstReg;
+          dstReg = operandResolve(i, lirFunc, lirBlock);
           break;
         }
         default:
@@ -548,6 +561,7 @@ LirOperand *ToLir::immResolve(Value * val, LirFunction * lirFunc,
 }
 
 // 此处如果传递的是引用，那么局部变量会被销毁
+
 // 将立即数移入 Float Reg
 FVReg *ToLir::loadImmToFVReg(float val, LirFunction *lirFunc,
                               LirBlock *lirBlock) {
