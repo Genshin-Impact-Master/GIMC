@@ -57,6 +57,8 @@ void LirToArm::genFunction(LirFunction *func) {
 
 void LirToArm::genInst(LirInst *lir_inst)
 {
+    LirBlock *blk = lir_inst->getParent();
+    LirFunction *func = blk->getParent();
     switch(lir_inst->getKind())
     {
       case LirInstKind::Add:
@@ -65,14 +67,123 @@ void LirToArm::genInst(LirInst *lir_inst)
         break;
       }
       
+      case LirInstKind::Sub:
+      {
+        sub(lir_inst->getOperandName(lir_inst->getOpd1()),lir_inst->getOperandName(lir_inst->getOpd2()),lir_inst->getOperandName(lir_inst->getOpd3()));
+        break;
+      }
+
+      case LirInstKind::Mul:
+      {
+        mul(lir_inst->getOperandName(lir_inst->getOpd1()),lir_inst->getOperandName(lir_inst->getOpd2()),lir_inst->getOperandName(lir_inst->getOpd3()));
+        break;
+      }
+
+      case LirInstKind::Div:
+      {
+        div(lir_inst->getOperandName(lir_inst->getOpd1()),lir_inst->getOperandName(lir_inst->getOpd2()),lir_inst->getOperandName(lir_inst->getOpd3()));
+        break;
+      }
+
       case LirInstKind::Addf:
       {
         addf(lir_inst->getOperandName(lir_inst->getOpd1()),lir_inst->getOperandName(lir_inst->getOpd2()),lir_inst->getOperandName(lir_inst->getOpd3()));
+        break;
+      }
+
+      case LirInstKind::Subf:
+      {
+        subf(lir_inst->getOperandName(lir_inst->getOpd1()),lir_inst->getOperandName(lir_inst->getOpd2()),lir_inst->getOperandName(lir_inst->getOpd3()));
+        break;
+      }
+
+      case LirInstKind::Mulf:
+      {
+        mulf(lir_inst->getOperandName(lir_inst->getOpd1()),lir_inst->getOperandName(lir_inst->getOpd2()),lir_inst->getOperandName(lir_inst->getOpd3()));
+        break;
+      }
+
+      case LirInstKind::Divf:
+      {
+        divf(lir_inst->getOperandName(lir_inst->getOpd1()),lir_inst->getOperandName(lir_inst->getOpd2()),lir_inst->getOperandName(lir_inst->getOpd3()));
+        break;
+      }
+
+      case LirInstKind::Rsb:
+      {
+        rsb(lir_inst->getOperandName(lir_inst->getOpd1()),lir_inst->getOperandName(lir_inst->getOpd2()),lir_inst->getOperandName(lir_inst->getOpd3()));
+        break;
       }
 
       case LirInstKind::Fp2Int:
       {
+        int2fp(lir_inst->getOperandName(lir_inst->getOpd1()),lir_inst->getOperandName(lir_inst->getOpd2()));
+        break;
+      }
+
+      case LirInstKind::Int2Fp:
+      {
+        fp2int(lir_inst->getOperandName(lir_inst->getOpd1()),lir_inst->getOperandName(lir_inst->getOpd2()));
+        break;
+      }
+
+      case LirInstKind::Store:
+      {
+        armOut<<"str"<<"\t"<<lir_inst->getOpd2()->toString()<<","<<"["<<lir_inst->getOpd3()->toString()<<"]";
+        armOut<<"\n";
+        break;
+      }
+
+      case LirInstKind::Load:
+      {
+        if (lir_inst->getOpd1()->isInt())
+        {
+          armOut<<"ldr"<<"\t"<<lir_inst->getOpd1()->toString()<<","<<"["<<lir_inst->getOpd2()->toString()<<"]";
+          armOut<<"\n";
+          break;
+        }
+        else
+        {
+          armOut<<"vldr.32"<<"\t"<<lir_inst->getOpd1()->toString()<<","<<"["<<lir_inst->getOpd2()->toString()<<"]";
+          armOut<<"\n";
+          break;
+        }
         
+      }
+
+      case LirInstKind::Call:
+      {
+        armOut<<"bl"<<"\t"<<lir_inst->getOpd2()->toString();
+        armOut<<"\n";
+        break;
+      }
+
+      case LirInstKind::Ret:
+      {
+        smartOut("add", ARM_REGS[FP_REG],ARM_REGS[FP_REG],func->getStackSize()); 
+        armOut<<" mov     sp, r7\npop     {r7, pc}\n";
+        break;
+      }
+
+      case LirInstKind::Move:
+      {
+         std::string s =lir_inst->getOpd2()->toString();
+         if(lir_inst->getOpd2()->isFloat() && lir_inst->getOpd2()->isImm())
+         {
+            float f = atof(s.c_str());
+            int i = *(int*)&f;
+            armOut << "movw"<<"\t"<<lir_inst->getOpd1()->toString()<<", #"<<i%65536<<"\n";
+            armOut << "movt"<<"\t"<<lir_inst->getOpd1()->toString()<<","<<i/65536<<"\n";
+            break;
+         }
+         if(lir_inst->getOpd2()->isInt() && lir_inst->getOpd2()->isImm())
+         {
+            int i = atoi(s.c_str());
+            armOut << "movw"<<"\t"<<lir_inst->getOpd1()->toString()<<", #"<<i%65536<<"\n";
+            armOut << "movt"<<"\t"<<lir_inst->getOpd1()->toString()<<","<<i/65536<<"\n";
+            break;
+         }
+
       }
     }
 }
