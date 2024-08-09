@@ -102,6 +102,8 @@ class LirInst {
         LirInst* getNextInst() {
           return lirInstNode.getNext()->getOwner();
         }
+
+        LirArmStatus getStatus() {return status;}
 };
 
 class LirStore : public LirInst {

@@ -17,6 +17,10 @@ std::vector<std::string> ST_FConds = {
   "oeq ", "ogt ", "oge ", "olt ", "ole ", "one "
 };
 
+std::vector<std::string> ST_ARM_STATUS = {
+  "eq", "ne", "gt", "lt", "ge", "le", ""
+};
+
 std::vector<Value*> Zero_Argu_List;
 
 std::vector<baseTypePtr> Zero_Argu_Type_List;

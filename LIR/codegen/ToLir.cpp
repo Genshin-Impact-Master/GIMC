@@ -35,7 +35,6 @@ LirModule &ToLir::moduleGen() {
     lirModule.getGlobalvars()[globalVar->getName()] = globalVar;
     Addr *addr = new Addr(globalVar->getName());
     bindGlobal(globalVar, addr);
-    lirModule.getGlobalOperands().push_back(addr);
   }
 
   // 将 Function 的 <label> (名字) 加入 map

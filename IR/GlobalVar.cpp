@@ -5,11 +5,11 @@ std::string GlobalVar::getData() {
   // 返回 value 的初始化 llvm 代码
   std::shared_ptr<PointerType> ptr = std::dynamic_pointer_cast<PointerType>(this->getType());
   if (ptr == nullptr) {
-    error("GlobalVar type error");
+    error("IR:getData: GlobalVar type error");
     exit(1);
   }
   if (ptr->isArray() == false) {
-    // 非数组类型，此处与 C 语言有所不同，数组初始化不一定为常数
+    // 非数组类型，此处与 C 语言有所不同，sysy 中数组初始化一定为常数
     if (values_.size() == 0) {
       return "zeroinitializer";
     }

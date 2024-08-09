@@ -29,7 +29,9 @@ public:
   
   // 输出 Arm 指令的全局变量部分
   void Output_Arm_global();
+  void cycleGlobal(GlobalVar* var);   // 递归式初始化 globalVar
 
+  // 输出 Inst
   void genInst(LirInst *lir_inst);
 
   
@@ -123,24 +125,30 @@ public:
   
 
   // @C++_Learn 变长参数模板，实现类似 printf 的功能 (采用递归的方法解析)
-  template <typename... Args>
-  void smartOut(const std::string &attr, Args... args) {
-    armOut << "\t" << attr << " ";
-    if (sizeof...(args) > 0) {
-      armOut << " "; // 在 attr 和第一个参数间添加空格
-      appendToStream(args...);
-    }
-  }
-  template <typename T> void appendToStream(T &value) {
-    armOut << value << std::endl;
-  }
-  template <typename T, typename... Args>
-  void appendToStream(T &value, Args &...args) {
-    armOut << value;
-    if (sizeof...(args) > 0) {
-      armOut << ", ";
-      appendToStream(args...);
-    }
+  template <typename... Args>  
+  void smartOut(const std::string &attr, Args... args) {  
+    armOut << "\t" << attr << " ";  
+    if constexpr (sizeof...(args) > 0) {  
+      armOut << " "; // 在 attr 和第一个参数间添加空格  
+      appendToStream(args...);  
+    } else {  
+      // 如果没有额外的参数，则不需要输出任何内容（或者可以输出一个换行符）  
+      armOut << std::endl;  
+    }  
+  }  
+    
+  template <typename T>  
+  void appendToStream(T &value) {  
+    armOut << value << std::endl;  
+  }  
+    
+  template <typename T, typename... Args>  
+  void appendToStream(T &value, Args &...args) {  
+    armOut << value;  
+    if constexpr (sizeof...(args) > 0) {  
+      armOut << ", ";  
+      appendToStream(args...);  
+    }  
   }
 };
 

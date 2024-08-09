@@ -24,8 +24,13 @@ void RegAllocStack::alloc(LirModule &lirModule) {
     // 再在起始位置加一条 sp += size 的命令
     LirBlock *blk = entry->getNode().getOwner();
     LirInst *fistInst = blk->getInst().getHeadPtr()->getOwner();
-    LirBinary *bin = new LirBinary(LirInstKind::Add, blk, IPhyReg::SP, ToLir::loadImmToIVReg(size, func, blk), IPhyReg::SP);
+    IVReg *tmpReg = new IVReg();
+    IImm *iImm = new IImm(size);
+    LirInstMove *move = new LirInstMove(blk, tmpReg, iImm, LirArmStatus::NO_Cond);
+    func->getImmMap().insert(std::pair<LirOperand*, LirInstMove*>(tmpReg, move));
+    LirBinary *bin = new LirBinary(LirInstKind::Add, blk, IPhyReg::SP, tmpReg, IPhyReg::SP);
     bin->addBefore(fistInst);
+    move->addBefore(bin);
 
     // 第二遍遍历，进行栈分配，将 reg 从栈中取出
     blkNode = &entry->getNode();
