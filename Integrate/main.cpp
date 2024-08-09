@@ -43,7 +43,7 @@ int main(int argc, char* argv[]){
     stackAllocPass.alloc(lirModule); 
 
     // LIR to arm
-    LirToArm armCodegen(lirModule);
+    LirToArm armCodegen(lirModule, std::string(dumpfilename));
     armCodegen.genModule();
     return 0;
   }

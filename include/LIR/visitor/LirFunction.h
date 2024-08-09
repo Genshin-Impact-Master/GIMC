@@ -51,8 +51,11 @@ class LirFunction {
 
         void appendBlk(LirBlock *blk) {
           blkList.append(blk->getNode());
+#ifdef DEBUG_MODE
+  std::cout << "add lirBlock " << blk->getLabel() << " to "  << getFuncName() << std::endl; 
+#endif
         }
-        
+
         // 将 IR 中 alloca 指令生成的变量分配到函数栈空间
         IImm putLocalVar(Value *alloca);
 
@@ -69,6 +72,16 @@ class LirFunction {
 
         // 获取 entry 基本块
         LirBlock* getEntry() {return prologue;}
+
+        // 设置 entry 基本块
+        void setEntry(LirBlock *entry) {prologue = entry;} 
+
+        // 获得链表
+        IList<LirFunction, LirBlock>& getBlkList() {return blkList;}
+
+        // 获得第一个 Block
+        LirBlock* getFirstBlock() {return blkList.getHeadPtr()->getNext()->getOwner();}
+
 };
 
 

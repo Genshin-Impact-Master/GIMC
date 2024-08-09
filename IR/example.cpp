@@ -90,6 +90,7 @@ void newModule(IRBuilder &builder, Module *module) {
 
 GIMC_NAMESPACE_END
 
+#ifndef COMMIT_MODE
 int main(int argc, char** args) {
   // 创建 IR 构造器对象
   IRBuilder builder;
@@ -651,3 +652,4 @@ int main(int argc, char** args) {
   // 关闭 builder 的 irout 文件输出流
   builder.close();
 }
+#endif

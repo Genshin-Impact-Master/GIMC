@@ -6,7 +6,7 @@ USING_GIMC_NAMESPACE
 void LirToArm::genModule() {
   // 准备工作
   smartOut(".arch", "armv7");
-  smartOut(".fpu", "softvfp");
+  smartOut(".fpu", "vfpv3");
 
   std::list<LirFunction *> funcs = lirModule_.getFunctions();
   for (auto func : funcs) {
@@ -30,10 +30,8 @@ void LirToArm::genFunction(LirFunction *func) {
 
   // 预备的栈处理工作，fp 设为 r7
   smartOut("/* ******** 函数预处理 ******** */");
-  smartOut("@ 将 fp 压栈");
-  push(ARM_REGS[FP_REG]);
-  smartOut("@ 将 lr 压栈");
-  push("lr");
+  smartOut("@ 将 fp,lr 压栈");
+  armOut << "\tpush {r7, lr}" << std::endl;
   int offset = func->getStackSize();
   sub("sp", "sp", "#" + std::to_string(offset));
   add(ARM_REGS[FP_REG], IPhyReg::SP->toString(), "#0");
@@ -137,7 +135,7 @@ void LirToArm::genInst(LirInst *lir_inst) {
   }
 
   case LirInstKind::Store: {
-    armOut << "str"
+    armOut << "\tstr"
            << "\t" << opd2->toString() << ","
            << "[" << opd3->toString() << "]";
     armOut << "\n";
@@ -146,7 +144,7 @@ void LirToArm::genInst(LirInst *lir_inst) {
 
   case LirInstKind::Load: {
     if (opd1->isInt()) {
-      armOut << "ldr"
+      armOut << "\tldr"
              << "\t" << opd1->toString() << ","
              << "[" << opd2->toString() << "]";
       armOut << "\n";
@@ -168,8 +166,8 @@ void LirToArm::genInst(LirInst *lir_inst) {
   }
 
   case LirInstKind::Ret: {
-    smartOut("add", ARM_REGS[FP_REG], ARM_REGS[FP_REG], func->getStackSize());
-    armOut << " mov     sp, r7\npop     {r7, pc}\n";
+    smartOut("add", ARM_REGS[FP_REG], ARM_REGS[FP_REG], "#" + std::to_string(func->getStackSize()));
+    armOut << "\tmov     sp, r7\n\tpop     {r7, pc}\n";
     break;
   }
   // todo 条件执行
@@ -181,26 +179,27 @@ void LirToArm::genInst(LirInst *lir_inst) {
     if (opd2->isFloat() && opd2->isImm()) {
       float f = atof(s.c_str());
       int i = *(int *)&f;
-      armOut << "movw" << cond
+      armOut << "\t" << "movw" << cond
              << "\t" << opd1->toString() << ", #" << i % 65536
              << "\n";
-      armOut << "movt"
+      armOut << "\t" << "movt"
              << "\t" << opd1->toString() << "," << i / 65536
              << "\n";
       break;
     }
     if (opd2->isInt() && opd2->isImm()) {
       int i = atoi(s.c_str());
-      armOut << "movw" << cond
+      armOut << "\tmovw" << cond
              << "\t" << opd1->toString() << ", #" << i % 65536
              << "\n";
-      armOut << "movt"
+      armOut << "\tmovt"
              << "\t" << opd1->toString() << "," << i / 65536
              << "\n";
       break;
     }
     else {
-      smartOut("mov", opd1->toString(), opd2->toString());
+      smartOut("mov" + cond, opd1->toString(), opd2->toString());
+      break;
     }
   }
 
@@ -245,8 +244,8 @@ void LirToArm::genBlock(LirBlock *blk) {
 void LirToArm::Output_Arm_global() {
   for (auto iter : lirModule_.getGlobalMap()) {
     GlobalVar *var = dynamic_cast<GlobalVar*>(iter.first);
-    armOut << iter.second->toString() << ":"
-           << "\n";
+    // armOut << iter.second->toString() << ":"
+    //        << "\n";
     if (var) {
       // 说明为全局变量
       armOut << var->getName() << ":" << std::endl;

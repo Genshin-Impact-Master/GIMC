@@ -32,6 +32,14 @@ class LirBlock {
         std::string &getLabel() {return label;}
         IList<LirBlock, LirInst> &getInst(){return lirInstLists;}
         LirFunction* getParent() {return lirFunction;}
+
+        LirInst *getFirstInst() {
+          INode<LirInst> *node = lirInstLists.getHeadPtr();
+          if (node->isEnd()) {
+            error("LirBlock 基本块中不含指令");
+          }
+          return node->getNext()->getOwner();
+        }
 };
 
 

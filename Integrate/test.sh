@@ -1,10 +1,11 @@
 #!/bin/bash
 
-SCC="arm-none-eabi-gcc-14"
-QEMU="/home/zerosister/arm_v3/qemu/cwq_build/qemu-arm"
+SCC="arm-linux-gnueabihf-gcc"
+QEMU="qemu-arm"
 ARM_FLAGS="-cpu cortex-a7"
 COMPILE_FLAGS="-march=armv7 -mfpu=vfpv3 -mfloat-abi=hard"
 LLVM_LINK="llvm-link"
+QEMU_FLAGS="-L /usr/arm-linux-gnueabihf"
 
 # 函数用法说明
 usage() {
@@ -91,19 +92,19 @@ for syfile in $FILES; do
         fi
     elif [ "$S" = true ]; then
         if [ "$ISTMP" = true ]; then
-            tmpGIMC_S="$INTEGRATE/tmp_{base}.s"
+            tmpGIMC_S="$INTEGRATE/tmp_${base}.s"
             tmpOUT="$GIMCASM/tmp_${base}_gimc.out"
         else
             tmpGIMC_S="$GIMCASM/${base}.s"
             tmpOUT="$GIMCEXE/${base}.out"
         fi
         $GIMC "$syfile" -S -o "$tmpGIMC_S"
-        $SCC $COMPILER_FLAGS "$tmpGIMC_S" ../lib/newlib.o -o "$tmpDir/tmp"
+        $SCC $COMPILE_FLAGS "$tmpGIMC_S" ../lib/newlib.o -o "$tmpDir/tmp"
         if [ -f "$infile" ]; then
-            $QEMU $ARM_FLAGS "$tmpDir/tmp" < "$infile" > "$tmpOUT"
+            $QEMU $ARM_FLAGS $QEMU_FLAGS "$tmpDir/tmp" < "$infile" > "$tmpOUT"
             echo $? >> "$tmpOUT"
         else
-            $QEMU $ARM_FLAGS "$tmpDir/tmp" > "$tmpOUT"
+            $QEMU $ARM_FLAGS $QEMU_FLAGS "$tmpDir/tmp" > "$tmpOUT"
             echo $? >> "$tmpOUT"
         fi
     else

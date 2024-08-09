@@ -12,9 +12,10 @@ class LirToArm {
 private:
   LirModule lirModule_; // LirModule 包含了所有 LIR 的指令和数据
   std::ofstream armOut; // 输出 arm 汇编的字符流
+  std::string outFileName;
 public:
-  LirToArm(LirModule lirModule) : lirModule_(lirModule) {
-    armOut.open("test.s");
+  LirToArm(LirModule lirModule, std::string outFileName) : lirModule_(lirModule) {
+    armOut.open(outFileName);
   } // 唯一的构造方法
 
   /*********************************** 汇编代码生成 *****************************************/

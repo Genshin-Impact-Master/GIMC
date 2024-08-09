@@ -7,7 +7,8 @@
 #define USING_GIMC_NAMESPACE using namespace GIMC;
 #define ADDR_LENGTH 32                                // 机器字长
 //#define PRINT_CFG                                     // 设置此宏，将 CFG 生成出来
-
+#define DEBUG_MODE                                    // 设置此宏开启 Debug 模式
+#define COMMIT_MODE                                   // 提交模式
 
 /*********************************************** 后端宏定义 **********************************************/
 #define STACK_ALIGN 8                                 // arm 栈对齐大小
@@ -37,6 +38,7 @@ extern std::vector<std::string> ST_Insts;
 extern std::vector<std::string> ST_IConds;
 extern std::vector<std::string> ST_FConds;
 extern std::vector<std::string> ST_ARM_STATUS;
+extern std::vector<std::string> ST_LirConds;
 
 // 定义一个空参数列表，所有零参函数在 call 时均使用此列表
 extern std::vector<Value*> Zero_Argu_List;

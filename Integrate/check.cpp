@@ -2,13 +2,15 @@
 #include <iostream>
 #include <string>
 #include <fstream>
+#include "../include/Config.h"
 using namespace std;
 
-// 用法: 
+// 用法：
 // g++ -o 可执行程序名 check.cpp 
 // ./可执行程序名 file1 file2
-// 输出:
+// 输出：
 // check success 或者 check failed
+#ifndef COMMIT_MODE
 int main(int argc, char *argv[]) {
     argv++;
     if (argc > 0) {
@@ -35,3 +37,4 @@ int main(int argc, char *argv[]) {
     cout << "no input file" << endl;
     return 0;
 }
+#endif

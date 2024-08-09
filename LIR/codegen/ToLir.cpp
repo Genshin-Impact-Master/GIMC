@@ -103,8 +103,6 @@ LirModule &ToLir::moduleGen() {
     // 先为 BBLock 分配标签，生成 LirBlock 并加入 LirFunction 中
     if (func->getBBlockList().getSize() > 0) {
       INode<BBlock> *blockNode = func->getBBlockList().getHeadPtr();
-      // 由于 IR 中的 correctCheck 每个函数一定有 entry 块
-      func->setEntry(blockNode->getNext()->getOwner());
       while (!blockNode->isEnd()) {
         blockNode = blockNode->getNext();
         BBlock *block = blockNode->getOwner();
@@ -119,8 +117,12 @@ LirModule &ToLir::moduleGen() {
         bindGlobal(block, new Addr(lirBlkName));
       }
     }
+    else
+      error("moduleGen: BBlock must have a size >= 1");
 
     INode<BBlock> *blockNode = func->getBBlockList().getHeadPtr();
+    // 由于 IR 中的 correctCheck 每个函数一定有 entry 块
+    lirFunc->setEntry(blockMap[func->getEntryBBlock()]);
     while (!blockNode->isEnd()) {
       blockNode = blockNode->getNext();
       BBlock *block = blockNode->getOwner();
@@ -149,6 +151,7 @@ LirModule &ToLir::moduleGen() {
     while (!blockNode->isEnd()) {
       blockNode = blockNode->getNext();
       BBlock *bBLk = blockNode->getOwner();
+      setCheckingLirBlock(blockMap[bBLk]);
       dealAlloca(bBLk);
     }
 
@@ -160,6 +163,7 @@ LirModule &ToLir::moduleGen() {
     while (!blockNode->isEnd()) {
       blockNode = blockNode->getNext();
       BBlock *bBlk = blockNode->getOwner();
+      setCheckingLirBlock(blockMap[bBlk]);
       instResolve(bBlk);
     }
   }
@@ -396,7 +400,7 @@ void ToLir::instResolve(BBlock *block) {
       LirOperand *dst = operandResolve(inst, lirFunc, lirBlock);
       LirInstMove *move = new LirInstMove(lirBlock, dst, IPhyReg::getRegR(0), LirArmStatus::NO_Cond);
       lirBlock->addInst(move);
-      bindValue(inst, dst);
+      bindValue(inst, IPhyReg::getRegR(0));
     }
 
     else if (kind == InstKind::Ret) {
@@ -636,12 +640,22 @@ void ToLir::SWCMP(InstKind kind, CondKind ckind, LirArmStatus * status) {
 }
 
 LirOperand *ToLir::getBindOperand(Value *val) {
+#ifdef DEBUG_MODE
+  std::cout << "get BindOperand " << val->getFullName() << " from "  << checkingBlock->getLabel()  << " and " << checkingFunc->getFuncName() << std::endl; 
+#endif
   // 可能为 IR 中的中间结果
   if (valMap.find(val) != valMap.end())
     return valMap[val];
+
   // 可能为 IR 中的 GlobalVar，Function，BBlock
   if (lirModule.getGlobalMap().find(val) != lirModule.getGlobalMap().end())
     return lirModule.getGlobalMap()[val];
+
+  // 可能为 IR 中 ConstValue
+  if (dynamic_cast<ConstValue*>(val)) {
+    return immResolve(val, checkingFunc, checkingBlock);
+  }
+    
   // 可能为 IR 中的局部变量或形参，存在栈空间中
   std::map<Value*, IImm>& map = checkingFunc->getStackOffsetMap();
   if (map.find(val) != map.end()) {
@@ -665,6 +679,7 @@ LirOperand *ToLir::getBindOperand(Value *val) {
     checkingBlock->addInst(getVar);
     return loadDst;
   }
+
   error("getBindOperand: val 还未与 LirOperand 绑定");
   return nullptr;
 }
