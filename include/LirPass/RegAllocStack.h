@@ -12,8 +12,8 @@ private:
 public:
   void alloc(LirModule &lirModule);
   void allocInst(LirInst *inst);
-  IImm putLocal(LirOperand *reg, LirFunction *lirFunc);
-  void resolveStack(LirOperand *reg, LirInst *inst);
+  void putLocal(LirOperand *reg, LirFunction *lirFunc);
+  void resolveStack(LirOperand *reg, LirInst *inst, LirOperand *saveTo);
 };
 
 GIMC_NAMESPACE_END

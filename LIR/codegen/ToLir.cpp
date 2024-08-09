@@ -384,7 +384,7 @@ void ToLir::instResolve(BBlock *block) {
       LirOperand *dst = operandResolve(inst, lirFunc, lirBlock);
       LirInstMove *move = new LirInstMove(lirBlock, dst, IPhyReg::getRegR(0), LirArmStatus::NO_Cond);
       lirBlock->addInst(move);
-      bindValue(call, dst);
+      bindValue(inst, dst);
     }
 
     else if (kind == InstKind::Ret) {
@@ -394,7 +394,7 @@ void ToLir::instResolve(BBlock *block) {
       // 返回值放在 r0
       LirInstMove *move = new LirInstMove(lirBlock, IPhyReg::getRegR(0), retVal, LirArmStatus::NO_Cond);
       lirBlock->addInst(move);
-      LirRet *lirRet = new LirRet(lirBlock, retVal);
+      LirRet *lirRet = new LirRet(lirBlock);
       lirBlock->addInst(lirRet);
     }
 

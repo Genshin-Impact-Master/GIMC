@@ -53,16 +53,9 @@ class LirInst {
         LirInstKind lirKind;
         LirBlock* parent;
         INode<LirInst> lirInstNode;
-        /**
-         * @note 寄存器分配后得到的映射 
-         * LirOperand -> int
-         * int 表示为寄存器的编号，而 int 编号又对应于相应寄存器
-         * @see Config.h
-         */
-        std::map<LirOperand*, int> regAllocMap;
     protected:
         // 三元式最多三个操作寄存器
-        std::vector<LirOperand*> opds[3];
+        std::vector<LirOperand*> opds;
         LirArmStatus status;
     public:
         LirInst(LirInstKind kind, LirBlock *parent_);
@@ -76,40 +69,38 @@ class LirInst {
         LirOperand* getOpd1() {return opds[0];}
         LirOperand* getOpd2() {return opds[1];}
         LirOperand* getOpd3() {return opds[2];}
+
+        // 设置寄存器
+        void setOpd1(LirOperand *opd) {opds[0] = opd;}
+        void setOpd2(LirOperand *opd) {opds[0] = opd;}
+        void setOpd3(LirOperand *opd) {opds[0] = opd;}
+
         std::vector<LirOperand*> &getOpds() {return opds;}
 
         bool isBinary() {return lirKind > LirInstKind::BinaryBegin && lirKind < LirInstKind::BinaryEnd;}
 
         // 是否为 Fp2Int 或 Int2Fp
-        bool isIFChange() {return lirKind == Fp2Int || lirKind == Int2Fp;}
-
-        /**
-         * 为无限寄存器分配实际寄存器
-         * @param opd 选择分配的寄存器
-         * @param armRegNum arm 寄存器的编号，其中通用寄存器为 0 ~ 15，浮点寄存器为 16 ~ ? todo
-         */
-        void allocaReg(LirOperand *opd, int armRegNum) {regAllocMap[opd] = armRegNum;}
+        bool isIFChange() {return lirKind == LirInstKind::Fp2Int || lirKind == LirInstKind::Int2Fp;}
 
         // LIR 到 arm 汇编 codegen 时调用
         std::string getOperandName(LirOperand *opd) {
           if (opd->isVirtual()) {
             // 若为分配的寄存器  
-            return ARM_REGS[regAllocMap[opd]];
+            error("getOperandName: 还存在虚拟寄存器，请保证进行寄存器分配且正确");
           }
           // 注意：到这一步时必须保证超过 arm 指令限定长度的立即数需要转换为 Addr? 是否是这样处理？todo
-          else if (opd->isImm() || opd->isAddr()) {
-            return opd->toString();
-          }
-          else {
-            error("暂时不支持其他种类的寄存器"); 
-          }
-          return "null";
+          return opd->toString();
         }
 
         // 加入 inst 指令前
         void addBefore(LirInst *inst) {
-          INode<LirInst> *node = inst->getNode();
-          lirInstNode.addBefore(node);
+          INode<LirInst> &node = inst->getNode();
+          lirInstNode.addBefore(&node);
+        }
+
+        // 获取下一条指令
+        LirInst* getNextInst() {
+          return lirInstNode.getNext()->getOwner();
         }
 };
 
