@@ -19,12 +19,12 @@ int main(int argc, char *argv[]) {
         string s1, s2;
         while (!in1.eof()) {
             char c1;
-            in1>>c1;
+            in1 >> c1;
             s1 = s1+c1;
         }
         while (!in2.eof()) {
             char c2;
-            in2>>c2;
+            in2 >> c2;
             s2 = s2+c2;
         }
         if (s1 != s2) {

@@ -142,28 +142,36 @@ CompUnit: CompUnit Decl{
 
 Decl: ConstDecl{
         $$ = new Decl();
+        $$ -> setInfo(yylloc.first_line, yylloc.first_column);
         $$ -> _node_type = NodeType::NT_DECL;
         $$ -> addConstDecl(ConstDeclPtr($1));
     }
     | VarDecl {
         $$ = new Decl();
+        $$ -> setInfo(yylloc.first_line, yylloc.first_column);
         $$ -> _node_type = NodeType::NT_DECL;
         $$ -> addVarDecl(VarDeclPtr($1));
+
     };
 
 /* ConstDecl → 'const' BType ConstDef { ',' ConstDef } ';' */
 ConstDecl: CONST BaseType ConstDefs SEMICOLON{
         $$ = new ConstDecl();
+        $$ -> setInfo(yylloc.first_line, yylloc.first_column);
         $$ -> addType($2);
         $$ -> addConstDef(ConstDefsPtr($3));
+
     };
 
 ConstDefs: ConstDef {
         $$ = new ConstDefs();
+        $$ -> setInfo(yylloc.first_line, yylloc.first_column);
         $$->addConstDef(ConstDefPtr($1));
+
     }
     | ConstDefs COMMA ConstDef {
         $$ = $1;
+        $$ -> setInfo(yylloc.first_line, yylloc.first_column);
         $1 -> addConstDef(ConstDefPtr($3));
     };
 
@@ -184,6 +192,8 @@ ConstDef: IDENTIFIER ASSIGN ConstExp{
         $$ -> addIdentifier($1);
         $$ -> addArray(false);
         $$ -> addInitVal(ConstExpPtr($3));
+        $$ -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
     | IDENTIFIER ArrayDim ASSIGN ArrayInitVal {
         $$ = new ConstDef();
@@ -191,15 +201,21 @@ ConstDef: IDENTIFIER ASSIGN ConstExp{
         $$ -> addArray(true);
         $$ -> addArrayDim(ArrayDimPtr($2));
         $$ -> addArrayInitVal(ArrayInitValPtr($4));
+        $$ -> setInfo(yylloc.first_line, yylloc.first_column);
+
     };
 
 ArrayDim: LEFT_BRACKETS ConstExp RIGHT_BRACKETS {
         $$ = new ArrayDim();
         $$ -> addDim (ConstExpPtr($2));
+        $$ -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
     | ArrayDim LEFT_BRACKETS ConstExp RIGHT_BRACKETS {
         $$ = $1;
         $$ -> addDim(ConstExpPtr($3));
+        $$ -> setInfo(yylloc.first_line, yylloc.first_column);
+
     };
 
 /* ConstInitVal → ConstExp 
@@ -252,15 +268,21 @@ VarDecl: BaseType VarDefs SEMICOLON{
          $$ = new VarDecl();
          $$ -> addType($1);
          $$ -> addVarDefs(VarDefsPtr($2));
+        $$ -> setInfo(yylloc.first_line, yylloc.first_column);
+
     };
 
 VarDefs: VarDef {
         $$ = new VarDefs();
         $$ -> addVarDef(VarDefPtr($1));
+        $$ -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
     | VarDefs COMMA VarDef {
         $$ = $1;
         $$ -> addVarDef(VarDefPtr($3)); 
+        $$ -> setInfo(yylloc.first_line, yylloc.first_column);
+
     };
 /* VarDef → Ident { '[' ConstExp ']' }
             | Ident { '[' ConstExp ']' } '=' InitVal
@@ -271,6 +293,8 @@ VarDef: IDENTIFIER {
         $$ -> addIdentifier($1);
         $$ -> addInit(false);
         $$ -> addArray(false);
+        $$ -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
     | IDENTIFIER ASSIGN Exp{
         $$ = new VarDef();
@@ -278,6 +302,8 @@ VarDef: IDENTIFIER {
         $$ -> addInit(true);
         $$ -> addInitVal(ExpPtr($3));
         $$ -> addArray(false);
+        $$ -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
     | IDENTIFIER ArrayDim {
         $$ = new VarDef();
@@ -285,6 +311,8 @@ VarDef: IDENTIFIER {
         $$ -> addArrayDim(ArrayDimPtr($2));
         $$ -> addInit(false);
         $$ -> addArray(true);
+        $$ -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
     | IDENTIFIER ArrayDim ASSIGN ArrayInitVal{
         $$ = new VarDef();
@@ -293,6 +321,8 @@ VarDef: IDENTIFIER {
         $$ -> addArrayInitVal(ArrayInitValPtr($4));
         $$ -> addInit(true);
         $$ -> addArray(true);
+        $$ -> setInfo(yylloc.first_line, yylloc.first_column);
+
     };
 
 
@@ -307,19 +337,26 @@ VarDef: IDENTIFIER {
 InitVals: Exp {
         $$ = new InitVals();
         $$ -> addExp(ExpPtr($1));
+        $$ -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
     | ArrayInitVal {
         $$ = new InitVals();
         $$ -> addExp(ExpPtr($1));
+        $$ -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
     | InitVals COMMA Exp {
         $$ = $1;
         $$ -> addExp(ExpPtr($3));
+        $$ -> setInfo(yylloc.first_line, yylloc.first_column);
         
     }
     | InitVals COMMA ArrayInitVal {
         $$ = $1;
         $$ -> addExp(ExpPtr($3));
+        $$ -> setInfo(yylloc.first_line, yylloc.first_column);
+
     };
 
 
@@ -327,11 +364,15 @@ ArrayInitVal: LEFT_BRACES InitVals RIGHT_BRACES {
         $$ = new ArrayInitVal();
         $$ -> addDimVal(InitValsPtr($2));
         $$ -> addType(ExpType::ET_DIM);
+        $$ -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
     | LEFT_BRACES RIGHT_BRACES {
         $$ = new ArrayInitVal();
         $$ -> addDimVal(InitValsPtr(nullptr));
         $$ -> addType(ExpType::ET_DIM);
+        $$ -> setInfo(yylloc.first_line, yylloc.first_column);
+
     };
 
  /* FuncDef → FuncType Ident '(' [FuncFParams] ')' Block */
@@ -343,6 +384,8 @@ FuncDef: BaseType IDENTIFIER LEFT_PARENTHESES FuncFParams RIGHT_PARENTHESES Bloc
         $$ -> addParam(true);
         $$ -> addFuncFParams(FuncFParamsPtr($4));
         $$ -> addBlock(BlockPtr($6));
+        $$ -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
     | BaseType IDENTIFIER LEFT_PARENTHESES RIGHT_PARENTHESES Block{
         $$ = new FuncDef();
@@ -352,6 +395,8 @@ FuncDef: BaseType IDENTIFIER LEFT_PARENTHESES FuncFParams RIGHT_PARENTHESES Bloc
         $$ -> addParam(false);
         $$ -> addBlock(BlockPtr($5));
         $$ -> addFuncFParams(nullptr);
+        $$ -> setInfo(yylloc.first_line, yylloc.first_column);
+
     };
 
 /* FuncType → 'void' | 'int' | 'float' */
@@ -360,10 +405,14 @@ FuncDef: BaseType IDENTIFIER LEFT_PARENTHESES FuncFParams RIGHT_PARENTHESES Bloc
 FuncFParams: FuncFParam {
         $$ = new FuncFParams();
         $$ -> addFuncFParam(FuncFParamPtr($1));
+        $$ -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
     | FuncFParams COMMA FuncFParam{
         $$ = $1;
         $$ -> addFuncFParam(FuncFParamPtr($3));
+        $$ -> setInfo(yylloc.first_line, yylloc.first_column);
+
     };
 
 /* FuncFParam → BType Ident ['[' ']' { '[' Exp ']' }] */
@@ -372,6 +421,8 @@ FuncFParam: BaseType IDENTIFIER {
         $$ -> addType($1);
         $$ -> addIdentifier($2);
         $$ -> addArray(false);
+        $$ -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
     | BaseType IDENTIFIER ParamArrayDim {
         $$ = new FuncFParam();
@@ -379,45 +430,65 @@ FuncFParam: BaseType IDENTIFIER {
         $$ -> addIdentifier($2);
         $$ -> addArray(true);
         $$ -> addArrayDim(ParamArrayDimPtr($3));
+        $$ -> setInfo(yylloc.first_line, yylloc.first_column);
+
     };
 
 ParamArrayDim: LEFT_BRACKETS RIGHT_BRACKETS {
         $$ = new ParamArrayDim();
         $$ -> addDim(nullptr);
+        $$ -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
     | ParamArrayDim LEFT_BRACKETS Exp RIGHT_BRACKETS {
         $$ = $1;
         $$ -> addDim(ExpPtr($3));
+        $$ -> setInfo(yylloc.first_line, yylloc.first_column);
+
     };
 
 /* Block → '{' { BlockItem } '}' */
 Block: LEFT_BRACES RIGHT_BRACES {
         $$ = new Block();
         $$ -> addBlockItem(BlockItemsPtr(nullptr));
+        $$ -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
     | LEFT_BRACES BlockItems RIGHT_BRACES{
         $$ = new Block();
         $$ -> addBlockItem(BlockItemsPtr($2));
+        $$ -> setInfo(yylloc.first_line, yylloc.first_column);
+
     };
 
 BlockItems: Decl {
         $$ = new BlockItems();
         $$ -> addDecl(DeclPtr($1));
+        $$ -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
     | Stmt {
         $$ = new BlockItems();
         $$ -> addStmt(StmtPtr($1));
+        $$ -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
     | BlockItems Decl {
         $$ = $1;
         $$ -> addDecl(DeclPtr($2));
+        $$ -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
     | BlockItems Stmt {
         $$ = $1;
         $$ -> addStmt(StmtPtr($2));
+        $$ -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
     | BlockItems SEMICOLON {
         $$ = $1;
+        $$ -> setInfo(yylloc.first_line, yylloc.first_column);
+
     };
 
 /* BlockItem → Decl | Stmt */
@@ -435,6 +506,8 @@ Stmt: LVal ASSIGN Exp SEMICOLON {
         $$ = (Stmt*)(assign);
         $$ -> addType(StmtType::ST_ASSIGN);
         $$ -> _node_type = NodeType::NT_STMT;
+        $$ -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }   
     | Exp SEMICOLON {
         ExpStmt* exp = new ExpStmt();
@@ -442,11 +515,15 @@ Stmt: LVal ASSIGN Exp SEMICOLON {
         $$ = (Stmt*)(exp);
         $$ -> addType(StmtType::ST_EXP);
         $$ -> _node_type = NodeType::NT_STMT;
+        $$ -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
     | SEMICOLON {
         $$ = new Stmt();
         $$ -> addType(StmtType::ST_BLANK);
         $$ -> _node_type = NodeType::NT_STMT;
+        $$ -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
     | Block {
         BlockStmt* block = new BlockStmt();
@@ -454,6 +531,8 @@ Stmt: LVal ASSIGN Exp SEMICOLON {
         $$ = (Stmt*)(block);
         $$ -> addType(StmtType::ST_BLOCK);
         $$ -> _node_type = NodeType::NT_STMT;
+        $$ -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
     | IF LEFT_PARENTHESES LOrExp RIGHT_PARENTHESES Stmt {
         IfElseStmt* ifelsestmt = new IfElseStmt();
@@ -463,6 +542,8 @@ Stmt: LVal ASSIGN Exp SEMICOLON {
         $$ = (Stmt*)(ifelsestmt);
         $$ -> addType(StmtType::ST_IF);
         $$ -> _node_type = NodeType::NT_STMT;
+        $$ -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
     | IF LEFT_PARENTHESES LOrExp RIGHT_PARENTHESES Stmt ELSE Stmt {
         IfElseStmt* ifelsestmt = new IfElseStmt();
@@ -472,6 +553,8 @@ Stmt: LVal ASSIGN Exp SEMICOLON {
         $$ = (Stmt*)(ifelsestmt);
         $$ -> addType(StmtType::ST_IF);
         $$ -> _node_type = NodeType::NT_STMT;
+        $$ -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
     | WHILE LEFT_PARENTHESES LOrExp RIGHT_PARENTHESES Stmt {
         WhileStmt* whilestmt = new WhileStmt();
@@ -480,16 +563,22 @@ Stmt: LVal ASSIGN Exp SEMICOLON {
         $$ = (Stmt*)(whilestmt);
         $$ -> addType(StmtType::ST_WHILE);
         $$ -> _node_type = NodeType::NT_STMT;
+        $$ -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
     | BREAK SEMICOLON{
         $$ = new Stmt();
         $$ -> addType(StmtType::ST_BREAK);
         $$ -> _node_type = NodeType::NT_STMT;
+        $$ -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
     | CONTINUE SEMICOLON {
         $$ = new Stmt();
         $$ -> addType(StmtType::ST_CONTINUE);
         $$ -> _node_type = NodeType::NT_STMT;
+        $$ -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
     | RETURN SEMICOLON {
         ReturnStmt* returnstmt = new ReturnStmt();
@@ -497,6 +586,8 @@ Stmt: LVal ASSIGN Exp SEMICOLON {
         $$ = (Stmt*)(returnstmt);
         $$ -> addType(StmtType::ST_RETURN);
         $$ -> _node_type = NodeType::NT_STMT;
+        $$ -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
     | RETURN Exp SEMICOLON {
         ReturnStmt* returnstmt = new ReturnStmt();
@@ -504,11 +595,15 @@ Stmt: LVal ASSIGN Exp SEMICOLON {
         $$ = (Stmt*)(returnstmt);
         $$ -> addType(StmtType::ST_RETURN);
         $$ -> _node_type = NodeType::NT_STMT;
+        $$ -> setInfo(yylloc.first_line, yylloc.first_column);
+
     };
 
 /* Exp → AddExp */
 Exp: AddExp {
         $$ = $1;
+        $$ -> setInfo(yylloc.first_line, yylloc.first_column);
+
     };
 
 /* Cond → LOrExp */
@@ -519,12 +614,16 @@ LVal: IDENTIFIER {
         $$ -> addIdentifier($1);
         $$ -> addIsArray(false);
         $$ -> addType(ExpType::ET_LVAL);
+        $$ -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
     | LVal LEFT_BRACKETS Exp RIGHT_BRACKETS {
         $$ = $1;
         $$ -> addIsArray(true);
         $$ -> addDims(ExpPtr($3));
         $$ -> addType(ExpType::ET_LVAL);
+        $$ -> setInfo(yylloc.first_line, yylloc.first_column);
+
     };
 
 /* PrimaryExp → '(' Exp ')' | LVal | Number */
@@ -536,6 +635,8 @@ Number: INTVAL  {
         $$ -> addFloatVal(float($1));
         $$ -> addIsFloat(false);
         $$ -> addType(ExpType::ET_INT);
+        $$ -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
     | FLOATVAL {
         $$ = new Number(0, 0, false);
@@ -543,6 +644,7 @@ Number: INTVAL  {
         $$ -> addIntVal(int($1));
         $$ -> addIsFloat(true);
         $$ -> addType(ExpType::ET_FLOAT);
+        $$ -> setInfo(yylloc.first_line, yylloc.first_column);
         
     };
 
@@ -550,12 +652,18 @@ Number: INTVAL  {
             | UnaryOp UnaryExp */
 UnaryExp: LEFT_PARENTHESES Exp RIGHT_PARENTHESES {
         $$ = $2;
+        $$ -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
     | LVal {
         $$ = (Exp*)($1);
+        $$ -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
     | Number {
         $$ = (Exp*)($1);
+        $$ -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
     | IDENTIFIER LEFT_PARENTHESES RIGHT_PARENTHESES {
         auto tmp = new FuncCall();
@@ -563,6 +671,7 @@ UnaryExp: LEFT_PARENTHESES Exp RIGHT_PARENTHESES {
         $$ = (Exp*)(tmp);
         $$ -> addType(ExpType::ET_FUNC); 
 
+        $$ -> setInfo(yylloc.first_line, yylloc.first_column);
         
     }
     | IDENTIFIER LEFT_PARENTHESES FuncRParams RIGHT_PARENTHESES{
@@ -571,18 +680,25 @@ UnaryExp: LEFT_PARENTHESES Exp RIGHT_PARENTHESES {
         tmp -> addArgs(FuncRParamsPtr($3));
         $$ = (Exp*)(tmp); 
         $$ -> addType(ExpType::ET_FUNC); 
+        $$ -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
     | ADD UnaryExp{
         $$ = $2;
+        $$ -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
     | SUB UnaryExp{
         $$ = $2;
         $$ -> addNeg();
+        $$ -> setInfo(yylloc.first_line, yylloc.first_column);
         
     }
     | NOT UnaryExp{
         $$ = $2;
         $$ -> addNot();
+        $$ -> setInfo(yylloc.first_line, yylloc.first_column);
+
     };
 
 /* UnaryOp → '+' | '−' | '!'  */
@@ -603,15 +719,21 @@ UnaryExp: LEFT_PARENTHESES Exp RIGHT_PARENTHESES {
 FuncRParams: Exp {
         $$ = new FuncRParams();
         $$ -> addArgs(ExpPtr($1));
+        $$ -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
     | FuncRParams COMMA Exp {
         $$ = $1;
         $$ -> addArgs(ExpPtr($3));
+        $$ -> setInfo(yylloc.first_line, yylloc.first_column);
+
     };
 
 /* MulExp → UnaryExp | MulExp ('*' | '/' | '%') UnaryExp */
 MulExp: UnaryExp {
         $$ = $1;
+        $$ -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
     | MulExp MUL UnaryExp {
         auto tmp = new BinaryExp();
@@ -620,6 +742,8 @@ MulExp: UnaryExp {
         tmp -> addOp(BinOpType::OP_MUL);
         tmp -> addType(ExpType::ET_BIN);
         $$ = (Exp*)(tmp);
+        $$ -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
     | MulExp DIV UnaryExp {
         auto tmp = new BinaryExp();
@@ -628,6 +752,8 @@ MulExp: UnaryExp {
         tmp -> addOp(BinOpType::OP_DIV);
         $$ = (Exp*)(tmp);
         $$ -> addType(ExpType::ET_BIN);
+        $$ -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
     | MulExp MOD UnaryExp {
         auto tmp = new BinaryExp();
@@ -636,11 +762,15 @@ MulExp: UnaryExp {
         tmp -> addOp(BinOpType::OP_MOD);
         $$ = (Exp*)(tmp);
         $$ -> addType(ExpType::ET_BIN);
+        $$ -> setInfo(yylloc.first_line, yylloc.first_column);
+
     };
 
 /* AddExp → MulExp | AddExp ('+' | '−') MulExp */
 AddExp: MulExp {
          $$ = $1;
+        $$ -> setInfo(yylloc.first_line, yylloc.first_column);
+
     } 
     | AddExp ADD MulExp {
         auto tmp = new BinaryExp();
@@ -649,6 +779,8 @@ AddExp: MulExp {
         tmp -> addOp(BinOpType::OP_ADD);
         $$ = (Exp*)(tmp);
         $$ -> addType(ExpType::ET_BIN);
+        $$ -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
     | AddExp SUB MulExp {
         auto tmp = new BinaryExp();
@@ -657,11 +789,15 @@ AddExp: MulExp {
         tmp -> addOp(BinOpType::OP_SUB);
         $$ = (Exp*)(tmp);
         $$ -> addType(ExpType::ET_BIN);
+        $$ -> setInfo(yylloc.first_line, yylloc.first_column);
+
     };
 
 /* RelExp → AddExp | RelExp ('<' | '>' | '<=' | '>=') AddExp */
 RelExp: AddExp {
         $$ = $1;
+        $$ -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
     | RelExp LT AddExp {
         auto tmp = new BinaryExp();
@@ -670,6 +806,8 @@ RelExp: AddExp {
         tmp -> addOp(BinOpType::OP_LT);
         $$ = (Exp*)(tmp);
         $$ -> addType(ExpType::ET_BIN);
+        $$ -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
     | RelExp GT AddExp {
         auto tmp = new BinaryExp();
@@ -678,6 +816,8 @@ RelExp: AddExp {
         tmp -> addOp(BinOpType::OP_GT);
         $$ = (Exp*)(tmp);
         $$ -> addType(ExpType::ET_BIN);
+        $$ -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
     | RelExp LTE AddExp {
         auto tmp = new BinaryExp();
@@ -686,6 +826,8 @@ RelExp: AddExp {
         tmp -> addOp(BinOpType::OP_LTE);
         $$ = (Exp*)(tmp);
         $$ -> addType(ExpType::ET_BIN);
+        $$ -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
     | RelExp GTE AddExp {
         auto tmp = new BinaryExp();
@@ -694,11 +836,15 @@ RelExp: AddExp {
         tmp -> addOp(BinOpType::OP_GTE);
         $$ = (Exp*)(tmp);
         $$ -> addType(ExpType::ET_BIN);
+        $$ -> setInfo(yylloc.first_line, yylloc.first_column);
+
     };
 
 /* EqExp → RelExp | EqExp ('==' | '!=') RelExp */
 EqExp: RelExp {
         $$ = $1;
+        $$ -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
     | EqExp EQ RelExp {
         auto tmp = new BinaryExp();
@@ -707,6 +853,8 @@ EqExp: RelExp {
         tmp -> addOp(BinOpType::OP_EQ);
         $$ = (Exp*)(tmp);
         $$ -> addType(ExpType::ET_BIN);
+        $$ -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
     | EqExp NEQ RelExp {
         auto tmp = new BinaryExp();
@@ -715,11 +863,15 @@ EqExp: RelExp {
         tmp -> addOp(BinOpType::OP_NEQ);
         $$ = (Exp*)(tmp);
         $$ -> addType(ExpType::ET_BIN);
+        $$ -> setInfo(yylloc.first_line, yylloc.first_column);
+
     };
 
 /* LAndExp → EqExp | LAndExp '&&' EqExp */
 LAndExp: EqExp {
         $$ = $1;
+        $$ -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
     | LAndExp AND EqExp {
         auto tmp = new BinaryExp();
@@ -728,11 +880,15 @@ LAndExp: EqExp {
         tmp -> addOp(BinOpType::OP_AND);
         $$ = (Exp*)(tmp);
         $$ -> addType(ExpType::ET_BIN);
+        $$ -> setInfo(yylloc.first_line, yylloc.first_column);
+
     };
 
 /* LOrExp → LAndExp | LOrExp '||' LAndExp */
 LOrExp: LAndExp {
         $$ = $1;
+        $$ -> setInfo(yylloc.first_line, yylloc.first_column);
+
     }
     | LOrExp OR LAndExp {
         auto tmp = new BinaryExp();
@@ -741,12 +897,16 @@ LOrExp: LAndExp {
         tmp -> addOp(BinOpType::OP_OR);
         $$ = (Exp*)(tmp);
         $$ -> addType(ExpType::ET_BIN);
+        $$ -> setInfo(yylloc.first_line, yylloc.first_column);
+
     };
 
 /* ConstExp → AddExp  */
 ConstExp: AddExp {
         $$ = new ConstExp();
         $$ -> addExp(ExpPtr($1));
+        $$ -> setInfo(yylloc.first_line, yylloc.first_column);
+
     };
 %%
 

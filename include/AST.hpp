@@ -134,6 +134,15 @@ class Visitor;
 #define ArrayRelateNodePtr shared_ptr<ArrayRelateNode>
 
 
+class ErrorInfo {
+public:
+    int line;
+    int col;
+
+    void setInfo(int line, int col){this->line=line;this->col=col;}
+    pair<int,int> getInfo() {return make_pair(line,col);}
+};
+
 class BaseNode {
 public:
     BaseNode(){};
@@ -150,7 +159,7 @@ public:
     vector<BaseNodePtr> getDecl(){return _decls;};
 };
 
-class Decl: public BaseNode {
+class Decl: public BaseNode, public ErrorInfo{
 private:
     ConstDeclPtr _const_decl;
     VarDeclPtr _var_decl;
@@ -163,7 +172,7 @@ public:
     VarDeclPtr getVarDecl(){return _var_decl;};
 };
 
-class ConstDecl {
+class ConstDecl: public ErrorInfo{
 private:
     ConstDefsPtr _const_defs;
     BaseType _type;
@@ -174,7 +183,7 @@ public:
     BaseType getType(){return _type;};
 };
 
-class ConstDef {
+class ConstDef: public ErrorInfo {
 private:
     string _identifier;
     ConstExpPtr _init_val;
@@ -194,7 +203,7 @@ public:
     ArrayInitValPtr getArrayInitVal(){return _array_init_val;};
 };
 
-class ArrayDim {
+class ArrayDim: public ErrorInfo {
 private:
     vector<ConstExpPtr> _dims;
 public:
@@ -202,7 +211,7 @@ public:
     vector<ConstExpPtr> getDim(){return _dims;};
 };
 
-class ConstDefs {
+class ConstDefs: public ErrorInfo {
 private:
     vector<ConstDefPtr> _const_defs;
 public:
@@ -210,7 +219,7 @@ public:
     vector<ConstDefPtr> getConstDef(){return _const_defs;};   
 };
 
-class VarDecl {
+class VarDecl: public ErrorInfo{
 private:
     BaseType _type;
     VarDefsPtr _var_defs;
@@ -221,7 +230,7 @@ public:
     VarDefsPtr getVarDefs(){return _var_defs;}
 };
 
-class VarDef {
+class VarDef: public ErrorInfo {
 private:
     string _identifier;
     bool _is_init;
@@ -250,7 +259,7 @@ public:
 
 
 
-class VarDefs {
+class VarDefs: public ErrorInfo {
 private:
     vector<VarDefPtr> _var_defs;
 public:
@@ -258,7 +267,7 @@ public:
     vector<VarDefPtr> getVarDef() {return _var_defs;}
 };
 
-class FuncDef: public BaseNode{
+class FuncDef: public BaseNode, public ErrorInfo{
 private:
     BaseType _return_type;
     string _identifier;
@@ -278,14 +287,14 @@ public:
     bool hasParam() {return _has_param;}
 };
 
-class FuncFParams {
+class FuncFParams : public ErrorInfo{
 private:
     vector<FuncFParamPtr> _func_f_params;
 public:
     void addFuncFParam(FuncFParamPtr func_f_param) {_func_f_params.pb(func_f_param);}
     vector<FuncFParamPtr> getFuncFParam() {return _func_f_params;}
 };
-class FuncFParam {
+class FuncFParam : public ErrorInfo{
 private:
     BaseType _type;
     string _identifier;
@@ -304,7 +313,7 @@ public:
     ParamArrayDimPtr getArrayDim(){return _dims;}
 };
 
-class ParamArrayDim {
+class ParamArrayDim: public ErrorInfo {
 private:
     vector<ExpPtr> _dims;
 public:
@@ -312,7 +321,7 @@ public:
     vector<ExpPtr> getDim() {return _dims;}
 };
 
-class BlockItems {
+class BlockItems: public ErrorInfo {
 private:
     vector<BaseNodePtr> _stmts;
 public:
@@ -320,7 +329,7 @@ public:
     vector<BaseNodePtr> getStmt() {return _stmts;}  
     void addDecl(DeclPtr decl) {_stmts.pb(decl);}
 };
-class Block {
+class Block: public ErrorInfo {
 private:
     BlockItemsPtr _block_items;
 public:
@@ -328,7 +337,7 @@ public:
     BlockItemsPtr getBlockItem() {return _block_items;}
 };
 
-class Stmt: public BaseNode{
+class Stmt: public BaseNode, public ErrorInfo{
 private:
     StmtType _type;
 public:
@@ -395,12 +404,13 @@ public:
 };
 
 
-class Exp {
+class Exp : public ErrorInfo{
 private:
     ExpType _type;
     BaseType _res_type;
     vector<UnaryOpType> _un_op;
     int _vec_idx = -1;
+    vector<int> _left_dims;
 public:
     Exp() {_vec_idx = -1;}
     virtual ~Exp() = default;
@@ -434,10 +444,12 @@ public:
     }
     ExpType getType(){return _type;}
     BaseType getResType(){return _res_type;}
+    void addLeftDims(vector<int> left_dims){_left_dims = left_dims;}
+    vector<int> getLeftDims(){return _left_dims;}
 };
 
 
-class InitVals{
+class InitVals: public ErrorInfo{
 private:
     vector<ExpPtr> _exps;
 public:
@@ -488,6 +500,7 @@ private:
     string _identifier;
     bool _is_array;
     vector<ExpPtr> _dims;
+
 public:
     void addIdentifier(string* identifier){_identifier=*identifier;}
     void addIsArray(bool is_array){_is_array=is_array;}
@@ -495,6 +508,7 @@ public:
     bool getIsArray(){return _is_array;}
     void addDims(ExpPtr dim){_dims.pb(dim);}
     vector<ExpPtr> getDims(){return _dims;}
+
 };
 
 class Number : public Exp {
@@ -512,7 +526,7 @@ public:
     float getFloatVal(){return _float_val;}
     bool getIsFloat(){return _is_float;}
 };
-class FuncRParams{
+class FuncRParams: public ErrorInfo{
 private:
     vector<ExpPtr> _args;
 public:
