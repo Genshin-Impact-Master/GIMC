@@ -15,7 +15,7 @@ class IVReg : public Reg {
     public:
         IVReg() : Reg(LirOperandKind::IVirtual), id() {
           id = count++; 
-          if (id > 2000) {
+          if (id > 4000) {
             exit(1);
           }
         };

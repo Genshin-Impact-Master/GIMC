@@ -55,7 +55,7 @@ public:
   void dealAlloca(BBlock *block);
 
   LirOperand* operandResolve(Value* val, LirFunction* lirFunc, LirBlock* lirBlock);
-  LirOperand* immResolve(Value* val, LirFunction* lirFunc, LirBlock* lirBlock) ;
+  LirOperand* immResolve(Value* val, LirFunction* lirFunc, LirBlock* lirBlock);
   FVReg* loadImmToFVReg(float val, LirFunction* lirFunc, LirBlock* lirBlock);
   IVReg* loadImmToIVReg(int val, LirFunction* lirFunc, LirBlock* lirBlock);
 
