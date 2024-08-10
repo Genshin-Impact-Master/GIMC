@@ -196,7 +196,7 @@ pair<Value*,bool> parseExp(ExpPtr exp, bool is_cond, bool is_exp, bool is_func_p
 
             // 函数存在但返回值是void
             else if (sym_tb.find_func(tmp -> getIdentifier()) -> _ret_type == BaseType::B_VOID && (is_exp||is_cond||is_func_param)){
-                error_msg = "line: " + to_string(tmp -> getInfo().first) + ", column: " + to_string(tmp -> getInfo().second) + "\n函数" + tmp -> getIdentifier() + "返回void";
+                error_msg = "line: " + to_string(tmp -> getInfo().first) + ", column: " + to_string(tmp -> getInfo().second) + "\n函数" + tmp -> getIdentifier() + "无返回值;
                 error_handle();
             }
             // 函数存在且返回值不是void
@@ -223,7 +223,7 @@ pair<Value*,bool> parseExp(ExpPtr exp, bool is_cond, bool is_exp, bool is_func_p
                 // 检查数组维数是否正确
                 // 是否取到了数
                 if (tmp -> getDims().size() != var_node->_dims.size()){
-                    error_msg ="line: " + to_string(tmp -> getInfo().first) + ", column: " + to_string(tmp -> getInfo().second) + "\n数组" + tmp -> getIdentifier() + "一共有" + std::to_string(var_node -> _dims.size()) + "个维度，但只给了" + std::to_string(tmp -> getDims().size()) + "个维度";
+                    error_msg ="line: " + to_string(tmp -> getInfo().first) + ", column: " + to_string(tmp -> getInfo().second) + "\n数组" + tmp -> getIdentifier() + "一共有" + std::to_string(var_node -> _dims.size()) + "个维度，但只给了" + std::to_string(tmp -> getDims().size()) + "个下标";
                     error_handle();
                 }
                 return pair<Value*,bool>(parseArrayLval(tmp, var_node, true), false);
@@ -232,7 +232,7 @@ pair<Value*,bool> parseExp(ExpPtr exp, bool is_cond, bool is_exp, bool is_func_p
                 // 作为函数实参时可以是数组指针
                 if (tmp -> getDims().size() == var_node -> _dims.size()) return pair<Value*,bool>(parseArrayLval(tmp, var_node, true), false); 
                 else if (tmp -> getDims().size() > var_node -> _dims.size()){
-                    error_msg ="line: " + to_string(tmp -> getInfo().first) + ", column: " + to_string(tmp -> getInfo().second) + "\n数组" + tmp -> getIdentifier() + "一共有" + std::to_string(var_node -> _dims.size()) + "个维度，但只给了" + std::to_string(tmp -> getDims().size()) + "个维度";
+                    error_msg ="line: " + to_string(tmp -> getInfo().first) + ", column: " + to_string(tmp -> getInfo().second) + "\n数组" + tmp -> getIdentifier() + "一共有" + std::to_string(var_node -> _dims.size()) + "个维度，但只给了" + std::to_string(tmp -> getDims().size()) + "个下标";
                     error_handle();
                 }
                 else {
@@ -450,9 +450,17 @@ void parseStmt(StmtPtr _stmt, BBlock* loop_st = nullptr, BBlock* loop_ed = nullp
         parseReturn(dynamic_pointer_cast<ReturnStmt>(_stmt));
     }   
     else if (_stmt -> getType() == StmtType::ST_BREAK) {
+        if (loop_ed == nullptr && loop_st == nullptr) {
+            error_msg = "line: " + to_string(_stmt -> getInfo().first) + ", column: " + to_string(_stmt -> getInfo().second) + "\nbreak语句不在循环体内";
+            error_handle();
+        }
         parseBreak(_stmt, loop_ed);
     }
     else if (_stmt -> getType() == StmtType::ST_CONTINUE) {
+        if (loop_ed == nullptr && loop_st == nullptr) {
+            error_msg = "line: " + to_string(_stmt -> getInfo().first) + ", column: " + to_string(_stmt -> getInfo().second) + "\ncontinue语句不在循环体内";
+            error_handle();
+        }
         parseContinue(_stmt, loop_st);
     }
     else if (_stmt -> getType() == StmtType::ST_BLOCK) {
@@ -609,7 +617,13 @@ void parseDecl(DeclPtr decl, bool is_global) {
             if (def -> isArray()) {
                 auto array_dim = def -> getArrayDim() -> getDim();
                 vector<int>dims, pos;
-                for (auto dim:array_dim) dims.push_back(getConstExpValue(dim -> getExp(), true) -> getIntVal());
+                for (auto dim:array_dim) {
+                    dims.push_back(getConstExpValue(dim -> getExp(), true) -> getIntVal());
+                    if (dims.back() <= 0) {
+                        error_msg = "line: " + to_string(dim -> getInfo().first) + ", column: " + to_string(dim -> getInfo().second) + "\n数组维度不能小于等于0";
+                        error_handle();
+                    }
+                }
                 pos.resize(dims.size());
                 // 创建数组容器
                 auto array_ty = const_type == int32PointerType? i32Type: floatType;
@@ -679,7 +693,13 @@ void parseDecl(DeclPtr decl, bool is_global) {
             if (def -> isArray()) {
                 auto array_dim = def -> getArrayDim() -> getDim();
                 vector<int>dims, pos;
-                for (auto dim:array_dim) dims.push_back(getConstExpValue(dim -> getExp(), true) -> getIntVal());
+                for (auto dim:array_dim) {
+                    dims.push_back(getConstExpValue(dim -> getExp(), true) -> getIntVal());
+                    if (dims.back() <= 0) {
+                        error_msg = "line: " + to_string(dim -> getInfo().first) + ", column: " + to_string(dim -> getInfo().second) + "\n数组维度不能小于等于0";
+                        error_handle();
+                    }
+                }
                 pos.resize(dims.size());
                 // 创建数组容器
                 auto array_ty = var_type == int32PointerType? i32Type: floatType;
@@ -891,6 +911,10 @@ void parseFuncDefine(FuncDefPtr func_def) {
     // 获取形参类型
     Function* func;
     vector<VarNode*> va_list;
+    if (sym_tb.check_func(func_def -> getIdentifier())) {
+        error_msg = "line: " + to_string(func_def -> getInfo().first) + ", column: " + to_string(func_def -> getInfo().second) + "\n函数" + func_def -> getIdentifier() + "重复定义";
+        error_handle();
+    }
     if (func_def -> hasParam()){
         // 有参数函数
         vector<baseTypePtr> param_types;
