@@ -107,12 +107,12 @@ for syfile in $FILES; do
             $QEMU $ARM_FLAGS $QEMU_FLAGS "$tmpDir/tmp" < "$infile" > "$tmpOUT"
             echo $? >> "$tmpOUT"
             echo "${base}"
-            "$INTEGRATE/check" "$tmpOUT" $stdOut && let count=count+1
+            "$INTEGRATE/check" "$tmpOUT" $stdOut && echo "right" > "$tmpOUT.yes"
         else
             $QEMU $ARM_FLAGS $QEMU_FLAGS "$tmpDir/tmp" > "$tmpOUT"
             echo $? >> "$tmpOUT"
             echo "${base}"
-            "$INTEGRATE/check" "$tmpOUT" $stdOut && let count=count+1
+            "$INTEGRATE/check" "$tmpOUT" $stdOut && echo "right" > "$tmpOUT.yes"
         fi
     else
         usage
