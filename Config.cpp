@@ -36,8 +36,10 @@ std::vector<std::string> ARM_REGS = {
   "APSR_nzcv",/* 用户级状态寄存器 */ "FPSCR" /* 浮点运算单元的状态寄存器 */
 };
 
-// todo 加上 ARM 的条件执行
-std::vector<std::string> ARM_COND = {};
+std::vector<std::string> ST_LirConds = {
+  "BinBegin", "add ", "sub ", "rsb ", "mul ", "div ", "srem ", "addf ", "subf ", "mulf ", "divf ", "binEnd ", "store ", "load ", 
+  "call ", "ret ", "cmp ", "br ", "fp2int ", "int2fp ", "move ", "push ", "pop "
+};
 
 // 报错函数
 void error(const std::string &msg) {

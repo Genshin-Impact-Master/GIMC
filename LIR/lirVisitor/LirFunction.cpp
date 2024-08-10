@@ -23,6 +23,9 @@ IImm LirFunction::putLocalVar(Value *alloca) {
   IImm yes(stackSize);
   stackSize += size;
   stackOffsetMap.insert(std::pair<Value*, IImm>(alloca, yes));
+#ifdef DEBUG_MODE
+  std::cout << "put Local Var " << alloca->getFullName() << " with stackoffset " << yes.getImm() << std::endl; 
+#endif
   return yes;
 }
 

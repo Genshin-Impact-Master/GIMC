@@ -48,7 +48,7 @@ public:
   LirModule& moduleGen();
   void instResolve(BBlock *block);
   
-  // 解析 alloca，构建栈空间 
+  // 解析 alloca，构建栈空间。将所有 ConstValue* 绑定到 IImm*
   void dealAlloca(BBlock *block);
 
   LirOperand* operandResolve(Value* val, LirFunction* lirFunc, LirBlock* lirBlock);
@@ -61,6 +61,9 @@ public:
   void bindValue(Value *val, LirOperand *reg) {
     // 因为只有初始化阶段会将 globalMap 中添加，后续 LIR 指令构建时只会构建 valMap
     valMap[val] = reg;
+#ifdef DEBUG_MODE
+    std::cout << "bind Value " << val->getFullName() << " with " << reg->toString() << std::endl; 
+#endif
   }
 
   // 对于全局变量，一定为 <label> 标签，即 addr

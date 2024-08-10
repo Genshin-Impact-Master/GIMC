@@ -1,12 +1,18 @@
 #include "../include/LirPass/RegAllocStack.h"
 #define IReg(r) IPhyReg::getRegR(r)
+#define INST_STRING ST_LirConds[static_cast<int>(inst->getKind())]
 
 USING_GIMC_NAMESPACE
 
 void RegAllocStack::alloc(LirModule &lirModule) {
   for (auto func : lirModule.getFunctions()) {
     LirBlock *entry = func->getEntry();
-    INode<LirBlock> *blkNode = &entry->getNode();
+
+    #ifdef DEBUG_MODE
+      std::cout << entry->getLabel() << std::endl; 
+    #endif
+
+    INode<LirBlock> *blkNode = func->getBlkList().getHeadPtr();
     // 第一遍遍历，先进行栈空间初始化，将 reg 分配到栈空间
     while (!blkNode->isEnd()) {
       blkNode = blkNode->getNext();
@@ -22,18 +28,17 @@ void RegAllocStack::alloc(LirModule &lirModule) {
     }
 
     // 再在起始位置加一条 sp += size 的命令
-    LirBlock *blk = entry->getNode().getOwner();
-    LirInst *fistInst = blk->getInst().getHeadPtr()->getOwner();
-    IVReg *tmpReg = new IVReg();
+    LirBlock *blk = func->getFirstBlock();
+    LirInst *fistInst = blk->getFirstInst();
     IImm *iImm = new IImm(size);
-    LirInstMove *move = new LirInstMove(blk, tmpReg, iImm, LirArmStatus::NO_Cond);
-    func->getImmMap().insert(std::pair<LirOperand*, LirInstMove*>(tmpReg, move));
-    LirBinary *bin = new LirBinary(LirInstKind::Add, blk, IPhyReg::SP, tmpReg, IPhyReg::SP);
+    LirInstMove *move = new LirInstMove(blk, IReg(6), iImm, LirArmStatus::NO_Cond);
+    func->getImmMap().insert(std::pair<LirOperand*, LirInstMove*>(IReg(6), move));
+    LirBinary *bin = new LirBinary(LirInstKind::Add, blk, IPhyReg::SP, IReg(6), IPhyReg::SP);
     bin->addBefore(fistInst);
     move->addBefore(bin);
 
     // 第二遍遍历，进行栈分配，将 reg 从栈中取出
-    blkNode = &entry->getNode();
+    blkNode = func->getBlkList().getHeadPtr();
     while (!blkNode->isEnd()) {
       blkNode = blkNode->getNext();
       LirBlock *blk = blkNode->getOwner();
@@ -47,12 +52,21 @@ void RegAllocStack::alloc(LirModule &lirModule) {
         LirOperand *opd3 = inst->getOpd3();
         if (opd1 && opd1->isVirtual()) {
           inst->setOpd1(IReg(4));
+#ifdef DEBUG_MODE
+  std::cout << "allocing " << INST_STRING << "'s " << opd1->toString() << " to reg4" << std::endl; 
+#endif
         }
         if (opd2 && opd2->isVirtual()) {
           inst->setOpd2(IReg(4));
+#ifdef DEBUG_MODE
+  std::cout << "allocing " << INST_STRING << "'s " << opd2->toString() << " to reg4" << std::endl;
+#endif
         }
         if (opd3 && opd3->isVirtual()) {
           inst->setOpd3(IReg(5));
+#ifdef DEBUG_MODE
+  std::cout << "allocing" << INST_STRING << "'s " << opd3->toString() << " to reg5" << std::endl; 
+#endif
         }
       }
     }
@@ -63,7 +77,6 @@ void RegAllocStack::allocInst(LirInst *inst) {
   LirBlock *blk = inst->getParent();
   LirFunction *lirFunc = blk->getParent();
   LirInstKind kind = inst->getKind();
-  std::vector<LirOperand*> &opds = inst->getOpds();
   // 立即数 map，可直接移入寄存器
   std::map<LirOperand*, LirInstMove*> map = lirFunc->getImmMap();
   // opd1 一定为目的寄存器，创建 store 指令

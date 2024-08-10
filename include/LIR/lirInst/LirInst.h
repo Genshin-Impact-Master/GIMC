@@ -55,7 +55,7 @@ class LirInst {
         INode<LirInst> lirInstNode;
     protected:
         // 三元式最多三个操作寄存器
-        std::vector<LirOperand*> opds;
+        LirOperand* opds[3];
         LirArmStatus status;
     public:
         LirInst(LirInstKind kind, LirBlock *parent_);
@@ -75,7 +75,7 @@ class LirInst {
         void setOpd2(LirOperand *opd) {opds[1] = opd;}
         void setOpd3(LirOperand *opd) {opds[2] = opd;}
 
-        std::vector<LirOperand*> &getOpds() {return opds;}
+        LirOperand** getOpds() {return opds;}
 
         bool isBinary() {return lirKind > LirInstKind::BinaryBegin && lirKind < LirInstKind::BinaryEnd;}
 
