@@ -100,7 +100,7 @@ Instruction* parseFuncCall(ExpPtr exp){
         auto F_param_i = F_param[i];
         auto arg_exp = parseExp(R_param_i, false, false, true);
         // 判断函数参数类型是否正确，注意类型转换！以及数组的处理！
-        // 函数形参数组的处理，为expResType多添加一个array_ptr
+        // 函数形参数组的处理，为 expResType 多添加一个 array_ptr
         // 类型不匹配时进行类型转换
         // 类型转换
         if (R_param_i -> getResType() == BaseType::B_FLOAT && F_param_i -> getType() == BaseType::B_INT) arg_exp.first = builder.createFp2IntInst(arg_exp.first);
@@ -144,10 +144,10 @@ Instruction* parseFuncCall(ExpPtr exp){
 }
 
 
-// 返回表达式IR、是否为常量表达式、是否合法
+// 返回表达式 IR、是否为常量表达式、是否合法
 // is_cond 用于判断是否为条件表达式
-// is_exp 用于判断是否为表达式 (返回类型只有int/float)
-// is_func_param 用于判断是否为函数参数 (返回类型有int/float/array_ptr)
+// is_exp 用于判断是否为表达式 (返回类型只有 int/float)
+// is_func_param 用于判断是否为函数参数 (返回类型有 int/float/array_ptr)
 int and_cnt = 1;
 int or_cnt = 1;
 pair<Value*,bool> parseExp(ExpPtr exp, bool is_cond, bool is_exp, bool is_func_param, BBlock* cond_true, BBlock* cond_false){
@@ -194,12 +194,12 @@ pair<Value*,bool> parseExp(ExpPtr exp, bool is_cond, bool is_exp, bool is_func_p
                 error_handle();
             }
 
-            // 函数存在但返回值是void
+            // 函数存在但返回值是 void
             else if (sym_tb.find_func(tmp -> getIdentifier()) -> _ret_type == BaseType::B_VOID && (is_exp||is_cond||is_func_param)){
-                error_msg = "line: " + to_string(tmp -> getInfo().first) + ", column: " + to_string(tmp -> getInfo().second) + "\n函数" + tmp -> getIdentifier() + "无返回值;
+                error_msg = "line: " + to_string(tmp -> getInfo().first) + ", column: " + to_string(tmp -> getInfo().second) + "\n函数" + tmp -> getIdentifier() + "无返回值";
                 error_handle();
             }
-            // 函数存在且返回值不是void
+            // 函数存在且返回值不是 void
             else{
                 exp -> addResType(sym_tb.find_func(tmp -> getIdentifier()) -> _ret_type);
                 return pair<Value*,bool>(parseFuncCall(exp), false);
@@ -258,7 +258,7 @@ pair<Value*,bool> parseExp(ExpPtr exp, bool is_cond, bool is_exp, bool is_func_p
                 // 解析左值
                 auto left = parseExp(tmp -> getExp1(), true, false, false, and_ls_true, cond_false);
                 if (tmp -> getExp1() -> getResType() != BaseType::B_JMP) {
-                    // 转换成cmpInst
+                    // 转换成 cmpInst
                     if (tmp -> getExp1() -> getResType() != BaseType::B_BOOL) {
                         if (tmp -> getExp1() -> getResType() == BaseType::B_INT) left.first = builder.createIcmpInst(ICondKind::Ne, new ConstIntValue(0), left.first);
                         if (tmp -> getExp1() -> getResType() == BaseType::B_FLOAT) left.first = builder.createFcmpInst(FCondKind::One, new ConstFloatValue(0), left.first);
@@ -270,7 +270,7 @@ pair<Value*,bool> parseExp(ExpPtr exp, bool is_cond, bool is_exp, bool is_func_p
 
                 auto right = parseExp(tmp -> getExp2(), true, false, false, cond_true, cond_false);
                 if (tmp -> getExp2() -> getResType() != BaseType::B_JMP) {
-                    // 转换成cmpInst
+                    // 转换成 cmpInst
                     if (tmp -> getExp2() -> getResType() != BaseType::B_BOOL) {
                         if (tmp -> getExp2() -> getResType() == BaseType::B_INT) right.first = builder.createIcmpInst(ICondKind::Ne, new ConstIntValue(0), right.first);
                         if (tmp -> getExp2() -> getResType() == BaseType::B_FLOAT) right.first = builder.createFcmpInst(FCondKind::One, new ConstFloatValue(0), right.first);
@@ -296,7 +296,7 @@ pair<Value*,bool> parseExp(ExpPtr exp, bool is_cond, bool is_exp, bool is_func_p
                 // 解析左值
                 auto left = parseExp(tmp -> getExp1(), true, false, false, cond_true, or_ls_false);
                 if (tmp -> getExp1() -> getResType() != BaseType::B_JMP) {
-                    // 转换成cmpInst
+                    // 转换成 cmpInst
                     if (tmp -> getExp1() -> getResType() != BaseType::B_BOOL) {
                         if (tmp -> getExp1() -> getResType() == BaseType::B_INT) left.first = builder.createIcmpInst(ICondKind::Ne, new ConstIntValue(0), left.first);
                         if (tmp -> getExp1() -> getResType() == BaseType::B_FLOAT) left.first = builder.createFcmpInst(FCondKind::One, new ConstFloatValue(0), left.first);
@@ -307,7 +307,7 @@ pair<Value*,bool> parseExp(ExpPtr exp, bool is_cond, bool is_exp, bool is_func_p
                 // 解析右值
                 auto right = parseExp(tmp -> getExp2(), true, false, false, cond_true, cond_false);
                 if (tmp -> getExp2() -> getResType() != BaseType::B_JMP) {
-                    // 转换成cmpInst
+                    // 转换成 cmpInst
                     if (tmp -> getExp2() -> getResType() != BaseType::B_BOOL) {
                         if (tmp -> getExp2() -> getResType() == BaseType::B_INT) right.first = builder.createIcmpInst(ICondKind::Ne, new ConstIntValue(0), right.first);
                         if (tmp -> getExp2() -> getResType() == BaseType::B_FLOAT) right.first = builder.createFcmpInst(FCondKind::One, new ConstFloatValue(0), right.first);
@@ -317,13 +317,13 @@ pair<Value*,bool> parseExp(ExpPtr exp, bool is_cond, bool is_exp, bool is_func_p
                 return pair<Value*,bool>(nullptr, false);
             }
 
-            // 二元表达式不可能返回一个array_ptr
+            // 二元表达式不可能返回一个 array_ptr
             auto left = parseExp(tmp -> getExp1(), is_cond, is_exp, false);
             auto right = parseExp(tmp -> getExp2(), is_cond, is_exp, false);
 
 
 
-            // 如果左右值也是一个比较表达式，是否需要类型提升? 不需要 
+            // 如果左右值也是一个比较表达式，是否需要类型提升？不需要 
             // 可能需要
             if (tmp -> getExp1() -> getResType() == BaseType::B_BOOL) 
                 left.first = builder.createZextInst(i32Type, left.first), tmp -> getExp1() -> addResType(BaseType::B_INT);
@@ -451,14 +451,14 @@ void parseStmt(StmtPtr _stmt, BBlock* loop_st = nullptr, BBlock* loop_ed = nullp
     }   
     else if (_stmt -> getType() == StmtType::ST_BREAK) {
         if (loop_ed == nullptr && loop_st == nullptr) {
-            error_msg = "line: " + to_string(_stmt -> getInfo().first) + ", column: " + to_string(_stmt -> getInfo().second) + "\nbreak语句不在循环体内";
+            error_msg = "line: " + to_string(_stmt -> getInfo().first) + ", column: " + to_string(_stmt -> getInfo().second) + "\nbreak 语句不在循环体内";
             error_handle();
         }
         parseBreak(_stmt, loop_ed);
     }
     else if (_stmt -> getType() == StmtType::ST_CONTINUE) {
         if (loop_ed == nullptr && loop_st == nullptr) {
-            error_msg = "line: " + to_string(_stmt -> getInfo().first) + ", column: " + to_string(_stmt -> getInfo().second) + "\ncontinue语句不在循环体内";
+            error_msg = "line: " + to_string(_stmt -> getInfo().first) + ", column: " + to_string(_stmt -> getInfo().second) + "\ncontinue 语句不在循环体内";
             error_handle();
         }
         parseContinue(_stmt, loop_st);
@@ -620,7 +620,7 @@ void parseDecl(DeclPtr decl, bool is_global) {
                 for (auto dim:array_dim) {
                     dims.push_back(getConstExpValue(dim -> getExp(), true) -> getIntVal());
                     if (dims.back() <= 0) {
-                        error_msg = "line: " + to_string(dim -> getInfo().first) + ", column: " + to_string(dim -> getInfo().second) + "\n数组维度不能小于等于0";
+                        error_msg = "line: " + to_string(dim -> getInfo().first) + ", column: " + to_string(dim -> getInfo().second) + "\n数组维度不能小于等于 0";
                         error_handle();
                     }
                 }
@@ -696,7 +696,7 @@ void parseDecl(DeclPtr decl, bool is_global) {
                 for (auto dim:array_dim) {
                     dims.push_back(getConstExpValue(dim -> getExp(), true) -> getIntVal());
                     if (dims.back() <= 0) {
-                        error_msg = "line: " + to_string(dim -> getInfo().first) + ", column: " + to_string(dim -> getInfo().second) + "\n数组维度不能小于等于0";
+                        error_msg = "line: " + to_string(dim -> getInfo().first) + ", column: " + to_string(dim -> getInfo().second) + "\n数组维度不能小于等于 0";
                         error_handle();
                     }
                 }
@@ -740,7 +740,7 @@ void parseDecl(DeclPtr decl, bool is_global) {
                 if (is_global) {
                     NumberPtr init_exp = nullptr;
                     
-                    // 全局变量无初始值时默认为0
+                    // 全局变量无初始值时默认为 0
                     if (! def -> isInit()) {
                         if (var_decl -> getType() == B_INT) init_exp = NumberPtr(new Number(0, 0, false));
                         else init_exp = NumberPtr(new Number(0.0, 0, true));
@@ -791,7 +791,7 @@ void parseIfElse(IfElseStmtPtr stmt, BBlock* loop_st, BBlock* loop_ed){
         BBlock* if_false = builder.createBBlock("if_false" + to_string(if_cnt-1), voidType);
         builder.setChosedBBlock(par_block);
         auto cond_exp = parseExp(stmt -> getCond(), true, false, false, if_true, if_false);
-        // 如果不是and和or
+        // 如果不是 and 和 or
         if (stmt -> getCond() -> getResType() != B_JMP ) {
             if (stmt -> getCond() -> getResType() != B_BOOL) {
                 if (stmt -> getCond() -> getResType() == BaseType::B_INT) cond_exp.first = builder.createIcmpInst(ICondKind::Ne, new ConstIntValue(0), cond_exp.first);
@@ -1074,7 +1074,7 @@ void parseArrayInitVal(ArrayInitValPtr arr_init, vector<int> &poss, vector<int> 
         return;
     }
     if (arr_init -> getDimVal() == nullptr) {
-        // cout<< "初始化为0"  << endl;
+        // cout<< "初始化为 0"  << endl;
         return;
     }
 
@@ -1139,7 +1139,7 @@ void parseArrayInitVal(ArrayInitValPtr arr_init, vector<int> &pos, vector<int> d
         return;
     }
     if (arr_init -> getDimVal() == nullptr) {
-        // cout<< "初始化为0"  << endl;
+        // cout<< "初始化为 0"  << endl;
         return;
     }
     // 是否解析完了所有表达式
@@ -1196,7 +1196,7 @@ void arrayDebug(DeclPtr decl,int offset =0 ) {
     for (auto var_def : var_defs) {
         if (var_def -> isArray() == false) exit(0);
         auto arrayDim = var_def -> getArrayDim() -> getDim();
-        cout<< "解析维度信息: "  << endl;
+        cout<< "解析维度信息："  << endl;
         vector<int>dims;vector<int>pos;
         for (auto dim : arrayDim) {
             cout<< getConstExpValue(dim -> getExp(), true) -> getIntVal() << " ";

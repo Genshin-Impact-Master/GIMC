@@ -99,7 +99,7 @@ for syfile in $FILES; do
             tmpGIMC_S="$GIMCASM/${base}.s"
             tmpOUT="$GIMCEXE/${base}.out"
         fi
-        $GIMC "$syfile" -S -o "$tmpGIMC_S"
+        $GIMC -S -o "$tmpGIMC_S" "$syfile"
         $SCC $COMPILE_FLAGS "$tmpGIMC_S" ../lib/newlib.o -o "$tmpDir/tmp"
         # if [ -f "$infile" ]; then
         #     $QEMU $ARM_FLAGS $QEMU_FLAGS "$tmpDir/tmp" < "$infile" > "$tmpOUT"

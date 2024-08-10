@@ -13,14 +13,14 @@ Module* module;
 int main(int argc, char* argv[]){
   ++ argv;
   if (argc > 0) {
-    // 运行格式必须是 ./compiler input -S -o output!!!!
+    // 运行格式必须是 ./compiler -S -o testcase.s testcase.sy
     char *filename = argv[0];
-    char *dumpfilename = argv[3];
+    char *dumpfilename = argv[2];
     // 生成 IRModule 
-    genIRModule(argv[0]);
+    genIRModule(argv[3]);
 
     // 可选项，若 -S 替换为 -emit-llvm 则 output 为 llvm 文件
-    std::string str(argv[1]);
+    std::string str(argv[0]);
     if (str.compare("-emit-llvm") == 0) {
       builder.emitIRModule(module, dumpfilename);
       builder.close();
