@@ -8,3 +8,4 @@ build
 testout.out
 a.out
 a.txt
+*.gch
