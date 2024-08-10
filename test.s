@@ -14,7 +14,7 @@ main:
 	movw	r6, #65528
 	movt	r6,65535
 	add  sp, sp, r6	@ sp <- sp + r6
-	movw	r4, #3
+	movw	r4, #0
 	movt	r4,0
 	movw	r5, #65528
 	movt	r5,65535
@@ -28,3 +28,8 @@ main:
 	add  r7, r7, #0
 	mov     sp, r7
 	pop     {r7, pc}
+	.text 
+	.global  _gimc_a
+	.size  _gimc_a, 400
+_gimc_a:
+	.space  40
