@@ -30,9 +30,9 @@ void RegAllocStack::alloc(LirModule &lirModule) {
     LirBlock *blk = func->getFirstBlock();
     LirInst *fistInst = blk->getFirstInst();
     IImm *iImm = new IImm(size);
-    LirInstMove *move = new LirInstMove(blk, IReg(6), iImm, LirArmStatus::NO_Cond);
-    func->getImmMap().insert(std::pair<LirOperand*, LirInstMove*>(IReg(6), move));
-    LirBinary *bin = new LirBinary(LirInstKind::Add, blk, IPhyReg::SP, IReg(6), IPhyReg::SP);
+    LirInstMove *move = new LirInstMove(blk, IReg(1), iImm, LirArmStatus::NO_Cond);
+    func->getImmMap().insert(std::pair<LirOperand*, LirInstMove*>(IReg(1), move));
+    LirBinary *bin = new LirBinary(LirInstKind::Add, blk, IPhyReg::SP, IReg(1), IPhyReg::SP);
     bin->addBefore(fistInst);
     move->addBefore(bin);
 
@@ -50,19 +50,19 @@ void RegAllocStack::alloc(LirModule &lirModule) {
         LirOperand *opd2 = inst->getOpd2();
         LirOperand *opd3 = inst->getOpd3();
         if (opd1 && opd1->isVirtual()) {
-          inst->setOpd1(IReg(4));
+          inst->setOpd1(IReg(3));
 #ifdef DEBUG_MODE
   std::cout << "allocing " << LIRINST_STRING << "'s " << opd1->toString() << " to reg4" << std::endl; 
 #endif
         }
         if (opd2 && opd2->isVirtual()) {
-          inst->setOpd2(IReg(4));
+          inst->setOpd2(IReg(3));
 #ifdef DEBUG_MODE
   std::cout << "allocing " << LIRINST_STRING << "'s " << opd2->toString() << " to reg4" << std::endl;
 #endif
         }
         if (opd3 && opd3->isVirtual()) {
-          inst->setOpd3(IReg(5));
+          inst->setOpd3(IReg(2));
 #ifdef DEBUG_MODE
   std::cout << "allocing" << LIRINST_STRING << "'s " << opd3->toString() << " to reg5" << std::endl; 
 #endif
@@ -85,25 +85,25 @@ void RegAllocStack::allocInst(LirInst *inst) {
   if (regsOffset.find(opd1) != regsOffset.end()) {
     // 为栈分配中新增变量，新增 Store 存值指令。在指令执行后添加
     LirInst *nextInst = inst->getNextInst();
-    resolveStack(opd1, nextInst, IReg(5));
+    resolveStack(opd1, nextInst, IReg(2));
     // r4 中保存刚刚计算完的值
-    LirStore *store = new LirStore(blk, IReg(4), IReg(5));
+    LirStore *store = new LirStore(blk, IReg(3), IReg(2));
     store->addBefore(nextInst);
   }
 
   LirOperand *opd2 = inst->getOpd2();
   if (regsOffset.find(opd2) != regsOffset.end()) {
     // lhs 放在 r4 中
-    resolveStack(opd2, inst, IReg(4));
-    LirLoad *load = new LirLoad(blk, IReg(4), IReg(4));
+    resolveStack(opd2, inst, IReg(3));
+    LirLoad *load = new LirLoad(blk, IReg(3), IReg(3));
     load->addBefore(inst);
   }
 
   LirOperand *opd3 = inst->getOpd3();
   if (regsOffset.find(opd3) != regsOffset.end()) {
     // rhs 放在 r5 中
-    resolveStack(opd3, inst, IReg(5));
-    LirLoad *load = new LirLoad(blk, IReg(5), IReg(5));
+    resolveStack(opd3, inst, IReg(2));
+    LirLoad *load = new LirLoad(blk, IReg(2), IReg(2));
     load->addBefore(inst);
   }
 }

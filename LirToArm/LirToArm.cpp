@@ -221,6 +221,7 @@ void LirToArm::genInst(LirInst *lir_inst) {
       // 与位置无关的汇编代码应当为
       // adr r0, _gimc_a
       smartOut("adr", opd1->toString(), opd2->toString());
+      exit(0);
       break;
     }
     else {
