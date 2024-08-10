@@ -101,17 +101,17 @@ for syfile in $FILES; do
         fi
         $GIMC -S -o "$tmpGIMC_S" "$syfile"
         $SCC $COMPILE_FLAGS "$tmpGIMC_S" ../lib/newlib.o -o "$tmpDir/tmp"
-        # if [ -f "$infile" ]; then
-        #     $QEMU $ARM_FLAGS $QEMU_FLAGS "$tmpDir/tmp" < "$infile" > "$tmpOUT"
-        #     echo $? >> "$tmpOUT"
-        #     echo "${base}"
-        #     "$INTEGRATE/check" "$tmpOUT" $stdOut || exit
-        # else
-        #     $QEMU $ARM_FLAGS $QEMU_FLAGS "$tmpDir/tmp" > "$tmpOUT"
-        #     echo $? >> "$tmpOUT"
-        #     echo "${base}"
-        #     "$INTEGRATE/check" "$tmpOUT" $stdOut || exit
-        # fi
+        if [ -f "$infile" ]; then
+            $QEMU $ARM_FLAGS $QEMU_FLAGS "$tmpDir/tmp" < "$infile" > "$tmpOUT"
+            echo $? >> "$tmpOUT"
+            echo "${base}"
+            "$INTEGRATE/check" "$tmpOUT" $stdOut || exit
+        else
+            $QEMU $ARM_FLAGS $QEMU_FLAGS "$tmpDir/tmp" > "$tmpOUT"
+            echo $? >> "$tmpOUT"
+            echo "${base}"
+            "$INTEGRATE/check" "$tmpOUT" $stdOut || exit
+        fi
     else
         usage
     fi

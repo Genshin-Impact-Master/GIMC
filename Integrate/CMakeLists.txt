@@ -43,10 +43,6 @@ add_executable(compiler
 ../lexer/lex.cpp
 ../semantic/genIR.cpp
 ../semantic/genIR.hpp
-../Test/lib/sylib.h
-../Test/lib/sylib.c
-../Test/lib/newlib.h
-../Test/lib/newlib.c
 ../include/AST.hpp
 ../include/LIR/codegen/ToLir.h
 ../include/LIR/LirHearders.h
@@ -66,7 +62,6 @@ add_executable(compiler
 ../include/LIR/lirOperand/IPhyReg.h
 ../include/LIR/lirOperand/Reg.h
 ../include/LIR/lirOperand/FPhyReg.h
-../include/IRToArm/IRToArm.h
 ../include/LirPass/RegAllocStack.h
 ../include/IR/ConstValue.h
 ../include/IR/Inst.h

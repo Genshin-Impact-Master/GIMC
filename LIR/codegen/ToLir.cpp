@@ -10,6 +10,7 @@ ToLir::ToLir(Module irModule) : irModule(irModule){
 
 Function *armMemset;
 Function *armMemcpy;
+Function *intDiv;
 
 void ToLir::addArmFunc() {
   // void *memset(void *str, int c, size_t n)
@@ -28,6 +29,10 @@ void ToLir::addArmFunc() {
 
   bindGlobal(armMemcpy, new Addr(armMemcpy->getName()));  
   bindGlobal(armMemset, new Addr(armMemset->getName()));  
+  
+  // 实际上只是需要一个名字而已
+  intDiv = new Function("__aeabi_idiv(PLT)", voidType, Zero_Argu_Type_List);
+  bindGlobal(intDiv, new Addr(intDiv->getName()));
 }
 
 LirModule &ToLir::moduleGen() {
@@ -400,11 +405,14 @@ void ToLir::instResolve(BBlock *block) {
         }
 
         case InstKind::Div: {
-          // 除法不可以交换
+          // 除法不可以交换，两个整数相除，调用函数 __aeabi_idiv(PLT)
           lhsReg = getBindOperand(lhs);
           rhsReg = getBindOperand(rhs);
+          LirInstMove *move1 = new LirInstMove(lirBlock, IPhyReg::getRegR(0), lhsReg, LirArmStatus::NO_Cond);
+          LirInstMove *move2 = new LirInstMove(lirBlock, IPhyReg::getRegR(1), rhsReg, LirArmStatus::NO_Cond);
+          LirCall *call = new LirCall(lirBlock, getBindOperand(intDiv));
           dstReg = ToLir::operandResolve(i, lirFunc, lirBlock);
-          lirInstKind = LirInstKind::Div;
+          LirInstMove *move3 = new LirInstMove(lirBlock, dstReg, IPhyReg::getRegR(0), LirArmStatus::NO_Cond);
           break;
         }
 
@@ -482,10 +490,12 @@ void ToLir::instResolve(BBlock *block) {
           break;
       }
       
-      // 接下来将解析出的三个 reg 放入 <Value*, LirOperand*> map 中
-      LirBinary *bin = new LirBinary(lirInstKind, lirBlock, lhsReg, rhsReg, dstReg);
-      lirBlock->addInst(bin);
-      bindValue(inst, dstReg);
+      if (kind != InstKind::Div) {
+        // 接下来将解析出的三个 reg 放入 <Value*, LirOperand*> map 中
+        LirBinary *bin = new LirBinary(lirInstKind, lirBlock, lhsReg, rhsReg, dstReg);
+        lirBlock->addInst(bin);
+        bindValue(inst, dstReg); 
+      }
     }
 
     // else if (kind == InstKind::Alloca) {
