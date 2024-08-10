@@ -1,24 +1,30 @@
 	.arch  armv7
-	.fpu  softvfp
+	.fpu  vfpv3
 	.text 
 	.align  3
 	.global  main
 	.syntax  unified
-	.thumb 
-	.thumb_func 
 	.type  main, %function
 main:
 	/* ******** 函数预处理 ******** */ 
-	@ 将 fp 压栈 
-	push  {r7}
-	@ 将 lr 压栈 
-	push  {lr}
+	@ 将 fp,lr 压栈 
+	push {r7, lr}
 	sub  sp, sp, #0	@ sp <- sp - #0
 	add  r7, sp, #0	@ r7 <- sp + #0
-entry_main:
-movw	r4, #0
-movt	r4,0
-	add  sp, sp, r5	@ sp <- sp + r5
-movw	r4, #3
-movt	r4,0
+	movw	r6, #65528
+	movt	r6,65535
+	add  sp, sp, r6	@ sp <- sp + r6
+	movw	r4, #3
+	movt	r4,0
+	movw	r5, #65528
+	movt	r5,65535
+	add  r5, r7, r5	@ r5 <- r7 + r5
+	str	r4,[r5]
+	movw	r4, #65528
+	movt	r4,65535
+	add  r4, r7, r4	@ r4 <- r7 + r4
+	ldr r4, [r4]
 	mov  r0, r4
+	add  r7, r7, #0
+	mov     sp, r7
+	pop     {r7, pc}
