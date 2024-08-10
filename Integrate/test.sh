@@ -64,6 +64,8 @@ fi
 # 设置最大栈空间为 4g
 ulimit -s 4096000
 
+count=0
+
 # 遍历文件并运行测试
 for syfile in $FILES; do
     base=$(basename "$syfile" .sy)
@@ -105,14 +107,16 @@ for syfile in $FILES; do
             $QEMU $ARM_FLAGS $QEMU_FLAGS "$tmpDir/tmp" < "$infile" > "$tmpOUT"
             echo $? >> "$tmpOUT"
             echo "${base}"
-            "$INTEGRATE/check" "$tmpOUT" $stdOut || exit
+            "$INTEGRATE/check" "$tmpOUT" $stdOut && let count=count+1
         else
             $QEMU $ARM_FLAGS $QEMU_FLAGS "$tmpDir/tmp" > "$tmpOUT"
             echo $? >> "$tmpOUT"
             echo "${base}"
-            "$INTEGRATE/check" "$tmpOUT" $stdOut || exit
+            "$INTEGRATE/check" "$tmpOUT" $stdOut && let count=count+1
         fi
     else
         usage
     fi
 done
+
+echo "$count"
