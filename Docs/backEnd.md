@@ -6,7 +6,7 @@
 
 [LirModule](../include/LIR/visitor/LirModule.h)
 `LirModule` 类，为中端 IR 的简单映射，同样包含 `GlobalVars`,`FunctionDefs`, 但是没有 `FunctionDeclares` ？其函数的定义与声明在汇编层面为何有此区别？
-> 汇编中 Call 某个函数直接使用 bl + \<label\> 即可，即只需要 FunctionDeclares 的函数名，不需要带有其他信息（但其他信息在构建 LIR 中的 `LIRCall` 会用到）。
+> 汇编中 Call 某个函数直接使用 bl + \<label\> 即可，即只需要 FunctionDeclares 的函数名，不需要带有其他信息（但其他信息在构建 LIR 中的 `LIRCall` 会用到，主要是整型参数和浮点型参数的数目）。
 
 ### LirFunction
 
@@ -16,9 +16,9 @@
 `LirFunction` 类，包含参数（但是这里会考虑到实际的寄存器数量的限制）,局部变量的栈空间大小 `stackSize`。
 
 #### 栈帧结构图
-如图为栈空间结构：
+如图为栈空间结构，以 `int foo(int r0, int r1, int r2, int r3, int a1,int a2, int a3, int a4)` 为例子（注意形参在栈帧的位置顺序，越靠近 `r7` 者，形参编号越小）：
 
-> ![栈空间结构](image-1.png)
+> ![栈空间示意图](image.png)
 > * 溢出形参： `LirFunction` 的形参数目超过预设的形参寄存器时，溢出到栈空间的形参（注意，Arm 汇编输出时，`LirFunction` 的默认 `codeGen` 模式为首先 `push {r7, lr}`，将本 `LirFunction` 记为 `Callee`，调用本 `LirFunction` 的 `LirFunction` 记为 `Caller`，则溢出形参在 `Caller` 中压栈）
 > * 局部变量：即本 `LirFunction` 中的局部变量
 > * 溢出寄存器：经过寄存器分配后，溢出的虚拟寄存器存储在栈空间中
@@ -101,10 +101,10 @@ store i32 6, ptr %b_ptr
 
 * `getBindOperand` 
   * 从 `valMap` 和 `globalMap` 中获得除了 IR 中 `alloca` 指令分配的局部变量外的所有虚拟寄存器。
-  * 对于 `alloca` 出来的变量，（也只有 `alloca` 出来的变量和溢出的形参能存在栈空间上），函数解决了获取栈上变量的功能。
+  * 对于 `alloca` 出来的变量，（也只有 `alloca` 出来的变量和溢出的形参能存在栈空间上），__需要万分注意，返回的是绝对地址，即 sp + offset__，而非变量本身。因为 `ptr` 的含义就是地址。
 > 如何获取的栈上变量？
 > 1. 先判断是不是栈上变量：若中端 `Value` 与 `IImm` 绑定（在 `LirFunction` 的 `stackOffsetMap` 中），说明其在栈上。
-> 2. LIR 中新增一条 `add` 指令，将实际的栈上位置存入寄存器，再加一条 `ldr` 指令，将栈上值存入寄存器中。
+> 2. LIR 中新增一条 `add` 指令，将实际的栈上位置存入寄存器。
 
 #### 栈分配
 * `dealAlloca`

@@ -48,7 +48,10 @@ public:
   LirModule& moduleGen();
   void instResolve(BBlock *block);
   
-  // 解析 alloca，构建栈空间。将所有 ConstValue* 绑定到 IImm*
+  // 解析 alloca，构建栈空间。将所有 ConstValue* 绑定到 IImm*。
+  // 必须要在 putParam 后做，
+  // ！！！重要，不能仅仅根据是否是 alloca 指令才分配变量，如果是个 ptr 类型，也需要分配到栈空间上，
+  // 因为指针类型的 IR 变量，是能被 GEP 或 STORE 的
   void dealAlloca(BBlock *block);
 
   LirOperand* operandResolve(Value* val, LirFunction* lirFunc, LirBlock* lirBlock);
@@ -92,6 +95,12 @@ public:
 
   // 设置当前正在生成的 lirBlock
   void setCheckingLirBlock(LirBlock *block) {checkingBlock = block;}
+
+  bool isAtStack(Value *val) {
+    std::map<Value*, IImm>& map = checkingFunc->getStackOffsetMap();
+    if (map.find(val) != map.end()) {return true;}
+    return false;
+  }
 };
 
 GIMC_NAMESPACE_END

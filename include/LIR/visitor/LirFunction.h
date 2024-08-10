@@ -51,9 +51,9 @@ class LirFunction {
 
         void appendBlk(LirBlock *blk) {
           blkList.append(blk->getNode());
-#ifdef DEBUG_MODE
-  std::cout << "add lirBlock " << blk->getLabel() << " to "  << getFuncName() << std::endl; 
-#endif
+// #ifdef DEBUG_MODE
+//   std::cout << "add lirBlock " << blk->getLabel() << " to "  << getFuncName() << std::endl; 
+// #endif
         }
 
         // 将 IR 中 alloca 指令生成的变量分配到函数栈空间
@@ -82,6 +82,11 @@ class LirFunction {
         // 获得第一个 Block
         LirBlock* getFirstBlock() {return blkList.getHeadPtr()->getNext()->getOwner();}
 
+        // 解析形参，获得整型参数和浮点参数个数等
+        void resolveParams(std::vector<baseTypePtr> &paramTypes);
+
+        // 将跨基本块的 IR 变量放入栈空间中
+        IImm putCrossBlockVar(Value *crossReg);
 };
 
 

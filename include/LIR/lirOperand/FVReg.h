@@ -13,7 +13,7 @@ class FVReg : public Reg {
         int id;
     
     public:
-        FVReg() : Reg(LirOperandKind::FVirtual), id(){count++;};
+        FVReg() : Reg(LirOperandKind::FVirtual), id(){id = count++;};
 
         FVReg(int id) : Reg(LirOperandKind::FVirtual), id(id){};
 

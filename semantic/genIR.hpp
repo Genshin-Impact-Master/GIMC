@@ -2,13 +2,13 @@
 #include "../include/IR/IRBuilder.h"
 #include "../include/SymbolTable.hpp"
 
-std::vector<Function*> *defs;                          // 函数定义容器
-std::vector<Function*> *declares;                      // 函数声明容器
-std::vector<GlobalVar*> *globals;                      // 全局变量容器
-SymbolTable sym_tb = SymbolTable();
-string error_msg = "";
-IRBuilder builder;
-Module* module;
+extern std::vector<Function*> *defs;                          // 函数定义容器
+extern std::vector<Function*> *declares;                      // 函数声明容器
+extern std::vector<GlobalVar*> *globals;                      // 全局变量容器
+extern SymbolTable sym_tb;
+extern string error_msg;
+extern IRBuilder builder;
+extern Module* module;
 
 NumberPtr getConstExpValue(ExpPtr exp, bool array_dim = false);
 CompUnit* parse(char *filename);

@@ -3,7 +3,7 @@
 SCC="arm-linux-gnueabihf-gcc"
 QEMU="qemu-arm"
 ARM_FLAGS="-cpu cortex-a7"
-COMPILE_FLAGS="-march=armv7 -mfpu=vfpv3 -mfloat-abi=hard"
+COMPILE_FLAGS="-march=armv7 -mfpu=vfpv3 -mfloat-abi=hard -fPIC"
 LLVM_LINK="llvm-link"
 QEMU_FLAGS="-L /usr/arm-linux-gnueabihf"
 
@@ -70,6 +70,7 @@ for syfile in $FILES; do
     infile="input/${base}.in"
     clangoutfile="$CLANGEXE/${base}.out"
     tmpDir="$INTEGRATE/tmpDir"
+    stdOut="stdOut/${base}.out"
 
     if [ "$EMIT_LLVM" = true ]; then
         if [ "$ISTMP" = true ]; then
@@ -100,13 +101,17 @@ for syfile in $FILES; do
         fi
         $GIMC "$syfile" -S -o "$tmpGIMC_S"
         $SCC $COMPILE_FLAGS "$tmpGIMC_S" ../lib/newlib.o -o "$tmpDir/tmp"
-        if [ -f "$infile" ]; then
-            $QEMU $ARM_FLAGS $QEMU_FLAGS "$tmpDir/tmp" < "$infile" > "$tmpOUT"
-            echo $? >> "$tmpOUT"
-        else
-            $QEMU $ARM_FLAGS $QEMU_FLAGS "$tmpDir/tmp" > "$tmpOUT"
-            echo $? >> "$tmpOUT"
-        fi
+        # if [ -f "$infile" ]; then
+        #     $QEMU $ARM_FLAGS $QEMU_FLAGS "$tmpDir/tmp" < "$infile" > "$tmpOUT"
+        #     echo $? >> "$tmpOUT"
+        #     echo "${base}"
+        #     "$INTEGRATE/check" "$tmpOUT" $stdOut || exit
+        # else
+        #     $QEMU $ARM_FLAGS $QEMU_FLAGS "$tmpDir/tmp" > "$tmpOUT"
+        #     echo $? >> "$tmpOUT"
+        #     echo "${base}"
+        #     "$INTEGRATE/check" "$tmpOUT" $stdOut || exit
+        # fi
     else
         usage
     fi

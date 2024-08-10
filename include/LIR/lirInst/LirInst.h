@@ -55,7 +55,7 @@ class LirInst {
         INode<LirInst> lirInstNode;
     protected:
         // 三元式最多三个操作寄存器
-        LirOperand* opds[3];
+        LirOperand* opds[3] = {nullptr, nullptr, nullptr};
         LirArmStatus status;
     public:
         LirInst(LirInstKind kind, LirBlock *parent_);
@@ -109,10 +109,10 @@ class LirInst {
 class LirStore : public LirInst {
 public:
   /**
-   * @param addr 存取的位置
    * @param input 需要存入的 Operand
+   * @param addr 存取的位置
    */
-  LirStore(LirBlock *parent, LirOperand *addr, LirOperand *input);
+  LirStore(LirBlock *parent, LirOperand *input, LirOperand *addr);
 };
 
 class LirLoad : public LirInst {

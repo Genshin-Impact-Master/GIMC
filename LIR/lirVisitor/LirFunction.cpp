@@ -29,19 +29,44 @@ IImm LirFunction::putLocalVar(Value *alloca) {
   return yes;
 }
 
+IImm LirFunction::putCrossBlockVar(Value *crossReg) {
+  IImm yes(stackSize);
+  stackSize += STACK_ALIGN;
+  stackOffsetMap.insert(std::pair<Value*, IImm>(crossReg, yes));
+  return yes;
+}
+
 IImm LirFunction::putParam(Value *param) {
   // 这里的 param 只能是 int，float，pointer，即只占 32 位，但用 8 字节对齐一下
-  IImm yes(paramSize);
+  IImm yes(stackSize);
   paramSize -= STACK_ALIGN;
   stackOffsetMap.insert(std::pair<Value*, IImm>(param, yes));
   return yes;
 }
 
 void LirFunction::updateParamStack() {
-  for (auto param : parameters) {
-    int right = stackOffsetMap.at(param).getImm();
-    // putParam 是减去，故 stackSize - right 即形参在栈上的实际偏移量
-    right = stackSize - right;
-    stackOffsetMap.insert(std::pair<Value*, IImm>(param, right));
+  for (auto it : stackOffsetMap) {
+    int right = stackSize - it.second.getImm();
+    stackOffsetMap.insert(std::pair<Value*, IImm>(it.first, IImm(right)));
+  }
+  // for (auto param : parameters) {
+  //   int right = stackOffsetMap.at(param).getImm();
+  //   // putParam 是减去，故 stackSize - right 即形参在栈上的实际偏移量
+  //   right = stackSize - right;
+  //   stackOffsetMap.insert(std::pair<Value*, IImm>(param, IImm(right)));
+  // }
+}
+
+void LirFunction::resolveParams(std::vector<baseTypePtr> &paramTypes) {
+  iparamsCnt = 0;
+  fparamsCnt = 0;
+  for (int i = 0; i < paramsCnt; i++) {
+    baseTypePtr ty = paramTypes[i];
+    if (TypeBase::isFloat(ty)) {
+      fparamsCnt++;
+    }
+    else {
+      iparamsCnt++;
+    }
   }
 }

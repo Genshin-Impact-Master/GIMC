@@ -23,8 +23,8 @@ void LirToArm::genFunction(LirFunction *func) {
   smartOut(".align", 3);
   smartOut(".global", name);
   smartOut(".syntax", "unified");
-  smartOut(".thumb");
-  smartOut(".thumb_func");
+  // smartOut(".thumb");
+  // smartOut(".thumb_func");
   smartOut(".type", name, "\%function");
   armOut << name << ":" << std::endl;
 
@@ -135,31 +135,38 @@ void LirToArm::genInst(LirInst *lir_inst) {
   }
 
   case LirInstKind::Store: {
-    armOut << "\tstr"
-           << "\t" << opd2->toString() << ","
-           << "[" << opd3->toString() << "]";
+  // ldr r5, =_gimc_a   @ 将 _gimc_a 的地址加载到 r5 中
+  // str r4, [r5]       @ 将 r4 的值存储到 _gimc_a 指向的地址中
+
+    // if (!opd3->isAddr()) {
+      armOut  << "\tstr"
+              << "\t" << opd2->toString() << ","
+              << "[" << opd3->toString() << "]";
+    // }
+    // else {
+    //   armOut  << "\tstr"
+    //           << "\t" << opd2->toString() << ","
+    //           << opd3->toString();
+    // }
     armOut << "\n";
     break;
   }
 
   case LirInstKind::Load: {
-    if (opd1->isInt()) {
-      armOut << "\tldr"
-             << "\t" << opd1->toString() << ","
-             << "[" << opd2->toString() << "]";
-      armOut << "\n";
-      break;
-    } else {
-      armOut << "vldr.32"
-             << "\t" << opd1->toString() << ","
-             << "[" << opd2->toString() << "]";
-      armOut << "\n";
-      break;
-    }
+    if (opd1->isInt())
+      armOut << "\tldr";
+    else
+      armOut << "\tvldr.32";
+    armOut << " " << opd1->toString() << ", ";
+    if (opd2->isAddr())
+      armOut << opd2->toString() << "\n";
+    else
+      armOut << "[" << opd2->toString() << "]" << "\n";
+    break;
   }
 
   case LirInstKind::Call: {
-    armOut << "bl"
+    armOut << "\tbl"
            << "\t" << opd2->toString();
     armOut << "\n";
     break;
@@ -178,23 +185,42 @@ void LirToArm::genInst(LirInst *lir_inst) {
     std::string cond = ST_ARM_STATUS[status];
     if (opd2->isFloat() && opd2->isImm()) {
       float f = atof(s.c_str());
-      int i = *(int *)&f;
+      uint32_t i = *(uint32_t *)&f;
+      uint16_t low = i & 0xffff;
+      uint16_t high = (i >> 16) & 0xffff; 
       armOut << "\t" << "movw" << cond
-             << "\t" << opd1->toString() << ", #" << i % 65536
+             << "\t" << opd1->toString() << ", #" << low
              << "\n";
       armOut << "\t" << "movt"
-             << "\t" << opd1->toString() << "," << i / 65536
+             << "\t" << opd1->toString() << "," << high
              << "\n";
       break;
     }
     if (opd2->isInt() && opd2->isImm()) {
-      int i = atoi(s.c_str());
+      int h = atoi(s.c_str());
+      uint32_t i = *(uint32_t*)&h;
+      uint16_t low = i & 0xffff;
+      uint16_t high = (i >> 16) & 0xffff; 
+
       armOut << "\tmovw" << cond
-             << "\t" << opd1->toString() << ", #" << i % 65536
+             << "\t" << opd1->toString() << ", #" << low
              << "\n";
       armOut << "\tmovt"
-             << "\t" << opd1->toString() << "," << i / 65536
+             << "\t" << opd1->toString() << "," << high
              << "\n";
+      break;
+    }
+    if (opd2->isAddr()) {
+      // 对于全局变量，以下的做法是绝对地址，与位置相关
+      // movw    <reg>, #:lower16:<globalVar>
+      // movt    <reg>, #:upper16:<globalVar>
+
+      // smartOut("movw", opd1->toString(), "#:lower16:" + opd2->toString());
+      // smartOut("movt", opd1->toString(), "#:upper16:" + opd2->toString());
+      
+      // 与位置无关的汇编代码应当为
+      // adr r0, _gimc_a
+      smartOut("adr", opd1->toString(), opd2->toString());
       break;
     }
     else {
@@ -209,7 +235,7 @@ void LirToArm::genInst(LirInst *lir_inst) {
   }
 
   case LirInstKind::Br: {
-    armOut << "b" << ST_ARM_STATUS[static_cast<int>(lir_inst->getStatus())] << opd2->toString() << std::endl;
+    armOut << "\tb" << ST_ARM_STATUS[static_cast<int>(lir_inst->getStatus())] << opd2->toString() << std::endl;
     break;
   }
 
@@ -229,8 +255,8 @@ void LirToArm::genInst(LirInst *lir_inst) {
 
 void LirToArm::genBlock(LirBlock *blk) {
 
-  armOut << blk->getLabel() << ":"
-         << "\n"; // 输出 Block 的标签
+  // armOut << blk->getLabel() << ":"
+  //        << "\n"; // 输出 Block 的标签
 
   IList<LirBlock, LirInst> &Inst_List = blk->getInst();
   INode<LirInst> *node = Inst_List.getHeadPtr();
@@ -246,8 +272,15 @@ void LirToArm::Output_Arm_global() {
     GlobalVar *var = dynamic_cast<GlobalVar*>(iter.first);
     // armOut << iter.second->toString() << ":"
     //        << "\n";
+
     if (var) {
       // 说明为全局变量
+      
+      // 准备工作
+      smartOut(".text");
+      smartOut(".global", var->getName());
+      smartOut(".size", var->getName(), var->getType()->getSize());
+      
       armOut << var->getName() << ":" << std::endl;
       cycleGlobal(var);
     }
@@ -280,6 +313,10 @@ void LirToArm::Output_Arm_global() {
 void LirToArm::cycleGlobal(GlobalVar* var) {
   std::shared_ptr<PointerType> ptr = std::dynamic_pointer_cast<PointerType>(var->getType());
   baseTypePtr base = ptr->getBaseType();
+#ifdef DEBUG_MODE
+  std::cout << base->getDetailName() << std::endl;
+  std::cout << var->getName() << std::endl;
+#endif
   if (ptr == nullptr) {
     error("LirToArm:cycleGlobal: 全局变量必须为指针类型");
   }
@@ -298,11 +335,13 @@ void LirToArm::cycleGlobal(GlobalVar* var) {
       }
     }
     else {
-      // 非数组类型，直接输出
-      if (dynamic_cast<ConstValue*>(var) == nullptr) {
-        error("LirToArm:cycleGlobal: 全局变量必须使用常量初始化");
+      // values 中值非 GlobalVar* 类型，直接输出
+      for (auto value : values) {
+        if (dynamic_cast<ConstValue*>(value) == nullptr) {
+          error("LirToArm:cycleGlobal: 全局变量必须使用常量初始化");
+        } 
+        smartOut(".word", value->getName());
       }
-      smartOut(".word", var->getName());
     }
   }
 }

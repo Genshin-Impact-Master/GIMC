@@ -13,7 +13,7 @@ class IVReg : public Reg {
         int id;
     
     public:
-        IVReg() : Reg(LirOperandKind::IVirtual), id(){count++;};
+        IVReg() : Reg(LirOperandKind::IVirtual), id(){id = count++;};
 
         IVReg(int id) : Reg(LirOperandKind::IVirtual), id(id){};
 

@@ -29,7 +29,7 @@ int main(int argc, char *argv[]) {
         }
         if (s1 != s2) {
             cout << "check failed" << endl;
-            return 0;
+            return 1;
         }
         cout << "check success" << endl;
         return 0;

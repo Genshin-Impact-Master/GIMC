@@ -6,6 +6,7 @@
 #define GIMC_NAMESPACE_END }                          // GIMC namespace
 #define USING_GIMC_NAMESPACE using namespace GIMC;
 #define ADDR_LENGTH 32                                // 机器字长
+#define LIRINST_STRING ST_LirConds[static_cast<int>(inst->getKind())]
 //#define PRINT_CFG                                     // 设置此宏，将 CFG 生成出来
 #define DEBUG_MODE                                    // 设置此宏开启 Debug 模式
 #define COMMIT_MODE                                   // 提交模式

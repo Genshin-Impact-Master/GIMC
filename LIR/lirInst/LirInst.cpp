@@ -6,10 +6,10 @@ USING_GIMC_NAMESPACE
 LirInst::LirInst(LirInstKind kind, LirBlock *parent_)
     : lirInstNode(nullptr, nullptr, this), parent(parent_), lirKind(kind) {}
 
-LirStore::LirStore(LirBlock *parent, LirOperand *addr, LirOperand *input)
+LirStore::LirStore(LirBlock *parent, LirOperand *input, LirOperand *addr)
     : LirInst(LirInstKind::Store, parent) {
-  opds[1] = addr;
-  opds[2] = input;
+  opds[1] = input;
+  opds[2] = addr;
 }
 
 LirLoad::LirLoad(LirBlock *parent, LirOperand *dst, LirOperand *ptr)
